@@ -1,0 +1,25 @@
+--no-fonts
+-classpath
+'/Users/jean-christopheartinian/.m2/repository/org/openjfx/javafx-controls/21.0.5/javafx-controls-21.0.5.jar:/Users/jean-christopheartinian/.m2/repository/org/openjfx/javafx-controls/21.0.5/javafx-controls-21.0.5-mac-aarch64.jar:/Users/jean-christopheartinian/.m2/repository/org/openjfx/javafx-graphics/21.0.5/javafx-graphics-21.0.5.jar:/Users/jean-christopheartinian/.m2/repository/org/openjfx/javafx-graphics/21.0.5/javafx-graphics-21.0.5-mac-aarch64.jar:/Users/jean-christopheartinian/.m2/repository/org/openjfx/javafx-base/21.0.5/javafx-base-21.0.5.jar:/Users/jean-christopheartinian/.m2/repository/org/openjfx/javafx-base/21.0.5/javafx-base-21.0.5-mac-aarch64.jar:/Users/jean-christopheartinian/.m2/repository/org/openjfx/javafx-fxml/21.0.5/javafx-fxml-21.0.5.jar:/Users/jean-christopheartinian/.m2/repository/org/openjfx/javafx-fxml/21.0.5/javafx-fxml-21.0.5-mac-aarch64.jar:/Users/jean-christopheartinian/.m2/repository/io/github/mkpaz/atlantafx-base/2.0.1/atlantafx-base-2.0.1.jar:/Users/jean-christopheartinian/.m2/repository/org/xerial/sqlite-jdbc/3.47.1.0/sqlite-jdbc-3.47.1.0.jar:/Users/jean-christopheartinian/.m2/repository/org/json/json/20240303/json-20240303.jar'
+-encoding
+'UTF-8'
+-protected
+-source
+'21'
+-sourcepath
+'/Users/jean-christopheartinian/Service civique /bcd-express/src/main/java'
+-author
+-bottom
+'Copyright &#169; 2026. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/Users/jean-christopheartinian/Service civique /bcd-express/target/reports/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'BCD Express 1.0-SNAPSHOT API'
+-use
+-version
+-windowtitle
+'BCD Express 1.0-SNAPSHOT API'

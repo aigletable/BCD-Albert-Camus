@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+    Onglet Prêts & Retours — BCD Express
+    Design épuré et moderne conforme à la maquette de référence :
+    - En-tête : Titre + Actions (Panier Enseignant, Bilan, Exporter retards, + Nouvel emprunt)
+    - 3 Cartes KPI cliquables (Prêts en cours, Retards, Retours du jour)
+    - Carte Scanner douchette (accent bleu) & Carte Recherche/Filtre
+    - Tableau avec miniatures, statuts pastilles et retours rapides
+    - Barre de statut inférieure synchronisée
+-->
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="fr.ecole.bcd.controller.PretsController"
+      spacing="16" styleClass="tab-content">
+
+    <!-- ── 1. En-tête : Titre & Actions principales ─────────────────────── -->
+    <HBox spacing="12" alignment="CENTER_LEFT">
+        <Label text="Prêts &amp; Retours" styleClass="screen-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnPretPanier" text="🧺 Panier Enseignant" styleClass="btn-outline"
+                onAction="#handlePretPanier"/>
+        <Button fx:id="btnBilanActivite" text="📊 Bilan &amp; Stats" styleClass="btn-outline"
+                onAction="#handleBilanActivite"/>
+        <Button fx:id="btnExportRetards" text="📤 Exporter retards" styleClass="btn-outline"
+                onAction="#handleExportRetards"/>
+        <Button fx:id="btnNewEmprunt" text="➕ Nouvel emprunt" styleClass="btn-blue"
+                onAction="#handleNewEmprunt"/>
+    </HBox>
+
+    <!-- ── 2. Cartes KPI cliquables (3 Colonnes comme sur la maquette) ── -->
+    <HBox spacing="14">
+        <!-- Prêts en cours -->
+        <HBox spacing="14" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" styleClass="kpi-card"
+              onMouseClicked="#handleFilterAllLoans" style="-fx-cursor: hand;">
+            <Label text="📖" styleClass="kpi-icon-box-emerald"/>
+            <VBox spacing="2">
+                <Label text="Prêts en cours" styleClass="kpi-title"/>
+                <Label fx:id="lblKpiTotal" text="0" styleClass="kpi-value"/>
+            </VBox>
+        </HBox>
+
+        <!-- Retards -->
+        <HBox spacing="14" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" styleClass="kpi-card"
+              onMouseClicked="#handleFilterLateLoans" style="-fx-cursor: hand;">
+            <Label text="⏰" styleClass="kpi-icon-box-orange"/>
+            <VBox spacing="2">
+                <Label text="Retards" styleClass="kpi-title"/>
+                <Label fx:id="lblKpiRetards" text="0" styleClass="kpi-value" style="-fx-text-fill: #EA580C;"/>
+            </VBox>
+        </HBox>
+
+        <!-- Retours du jour -->
+        <HBox spacing="14" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" styleClass="kpi-card"
+              onMouseClicked="#handleFilterTodayLoans" style="-fx-cursor: hand;">
+            <Label text="📅" styleClass="kpi-icon-box-blue"/>
+            <VBox spacing="2">
+                <Label text="Retours du jour" styleClass="kpi-title"/>
+                <Label fx:id="lblKpiRetoursJour" text="0" styleClass="kpi-value" style="-fx-text-fill: #1A66FF;"/>
+            </VBox>
+        </HBox>
+    </HBox>
+
+    <!-- ── 3. Actions : Scanner douchette (Gauche) + Recherche & Filtres (Droite) ── -->
+    <HBox spacing="14" alignment="CENTER_LEFT">
+        <!-- Carte Scanner Douchette (Gauche) -->
+        <VBox spacing="8" prefWidth="380" minWidth="320" styleClass="mockup-card-accent">
+            <HBox alignment="CENTER_LEFT" spacing="8">
+                <Label text="⚡ Scanner un exemplaire (Retour direct)" styleClass="card-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="⚡ Douchette active" styleClass="pill-green" style="-fx-font-size: 10.5px;"/>
+            </HBox>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <TextField fx:id="quickReturnField"
+                           promptText="Code-barres ou N° d'exemplaire (ex: #042)…"
+                           HBox.hgrow="ALWAYS" onAction="#handleQuickReturn"/>
+                <Button fx:id="btnQuickReturn" text="Retourner" styleClass="btn-blue"
+                        minWidth="-Infinity" onAction="#handleQuickReturn"/>
+            </HBox>
+            <Label fx:id="lblQuickReturnMsg" wrapText="true"
+                   style="-fx-font-size: 11.5px; -fx-font-weight: bold;"/>
+        </VBox>
+
+        <!-- Carte Recherche & Filtres (Droite) -->
+        <HBox spacing="10" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" styleClass="mockup-card">
+            <TextField fx:id="searchField"
+                       promptText="🔍 Rechercher un élève, un livre, N° exemplaire…"
+                       HBox.hgrow="ALWAYS"/>
+            <Label text="Classe" minWidth="-Infinity" styleClass="filter-label"/>
+            <ComboBox fx:id="classeFilter" promptText="Toutes" minWidth="110" prefWidth="130"/>
+            <CheckBox fx:id="chkRetardOnly" text="⚠️ En retard" minWidth="-Infinity" styleClass="filter-checkbox"/>
+            <Button fx:id="btnRefresh" text="🔄" styleClass="btn-outline" minWidth="-Infinity" onAction="#loadData"/>
+        </HBox>
+    </HBox>
+
+    <!-- ── 4. Tableau des emprunts en cours ───────────────────────────── -->
+    <TableView fx:id="pretsTableView" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colExId" text="N° EX." prefWidth="85"/>
+            <TableColumn fx:id="colLivre" text="LIVRE" prefWidth="300"/>
+            <TableColumn fx:id="colEmprunteur" text="ÉLÈVE" prefWidth="230"/>
+            <TableColumn fx:id="colDateEmprunt" text="DATE PRÊT" prefWidth="110"/>
+            <TableColumn fx:id="colDateLimite" text="RETOUR PRÉVU" prefWidth="120"/>
+            <TableColumn fx:id="colStatut" text="STATUT" prefWidth="160"/>
+            <TableColumn fx:id="colActions" text="ACTION" prefWidth="170"/>
+        </columns>
+        <placeholder>
+            <Label text="Aucun emprunt en cours." style="-fx-text-fill: #94A3B8; -fx-font-size: 13px;"/>
+        </placeholder>
+    </TableView>
+
+    <!-- ── 5. Barre de statut inférieure ─────────────────────────────── -->
+    <HBox spacing="12" alignment="CENTER_LEFT" styleClass="status-bar">
+        <Label fx:id="statusLabel" text="Chargement…"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="statChips" style="-fx-font-weight: 700; -fx-font-size: 12px;"/>
+    </HBox>
+
+</VBox>

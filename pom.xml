@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ================================================================== -->
+    <!--  BCD Express – Gestion de la bibliothèque d'école primaire         -->
+    <!-- ================================================================== -->
+    <groupId>fr.ecole.bcd</groupId>
+    <artifactId>bcd-express</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>BCD Express</name>
+    <description>
+        Application de bureau JavaFX pour la gestion de la BCD
+        (Bibliothèque Centre Documentaire) d'une école primaire.
+    </description>
+
+    <!-- ================================================================== -->
+    <!--  Propriétés centralisées                                           -->
+    <!-- ================================================================== -->
+    <properties>
+        <!-- Encodage -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Java 21 LTS -->
+        <java.version>21</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+
+        <!-- JavaFX 21 LTS (même version majeure que le JDK) -->
+        <javafx.version>21.0.5</javafx.version>
+
+        <!-- AtlantaFX – thème moderne flat pour JavaFX -->
+        <atlantafx.version>2.0.1</atlantafx.version>
+
+        <!-- SQLite JDBC – accès à la base locale bcd.db -->
+        <sqlite.version>3.47.1.0</sqlite.version>
+
+        <!-- org.json – parsing léger des réponses Google Books API -->
+        <orgjson.version>20240303</orgjson.version>
+
+        <!-- Plugin JavaFX Maven -->
+        <javafx.plugin.version>0.0.8</javafx.plugin.version>
+
+        <!-- Classe principale (le lanceur Bootstrap, pas la classe Application) -->
+        <main.class>fr.ecole.bcd.Launcher</main.class>
+    </properties>
+
+    <!-- ================================================================== -->
+    <!--  Dépendances                                                       -->
+    <!-- ================================================================== -->
+    <dependencies>
+
+        <!-- ── JavaFX ─────────────────────────────────────────────────── -->
+        <!-- Contrôles UI (Button, TextField, TableView, TabPane…) -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- Chargement des fichiers FXML -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- ── AtlantaFX ──────────────────────────────────────────────── -->
+        <!-- Thème flat / moderne appliqué via Application.setUserAgentStylesheet() -->
+        <dependency>
+            <groupId>io.github.mkpaz</groupId>
+            <artifactId>atlantafx-base</artifactId>
+            <version>${atlantafx.version}</version>
+        </dependency>
+
+        <!-- ── SQLite JDBC ────────────────────────────────────────────── -->
+        <!-- Driver JDBC pour la base locale bcd.db (zéro serveur) -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>${sqlite.version}</version>
+        </dependency>
+
+        <!-- ── org.json ───────────────────────────────────────────────── -->
+        <!-- Parsing JSON léger pour l'API Google Books -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>${orgjson.version}</version>
+        </dependency>
+
+    </dependencies>
+
+    <!-- ================================================================== -->
+    <!--  Build / Plugins                                                   -->
+    <!-- ================================================================== -->
+    <build>
+        <plugins>
+
+            <!-- Compilateur Java 21 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+
+            <!-- Plugin JavaFX : permet « mvn javafx:run » -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>${javafx.plugin.version}</version>
+                <configuration>
+                    <!-- Pointe vers le Launcher (pas MainApp) pour
+                         contourner les erreurs de module-path sur Mac/Win -->
+                    <mainClass>${main.class}</mainClass>
+                </configuration>
+            </plugin>
+
+            <!-- Shade plugin : génère un fat-JAR autonome pour le déploiement Windows -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${main.class}</mainClass>
+                                </transformer>
+                            </transformers>
+                            <!-- Évite les erreurs de signature sur les JARs signés -->
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>

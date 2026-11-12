@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"fr.ecole.bcd"},{"l":"fr.ecole.bcd.controller"},{"l":"fr.ecole.bcd.database"},{"l":"fr.ecole.bcd.model"},{"l":"fr.ecole.bcd.service"},{"l":"fr.ecole.bcd.view"}];updateSearchResults();
