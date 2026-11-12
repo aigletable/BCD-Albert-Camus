@@ -11,6 +11,8 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.HBox;
@@ -124,19 +126,17 @@ public class MainApp extends Application {
             } catch (Exception ignored) {}
         }
         try {
-            String css = MainApp.class.getResource("/css/app.css") != null
-                    ? MainApp.class.getResource("/css/app.css").toExternalForm() : null;
-            String darkCss = MainApp.class.getResource("/css/dark.css") != null
-                    ? MainApp.class.getResource("/css/dark.css").toExternalForm() : null;
-
-            if (ThemeService.isDarkMode()) {
-                if (darkCss != null) {
-                    dialog.getDialogPane().getStylesheets().setAll(darkCss);
-                }
-            } else {
-                if (css != null) {
-                    dialog.getDialogPane().getStylesheets().setAll(css);
-                }
+            String activeCssPath = ThemeService.isDarkMode()
+                    ? ThemeService.getThemePreset().getDarkCss()
+                    : ThemeService.getThemePreset().getLightCss();
+            String css = MainApp.class.getResource(activeCssPath) != null
+                    ? MainApp.class.getResource(activeCssPath).toExternalForm() : null;
+            if (css == null) {
+                css = MainApp.class.getResource(ThemeService.isDarkMode() ? "/css/dark.css" : "/css/app.css") != null
+                        ? MainApp.class.getResource(ThemeService.isDarkMode() ? "/css/dark.css" : "/css/app.css").toExternalForm() : null;
+            }
+            if (css != null) {
+                dialog.getDialogPane().getStylesheets().setAll(css);
             }
         } catch (Exception ignored) {}
     }
@@ -250,18 +250,19 @@ public class MainApp extends Application {
             }
         });
 
-        /* ── 3. Bandeau supérieur officiel de l'école (Style Maquette) ───────── */
+        /* ── 3. Bandeau supérieur officiel de l'école (Style Maquette & KPIs) ───────── */
         HBox topBar = new HBox(12);
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.getStyleClass().add("top-school-header");
 
         // Carré bleu avec livre
         Label logoIcon = new Label("📖");
-        logoIcon.setStyle("-fx-font-size: 14px; -fx-text-fill: white; -fx-background-color: #1A66FF; " +
-                "-fx-background-radius: 8px; -fx-min-width: 30px; -fx-min-height: 30px; -fx-alignment: center;");
+        logoIcon.setStyle("-fx-font-size: 14px; -fx-text-fill: white; -fx-background-color: linear-gradient(to bottom right, #2563EB, #1D4ED8); " +
+                "-fx-background-radius: 8px; -fx-min-width: 30px; -fx-min-height: 30px; -fx-alignment: center; " +
+                "-fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.35), 6, 0, 0, 1);");
 
         Label appName = new Label("BCD Express");
-        appName.setStyle("-fx-font-weight: 800; -fx-font-size: 17px; -fx-text-fill: #1A66FF;");
+        appName.setStyle("-fx-font-weight: 800; -fx-font-size: 17px; -fx-text-fill: #1D4ED8;");
 
         HBox brandBox = new HBox(8, logoIcon, appName);
         brandBox.setAlignment(Pos.CENTER_LEFT);
@@ -272,11 +273,28 @@ public class MainApp extends Application {
         Label schoolBadge = new Label("🏫 École Albert Camus Pasteur • Meudon");
         schoolBadge.getStyleClass().add("school-name-badge");
 
+        // Widgets KPI en direct (Nombre total de livres & emprunts en cours)
+        Label kpiLivres = new Label("📚 … livres");
+        kpiLivres.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #334155; -fx-background-color: #F1F5F9; -fx-padding: 3 9; -fx-background-radius: 999px; -fx-border-color: #E2E8F0; -fx-border-radius: 999px;");
+        Label kpiPrets = new Label("🎒 … emprunts");
+        kpiPrets.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #1D4ED8; -fx-background-color: #EFF6FF; -fx-padding: 3 9; -fx-background-radius: 999px; -fx-border-color: #BFDBFE; -fx-border-radius: 999px;");
+        HBox kpiBox = new HBox(6, kpiLivres, kpiPrets);
+        kpiBox.setAlignment(Pos.CENTER_LEFT);
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Label subtitle = new Label("Bibliothèque Centre Documentaire");
-        subtitle.setStyle("-fx-font-size: 12px; -fx-text-fill: #94A3B8; -fx-font-weight: 500;");
+        // Menu Sélecteur de Design (Porte de sortie immédiate vers le design d'origine)
+        MenuButton btnDesign = new MenuButton(
+                ThemeService.getThemePreset() == ThemeService.ThemePreset.CUPERTINO
+                        ? "🎨 Design Apple" : "🏛️ Design Classique"
+        );
+        btnDesign.getStyleClass().addAll("btn-outline", "btn-sm");
+        btnDesign.setStyle("-fx-font-size: 11px; -fx-padding: 4px 10px; -fx-cursor: hand;");
+
+        MenuItem miCupertino = new MenuItem("🍏 Cupertino Moderne (Style Apple)");
+        MenuItem miPrimer = new MenuItem("🏛️ Primer Classique (Design d'origine)");
+        btnDesign.getItems().addAll(miCupertino, miPrimer);
 
         // Bouton Sauvegardes global
         Button btnBackup = new Button("💾 Sauvegardes");
@@ -289,13 +307,14 @@ public class MainApp extends Application {
                 else if (ctrl instanceof fr.ecole.bcd.controller.UtilisateursController uc) uc.loadData();
                 else if (ctrl instanceof fr.ecole.bcd.controller.PretsController pc) pc.loadData();
             }
+            refreshHeaderKpis(kpiLivres, kpiPrets);
         }));
 
         // Bouton Thème Jour / Nuit
         Button btnTheme = new Button();
         btnTheme.getStyleClass().add("theme-toggle-btn");
 
-        topBar.getChildren().addAll(brandBox, separator, schoolBadge, spacer, subtitle, btnBackup, btnTheme);
+        topBar.getChildren().addAll(brandBox, separator, schoolBadge, kpiBox, spacer, btnDesign, btnBackup, btnTheme);
 
         VBox root = new VBox(topBar, tabPane);
         VBox.setVgrow(tabPane, Priority.ALWAYS);
@@ -303,9 +322,22 @@ public class MainApp extends Application {
         /* ── 4. Scène et fenêtre ─────────────────────────────────────── */
         Scene scene = new Scene(root, 1080, 720);
 
-        // Initialiser le thème (Mode Jour ou Mode Nuit)
+        // Actions de bascule de design et de thème
+        miCupertino.setOnAction(e -> {
+            ThemeService.setPreset(ThemeService.ThemePreset.CUPERTINO, scene, btnTheme);
+            btnDesign.setText("🎨 Design Apple");
+        });
+        miPrimer.setOnAction(e -> {
+            ThemeService.setPreset(ThemeService.ThemePreset.PRIMER_CLASSIQUE, scene, btnTheme);
+            btnDesign.setText("🏛️ Design Classique");
+        });
+
         btnTheme.setOnAction(e -> ThemeService.toggleTheme(scene, btnTheme));
         ThemeService.initTheme(scene, btnTheme);
+
+        // Chargement initial des KPIs en direct
+        refreshHeaderKpis(kpiLivres, kpiPrets);
+        tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldT, newT) -> refreshHeaderKpis(kpiLivres, kpiPrets));
 
         stage.setTitle("BCD Express – École Albert Camus Pasteur (Meudon)");
         stage.setMinWidth(950);
@@ -375,5 +407,35 @@ public class MainApp extends Application {
         content.setAlignment(Pos.CENTER);
         content.setPadding(new Insets(40));
         return content;
+    }
+
+    /**
+     * Rafraîchit les compteurs KPIs du bandeau d'en-tête (Nombre total de livres & emprunts actifs).
+     *
+     * @param lblLivres label affichant le total des livres
+     * @param lblPrets  label affichant les emprunts en cours
+     */
+    public static void refreshHeaderKpis(Label lblLivres, Label lblPrets) {
+        if (lblLivres == null && lblPrets == null) return;
+        javafx.concurrent.Task<int[]> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected int[] call() {
+                int nbL = 0;
+                int nbP = 0;
+                try {
+                    nbL = new fr.ecole.bcd.database.LivreDao().count();
+                    nbP = new fr.ecole.bcd.database.EmpruntDao().countTotalEnCours();
+                } catch (Exception ignored) {}
+                return new int[]{nbL, nbP};
+            }
+        };
+        task.setOnSucceeded(e -> {
+            int[] vals = task.getValue();
+            if (lblLivres != null) lblLivres.setText("📚 " + vals[0] + " livres");
+            if (lblPrets != null) lblPrets.setText("🎒 " + vals[1] + " emprunt" + (vals[1] > 1 ? "s" : ""));
+        });
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
     }
 }

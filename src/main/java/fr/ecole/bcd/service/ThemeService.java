@@ -1,5 +1,7 @@
 package fr.ecole.bcd.service;
 
+import atlantafx.base.theme.CupertinoDark;
+import atlantafx.base.theme.CupertinoLight;
 import atlantafx.base.theme.PrimerDark;
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
@@ -10,70 +12,74 @@ import javafx.scene.control.Tooltip;
 import java.util.prefs.Preferences;
 
 /**
- * Service de gestion du thème visuel (Mode Jour / Mode Nuit) pour l'application BCD Express.
- * <p>
- * Ce service offre les fonctionnalités suivantes :
- * </p>
- * <ul>
- *   <li>Bascule dynamique et sans redémarrage entre les thèmes AtlantaFX {@link PrimerLight} et {@link PrimerDark}.</li>
- *   <li>Superposition de la feuille de style spécifique {@code dark.css} ou {@code app.css} sur la scène active.</li>
- *   <li>Mémorisation persistante de la préférence utilisateur via {@link Preferences} (nœud utilisateur local).</li>
- *   <li>Mise à jour en temps réel du bouton de bascule (icône, infobulle et micro-styles graphiques).</li>
- * </ul>
+ * Service de gestion du thème visuel (Mode Jour / Mode Nuit) et des styles d'interface
+ * (Cupertino Moderne Apple &harr; Primer Classique d'origine) pour BCD Express.
+ *
+ * <p>Ce service offre une **porte de sortie immédiate** permettant à tout moment
+ * de basculer entre le nouveau design moderne et le design classique d'origine.</p>
  *
  * @author JC ART
  * @since 2026-10-12
- * @version 1.0 (Dernière modification : 2026-11-10)
+ * @version 2.0 (Dernière modification : 2026-11-12)
  */
 public final class ThemeService {
 
     /**
-     * Clé de préférence système enregistrant l'état d'activation du mode nuit (booléen).
+     * Presets graphiques disponibles dans BCD Express.
      */
-    private static final String PREF_KEY_DARK = "dark_mode_active";
+    public enum ThemePreset {
+        CUPERTINO("🍏 Cupertino (Moderne Apple)", "/css/app.css", "/css/dark.css"),
+        PRIMER_CLASSIQUE("🏛️ Primer (Design Classique)", "/css/app-classic.css", "/css/dark-classic.css");
 
-    /**
-     * Nœud de préférences utilisateur Java associé à la classe ThemeService.
-     */
+        private final String label;
+        private final String lightCss;
+        private final String darkCss;
+
+        ThemePreset(String label, String lightCss, String darkCss) {
+            this.label = label;
+            this.lightCss = lightCss;
+            this.darkCss = darkCss;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public String getLightCss() {
+            return lightCss;
+        }
+
+        public String getDarkCss() {
+            return darkCss;
+        }
+    }
+
+    private static final String PREF_KEY_DARK = "dark_mode_active";
+    private static final String PREF_KEY_PRESET = "theme_preset_selected";
+
     private static final Preferences PREFS = Preferences.userNodeForPackage(ThemeService.class);
 
-    /**
-     * État d'activation actuel du mode sombre en mémoire.
-     */
     private static boolean darkMode = PREFS.getBoolean(PREF_KEY_DARK, false);
+    private static ThemePreset currentPreset = ThemePreset.valueOf(
+            PREFS.get(PREF_KEY_PRESET, ThemePreset.CUPERTINO.name())
+    );
 
-    /**
-     * Constructeur privé pour empêcher l'instanciation de cette classe utilitaire.
-     */
     private ThemeService() {
         // Classe utilitaire
     }
 
-    /**
-     * Indique si le mode sombre (nuit) est actuellement actif.
-     *
-     * @return {@code true} si le thème sombre est appliqué, {@code false} pour le thème clair
-     */
     public static boolean isDarkMode() {
         return darkMode;
     }
 
-    /**
-     * Initialise et applique le thème par défaut ou mémorisé lors de la création de la fenêtre principale.
-     *
-     * @param scene     la scène principale de l'application
-     * @param toggleBtn le bouton d'en-tête permettant de basculer de thème (peut être {@code null})
-     */
+    public static ThemePreset getThemePreset() {
+        return currentPreset;
+    }
+
     public static void initTheme(Scene scene, Button toggleBtn) {
         applyTheme(scene, toggleBtn);
     }
 
-    /**
-     * Inverse l'état du thème (Jour &harr; Nuit), persiste le choix dans les préférences et applique les modifications visuelles.
-     *
-     * @param scene     la scène principale
-     * @param toggleBtn le bouton de bascule à synchroniser
-     */
     public static void toggleTheme(Scene scene, Button toggleBtn) {
         darkMode = !darkMode;
         try {
@@ -83,35 +89,61 @@ public final class ThemeService {
     }
 
     /**
-     * Applique les styles CSS et le UserAgentStylesheet appropriés sur la scène et met à jour l'état visuel du bouton.
+     * Change le preset graphique (ex: Cupertino &harr; Primer classique) et applique les styles instantanément.
      *
-     * @param scene     la scène JavaFX sur laquelle appliquer les feuilles de style
-     * @param toggleBtn le bouton de bascule dont le texte et l'icône doivent être adaptés
+     * @param preset    le nouveau preset
+     * @param scene     la scène principale
+     * @param toggleBtn le bouton de bascule jour/nuit
+     */
+    public static void setPreset(ThemePreset preset, Scene scene, Button toggleBtn) {
+        if (preset == null) return;
+        currentPreset = preset;
+        try {
+            PREFS.put(PREF_KEY_PRESET, preset.name());
+        } catch (Exception ignored) {}
+        applyTheme(scene, toggleBtn);
+    }
+
+    /**
+     * Applique les styles CSS et le UserAgentStylesheet appropriés sur la scène.
      */
     public static void applyTheme(Scene scene, Button toggleBtn) {
-        String appCss = ThemeService.class.getResource("/css/app.css") != null
-                ? ThemeService.class.getResource("/css/app.css").toExternalForm() : null;
-        String darkCss = ThemeService.class.getResource("/css/dark.css") != null
-                ? ThemeService.class.getResource("/css/dark.css").toExternalForm() : null;
+        String activeCssPath = darkMode ? currentPreset.getDarkCss() : currentPreset.getLightCss();
+        String cssUrl = ThemeService.class.getResource(activeCssPath) != null
+                ? ThemeService.class.getResource(activeCssPath).toExternalForm() : null;
 
-        if (darkMode) {
-            setAppStylesheet(new PrimerDark().getUserAgentStylesheet());
-            if (scene != null && darkCss != null) {
-                scene.getStylesheets().setAll(darkCss);
+        // Si le fichier spécifique est introuvable (ex: fallback), utiliser app.css
+        if (cssUrl == null) {
+            cssUrl = ThemeService.class.getResource(darkMode ? "/css/dark.css" : "/css/app.css") != null
+                    ? ThemeService.class.getResource(darkMode ? "/css/dark.css" : "/css/app.css").toExternalForm() : null;
+        }
+
+        if (currentPreset == ThemePreset.CUPERTINO) {
+            if (darkMode) {
+                setAppStylesheet(new CupertinoDark().getUserAgentStylesheet());
+            } else {
+                setAppStylesheet(new CupertinoLight().getUserAgentStylesheet());
             }
-            if (toggleBtn != null) {
+        } else {
+            if (darkMode) {
+                setAppStylesheet(new PrimerDark().getUserAgentStylesheet());
+            } else {
+                setAppStylesheet(new PrimerLight().getUserAgentStylesheet());
+            }
+        }
+
+        if (scene != null && cssUrl != null) {
+            scene.getStylesheets().setAll(cssUrl);
+        }
+
+        if (toggleBtn != null) {
+            if (darkMode) {
                 toggleBtn.setText("☀️ Mode jour");
                 toggleBtn.setTooltip(new Tooltip("Basculer en mode clair (jour)"));
                 toggleBtn.setStyle("-fx-background-color: #21262D; -fx-text-fill: #FBBF24; -fx-border-color: #FBBF24; "
                         + "-fx-font-weight: 700; -fx-font-size: 12px; -fx-background-radius: 999px; -fx-border-radius: 999px; "
                         + "-fx-padding: 5px 14px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(251, 191, 36, 0.25), 6, 0, 0, 1);");
-            }
-        } else {
-            setAppStylesheet(new PrimerLight().getUserAgentStylesheet());
-            if (scene != null && appCss != null) {
-                scene.getStylesheets().setAll(appCss);
-            }
-            if (toggleBtn != null) {
+            } else {
                 toggleBtn.setText("🌙 Mode nuit");
                 toggleBtn.setTooltip(new Tooltip("Basculer en mode sombre (nuit)"));
                 toggleBtn.setStyle("-fx-background-color: #F8FAFC; -fx-text-fill: #334155; -fx-border-color: #CBD5E1; "
@@ -121,11 +153,6 @@ public final class ThemeService {
         }
     }
 
-    /**
-     * Définit la feuille de style globale du User-Agent JavaFX en gérant les exceptions éventuelles en mode headless.
-     *
-     * @param stylesheet l'URL de la feuille de style AtlantaFX
-     */
     private static void setAppStylesheet(String stylesheet) {
         try {
             Application.setUserAgentStylesheet(stylesheet);

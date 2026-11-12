@@ -251,6 +251,53 @@
     -fx-font-size: 11px;
 }
 
+/* Badges de genres littéraires pastel spécifiques (Palette Papeterie Douce) */
+.badge-genre-bd {
+    -fx-background-color: #FEF3C7;
+    -fx-text-fill: #92400E;
+    -fx-border-color: #FCD34D;
+}
+.badge-genre-roman {
+    -fx-background-color: #E0F2FE;
+    -fx-text-fill: #0369A1;
+    -fx-border-color: #7DD3FC;
+}
+.badge-genre-album {
+    -fx-background-color: #DCFCE7;
+    -fx-text-fill: #15803D;
+    -fx-border-color: #86EFAC;
+}
+.badge-genre-conte {
+    -fx-background-color: #F3E8FF;
+    -fx-text-fill: #7E22CE;
+    -fx-border-color: #D8B4FE;
+}
+.badge-genre-documentaire {
+    -fx-background-color: #E0E7FF;
+    -fx-text-fill: #4338CA;
+    -fx-border-color: #A5B4FC;
+}
+.badge-genre-revue {
+    -fx-background-color: #FFE4E6;
+    -fx-text-fill: #BE123C;
+    -fx-border-color: #FDA4AF;
+}
+.badge-genre-manga {
+    -fx-background-color: #FFEDD5;
+    -fx-text-fill: #C2410C;
+    -fx-border-color: #FDBA74;
+}
+.badge-genre-poesie {
+    -fx-background-color: #FCE7F3;
+    -fx-text-fill: #9D174D;
+    -fx-border-color: #F472B6;
+}
+.badge-genre-autre {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #475569;
+    -fx-border-color: #CBD5E1;
+}
+
 .badge-theme {
     -fx-background-color: #F0FDF4;
     -fx-text-fill: #15803D;

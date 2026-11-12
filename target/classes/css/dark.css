@@ -367,6 +367,15 @@
     -fx-border-radius: 6px;
     -fx-border-width: 1px;
 }
+.badge-genre-bd { -fx-background-color: #382404; -fx-text-fill: #FBBF24; -fx-border-color: #B45309; }
+.badge-genre-roman { -fx-background-color: #0C2D6B; -fx-text-fill: #60A5FA; -fx-border-color: #2563EB; }
+.badge-genre-album { -fx-background-color: #064E3B; -fx-text-fill: #34D399; -fx-border-color: #059669; }
+.badge-genre-conte { -fx-background-color: #3B0764; -fx-text-fill: #C084FC; -fx-border-color: #7E22CE; }
+.badge-genre-documentaire { -fx-background-color: #1E1B4B; -fx-text-fill: #818CF8; -fx-border-color: #4F46E5; }
+.badge-genre-revue { -fx-background-color: #4C0519; -fx-text-fill: #FB7185; -fx-border-color: #E11D48; }
+.badge-genre-manga { -fx-background-color: #431407; -fx-text-fill: #FB923C; -fx-border-color: #EA580C; }
+.badge-genre-poesie { -fx-background-color: #500724; -fx-text-fill: #F472B6; -fx-border-color: #DB2777; }
+.badge-genre-autre { -fx-background-color: #21262D; -fx-text-fill: #94A3B8; -fx-border-color: #30363D; }
 
 .badge-theme {
     -fx-background-color: #21262D;

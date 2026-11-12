@@ -237,6 +237,20 @@ public class EmpruntDao {
     }
 
     /**
+     * Dénombre le nombre total d'emprunts actuellement actifs (non rendus) dans toute la BCD.
+     *
+     * @return le nombre total de prêts en cours
+     * @throws SQLException en cas de problème de lecture
+     */
+    public int countTotalEnCours() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM emprunts WHERE date_rendu IS NULL";
+        try (java.sql.Statement st = DatabaseManager.getConnection().createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            return rs.getInt(1);
+        }
+    }
+
+    /**
      * Récupère l'historique chronologique intégral des emprunts (en cours et passés) d'un utilisateur.
      *
      * @param numero le numéro unique de l'emprunteur

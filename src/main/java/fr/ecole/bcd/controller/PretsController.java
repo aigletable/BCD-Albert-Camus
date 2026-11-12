@@ -121,6 +121,8 @@ public class PretsController {
         // Filtrage temps réel
         filteredEmprunts = new FilteredList<>(masterEmprunts, p -> true);
         pretsTableView.setItems(filteredEmprunts);
+        pretsTableView.setPlaceholder(fr.ecole.bcd.view.EmptyStateHelper.create(
+                "🎉", "Aucun emprunt en cours", "Tous les livres de la BCD sont actuellement bien rangés sur les étagères !"));
 
         searchField.textProperty().addListener((obs, oldVal, newVal) -> applyFilters());
         classeFilter.valueProperty().addListener((obs, oldVal, newVal) -> applyFilters());
@@ -335,6 +337,17 @@ public class PretsController {
 
             return true;
         });
+
+        if (retardOnly) {
+            pretsTableView.setPlaceholder(fr.ecole.bcd.view.EmptyStateHelper.create(
+                    "🎈", "Zéro retard !", "Tous les livres empruntés sont encore dans les délais. Félicitations aux élèves !"));
+        } else if (searchText != null && !searchText.isBlank()) {
+            pretsTableView.setPlaceholder(fr.ecole.bcd.view.EmptyStateHelper.create(
+                    "🔍", "Aucun résultat trouvé", "Aucun emprunt ne correspond à la recherche '" + searchText.trim() + "'."));
+        } else {
+            pretsTableView.setPlaceholder(fr.ecole.bcd.view.EmptyStateHelper.create(
+                    "🎉", "Aucun emprunt en cours", "Tous les livres de la BCD sont actuellement bien rangés sur les étagères !"));
+        }
 
         updateCounters();
     }

@@ -195,6 +195,10 @@ public class InventaireController {
         // Filtrage en temps réel
         filteredLivres = new FilteredList<>(masterLivres, p -> true);
         livreTableView.setItems(filteredLivres);
+        livreTableView.setPlaceholder(fr.ecole.bcd.view.EmptyStateHelper.create(
+                "📚", "Aucun livre trouvé", "Essaie un mot-clé plus court ou réinitialise les filtres."));
+        exemplaireTableView.setPlaceholder(fr.ecole.bcd.view.EmptyStateHelper.create(
+                "📦", "Aucun exemplaire physique", "Ce titre ne possède aucun exemplaire enregistré en stock."));
         searchField.textProperty().addListener((obs, oldVal, newVal) -> applyFilter(newVal));
 
         // Sélection d'un livre
@@ -292,7 +296,7 @@ public class InventaireController {
                         setStyle("-fx-alignment: CENTER; -fx-text-fill: #94A3B8;");
                     } else {
                         Label badge = new Label(genre);
-                        badge.getStyleClass().add("badge-genre");
+                        badge.getStyleClass().addAll("badge-genre", fr.ecole.bcd.view.CoverHelper.getStyleForGenre(genre).badgeClass());
                         setGraphic(badge);
                         setText(null);
                         setAlignment(Pos.CENTER);
@@ -466,6 +470,7 @@ public class InventaireController {
                             }
                         }
 
+                        thumbBox.getChildren().removeIf(n -> n != coverPlaceholder && n != coverImg);
                         if (cached != null && !cached.isError()) {
                             coverImg.setImage(cached);
                             coverImg.setVisible(true);
@@ -473,7 +478,9 @@ public class InventaireController {
                         } else {
                             coverImg.setImage(null);
                             coverImg.setVisible(false);
-                            coverPlaceholder.setVisible(true);
+                            coverPlaceholder.setVisible(false);
+                            Node styledCover = fr.ecole.bcd.view.CoverHelper.createStyledCover(livre, 56, 76);
+                            thumbBox.getChildren().add(styledCover);
                         }
 
                         setGraphic(card);
@@ -1046,6 +1053,7 @@ public class InventaireController {
             String g = livre.getGenre();
             if (g != null && !g.isBlank()) {
                 lblBadgeGenre.setText(g);
+                lblBadgeGenre.getStyleClass().setAll("badge-genre", fr.ecole.bcd.view.CoverHelper.getStyleForGenre(g).badgeClass());
                 lblBadgeGenre.setVisible(true);
                 lblBadgeGenre.setManaged(true);
                 hasBadge = true;
@@ -1097,23 +1105,27 @@ public class InventaireController {
             }
         }
 
-        // Couverture avec cache mémoire et indicateur de chargement
+        // Couverture avec cache mémoire, indicateur de chargement et fausse couverture stylisée Apple Books
+        coverBox.getChildren().removeIf(n -> n != imgCouverture && n != lblNoCover && n != coverProgress);
+        lblNoCover.setVisible(false);
+
         String url = livre.getCouvertureUrl();
         if (url != null && !url.isBlank()) {
             Image cached = COVER_IMAGE_CACHE.get(url);
             if (cached != null) {
                 if (cached.isError()) {
                     imgCouverture.setImage(null);
-                    lblNoCover.setVisible(true);
+                    imgCouverture.setVisible(false);
+                    coverBox.getChildren().add(0, fr.ecole.bcd.view.CoverHelper.createStyledCover(livre, 88, 120));
                     if (coverProgress != null) coverProgress.setVisible(false);
                 } else {
                     imgCouverture.setImage(cached);
-                    lblNoCover.setVisible(false);
+                    imgCouverture.setVisible(true);
                     if (coverProgress != null) coverProgress.setVisible(false);
                 }
             } else {
                 imgCouverture.setImage(null);
-                lblNoCover.setVisible(false);
+                imgCouverture.setVisible(false);
                 if (coverProgress != null) coverProgress.setVisible(true);
 
                 try {
@@ -1123,7 +1135,9 @@ public class InventaireController {
                             Platform.runLater(() -> {
                                 COVER_IMAGE_CACHE.put(url, img);
                                 imgCouverture.setImage(null);
-                                lblNoCover.setVisible(true);
+                                imgCouverture.setVisible(false);
+                                coverBox.getChildren().removeIf(n -> n != imgCouverture && n != lblNoCover && n != coverProgress);
+                                coverBox.getChildren().add(0, fr.ecole.bcd.view.CoverHelper.createStyledCover(livre, 88, 120));
                                 if (coverProgress != null) coverProgress.setVisible(false);
                             });
                         }
@@ -1132,8 +1146,9 @@ public class InventaireController {
                         if (progress.doubleValue() >= 1.0 && !img.isError()) {
                             COVER_IMAGE_CACHE.put(url, img);
                             Platform.runLater(() -> {
+                                coverBox.getChildren().removeIf(n -> n != imgCouverture && n != lblNoCover && n != coverProgress);
                                 imgCouverture.setImage(img);
-                                lblNoCover.setVisible(false);
+                                imgCouverture.setVisible(true);
                                 if (coverProgress != null) coverProgress.setVisible(false);
                             });
                         }
@@ -1141,13 +1156,15 @@ public class InventaireController {
                     imgCouverture.setImage(img);
                 } catch (Exception e) {
                     imgCouverture.setImage(null);
-                    lblNoCover.setVisible(true);
+                    imgCouverture.setVisible(false);
+                    coverBox.getChildren().add(0, fr.ecole.bcd.view.CoverHelper.createStyledCover(livre, 88, 120));
                     if (coverProgress != null) coverProgress.setVisible(false);
                 }
             }
         } else {
             imgCouverture.setImage(null);
-            lblNoCover.setVisible(true);
+            imgCouverture.setVisible(false);
+            coverBox.getChildren().add(0, fr.ecole.bcd.view.CoverHelper.createStyledCover(livre, 88, 120));
             if (coverProgress != null) coverProgress.setVisible(false);
         }
 

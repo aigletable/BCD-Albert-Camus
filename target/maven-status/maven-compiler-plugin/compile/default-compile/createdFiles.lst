@@ -20,6 +20,7 @@ fr/ecole/bcd/database/UtilisateurDao.class
 fr/ecole/bcd/model/MotifEcart.class
 fr/ecole/bcd/controller/InventaireController$6.class
 fr/ecole/bcd/controller/PretsController$7.class
+fr/ecole/bcd/view/CoverHelper.class
 fr/ecole/bcd/controller/InventaireController$9.class
 fr/ecole/bcd/service/BilanExportService.class
 fr/ecole/bcd/controller/MallettesController$2.class
@@ -59,6 +60,7 @@ fr/ecole/bcd/controller/MallettesController$4.class
 fr/ecole/bcd/controller/UtilisateursController$1.class
 fr/ecole/bcd/database/DatabaseManager.class
 fr/ecole/bcd/database/BoiteVerificationDao.class
+fr/ecole/bcd/view/CoverHelper$GenreStyle.class
 fr/ecole/bcd/MainApp.class
 fr/ecole/bcd/Launcher.class
 fr/ecole/bcd/database/ExemplaireDao.class
@@ -69,6 +71,7 @@ fr/ecole/bcd/service/LivreClassificationService.class
 fr/ecole/bcd/view/AnimationHelper.class
 fr/ecole/bcd/view/BackupDialogHelper.class
 fr/ecole/bcd/controller/InventaireController$7.class
+fr/ecole/bcd/MainApp$1.class
 fr/ecole/bcd/controller/package-info.class
 fr/ecole/bcd/model/SessionInventaire$PerimetreType.class
 fr/ecole/bcd/controller/MallettesController$6.class
@@ -87,6 +90,7 @@ fr/ecole/bcd/model/MalletteItem.class
 fr/ecole/bcd/controller/MallettesController$7.class
 fr/ecole/bcd/model/Mallette.class
 fr/ecole/bcd/service/LivreBatchImportService$BatchReport.class
+fr/ecole/bcd/service/ThemeService$ThemePreset.class
 fr/ecole/bcd/service/BarcodeService$FormatPlanche.class
 fr/ecole/bcd/database/MalletteDao.class
 fr/ecole/bcd/model/LivreAVerifier.class
@@ -111,6 +115,7 @@ fr/ecole/bcd/SmokeTest.class
 fr/ecole/bcd/model/Exemplaire$Statut.class
 fr/ecole/bcd/SimulationAnneeScolaire.class
 fr/ecole/bcd/controller/InventaireController$8.class
+fr/ecole/bcd/view/EmptyStateHelper.class
 fr/ecole/bcd/service/BilanExportService$PanierLivreItem.class
 fr/ecole/bcd/service/ThemeService.class
 fr/ecole/bcd/controller/InventaireController$1.class
