@@ -11,8 +11,6 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.HBox;
@@ -284,18 +282,6 @@ public class MainApp extends Application {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // Menu Sélecteur de Design (Porte de sortie immédiate vers le design d'origine)
-        MenuButton btnDesign = new MenuButton(
-                ThemeService.getThemePreset() == ThemeService.ThemePreset.CUPERTINO
-                        ? "🎨 Design Apple" : "🏛️ Design Classique"
-        );
-        btnDesign.getStyleClass().addAll("btn-outline", "btn-sm");
-        btnDesign.setStyle("-fx-font-size: 11px; -fx-padding: 4px 10px; -fx-cursor: hand;");
-
-        MenuItem miCupertino = new MenuItem("🍏 Cupertino Moderne (Style Apple)");
-        MenuItem miPrimer = new MenuItem("🏛️ Primer Classique (Design d'origine)");
-        btnDesign.getItems().addAll(miCupertino, miPrimer);
-
         // Bouton Sauvegardes global
         Button btnBackup = new Button("💾 Sauvegardes");
         btnBackup.getStyleClass().addAll("btn-outline", "btn-sm");
@@ -314,23 +300,13 @@ public class MainApp extends Application {
         Button btnTheme = new Button();
         btnTheme.getStyleClass().add("theme-toggle-btn");
 
-        topBar.getChildren().addAll(brandBox, separator, schoolBadge, kpiBox, spacer, btnDesign, btnBackup, btnTheme);
+        topBar.getChildren().addAll(brandBox, separator, schoolBadge, kpiBox, spacer, btnBackup, btnTheme);
 
         VBox root = new VBox(topBar, tabPane);
         VBox.setVgrow(tabPane, Priority.ALWAYS);
 
         /* ── 4. Scène et fenêtre ─────────────────────────────────────── */
         Scene scene = new Scene(root, 1080, 720);
-
-        // Actions de bascule de design et de thème
-        miCupertino.setOnAction(e -> {
-            ThemeService.setPreset(ThemeService.ThemePreset.CUPERTINO, scene, btnTheme);
-            btnDesign.setText("🎨 Design Apple");
-        });
-        miPrimer.setOnAction(e -> {
-            ThemeService.setPreset(ThemeService.ThemePreset.PRIMER_CLASSIQUE, scene, btnTheme);
-            btnDesign.setText("🏛️ Design Classique");
-        });
 
         btnTheme.setOnAction(e -> ThemeService.toggleTheme(scene, btnTheme));
         ThemeService.initTheme(scene, btnTheme);

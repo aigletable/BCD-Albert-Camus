@@ -46,3 +46,4 @@ public final class EmptyStateHelper {
         return box;
     }
 }
+

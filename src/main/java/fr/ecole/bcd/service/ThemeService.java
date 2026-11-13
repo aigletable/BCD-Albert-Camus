@@ -60,9 +60,7 @@ public final class ThemeService {
     private static final Preferences PREFS = Preferences.userNodeForPackage(ThemeService.class);
 
     private static boolean darkMode = PREFS.getBoolean(PREF_KEY_DARK, false);
-    private static ThemePreset currentPreset = ThemePreset.valueOf(
-            PREFS.get(PREF_KEY_PRESET, ThemePreset.CUPERTINO.name())
-    );
+    private static ThemePreset currentPreset = ThemePreset.CUPERTINO;
 
     private ThemeService() {
         // Classe utilitaire
