@@ -43,6 +43,19 @@ public final class CoverHelper {
      */
     public record GenreStyle(String icon, Color topColor, Color botColor, String badgeClass) {}
 
+    /**
+     * Détermine si un livre possède un titre par défaut non renseigné
+     * (ex: "Livre ISBN 978...", "ISBN ...", ou non renseigné).
+     *
+     * @param titre le titre à tester
+     * @return true si le livre nécessite d'être complété d'urgence
+     */
+    public static boolean isTitreNonRenseigne(String titre) {
+        if (titre == null || titre.isBlank()) return true;
+        String t = titre.trim().toLowerCase();
+        return t.startsWith("livre isbn") || t.startsWith("isbn ") || t.equals("livre inconnu") || t.equals("titre inconnu");
+    }
+
     public static GenreStyle getStyleForGenre(String genre) {
         if (genre == null || genre.isBlank()) {
             return new GenreStyle("📖", Color.web("#475569"), Color.web("#1E293B"), "badge-genre-autre");
@@ -81,7 +94,10 @@ public final class CoverHelper {
         String titre = livre != null && livre.getTitre() != null ? livre.getTitre() : "Livre BCD";
         String auteur = livre != null && livre.getAuteur() != null ? livre.getAuteur() : "";
 
-        GenreStyle style = getStyleForGenre(genre);
+        boolean nonRenseigne = isTitreNonRenseigne(titre);
+        GenreStyle style = nonRenseigne
+                ? new GenreStyle("⚠️", Color.web("#DC2626"), Color.web("#991B1B"), "badge-genre-autre")
+                : getStyleForGenre(genre);
 
         // Fond avec dégradé subtil
         Rectangle bg = new Rectangle(width, height);
@@ -131,7 +147,7 @@ public final class CoverHelper {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        Label authorLbl = new Label(auteur.isBlank() ? "Albert Camus" : auteur);
+        Label authorLbl = new Label(nonRenseigne ? "⚠️ À renseigner !" : (auteur.isBlank() ? "Albert Camus" : auteur));
         authorLbl.setWrapText(true);
         authorLbl.setAlignment(Pos.CENTER);
         authorLbl.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);

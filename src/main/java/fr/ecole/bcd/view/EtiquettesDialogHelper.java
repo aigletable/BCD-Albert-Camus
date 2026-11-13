@@ -6,7 +6,9 @@ import fr.ecole.bcd.model.EtiquetteItem;
 import fr.ecole.bcd.model.Livre;
 import fr.ecole.bcd.service.BarcodeService;
 import fr.ecole.bcd.service.BarcodeService.FormatPlanche;
+import fr.ecole.bcd.service.SoundService;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -20,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -134,120 +137,207 @@ public final class EtiquettesDialogHelper {
         content.setPrefWidth(650);
         content.setPadding(new Insets(10));
 
-        // 1. Périmètre des exemplaires à imprimer
-        Label lblScopeSec = new Label("1. Quels exemplaires imprimer ?");
-        lblScopeSec.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+        // 1. Périmètre des exemplaires à imprimer (Panier d'étiquettes cumulatif)
+        Label lblScopeSec = new Label("1. Quels livres imprimer ? (Panier d'étiquettes)");
+        lblScopeSec.setStyle("-fx-font-weight: bold; -fx-font-size: 13.5px; -fx-text-fill: #0F172A;");
 
-        ToggleGroup scopeGroup = new ToggleGroup();
+        Label lblScopeHelp = new Label("Ajoutez les livres souhaités à votre liste par leur titre ou leur code ISBN (au clavier ou à la douchette) :");
+        lblScopeHelp.setStyle("-fx-font-size: 11.5px; -fx-text-fill: #64748B;");
 
-        // Livres actuellement sélectionnés dans la table
-        List<Livre> selectedLivres = (livreTableView != null && livreTableView.getSelectionModel().getSelectedItems() != null)
+        ObservableList<Livre> basketLivres = FXCollections.observableArrayList();
+
+        // Si l'utilisateur avait sélectionné des livres dans le tableau principal avant d'ouvrir la fenêtre, on les pré-remplit
+        List<Livre> initialSelection = (livreTableView != null && livreTableView.getSelectionModel().getSelectedItems() != null)
                 ? livreTableView.getSelectionModel().getSelectedItems().stream().filter(Objects::nonNull).toList()
                 : List.of();
-        int selectedCount = selectedLivres.size();
-        int selectedCopies = selectedLivres.stream().mapToInt(Livre::getNbExemplaires).sum();
-
-        RadioButton rbSelected = new RadioButton();
-        if (selectedCount == 1) {
-            Livre single = selectedLivres.get(0);
-            int copies = single.getNbExemplaires();
-            rbSelected.setText(String.format("Livre sélectionné : %s (%s • %d ex.)",
-                    single.getTitre(), single.getIsbn(), copies));
-        } else if (selectedCount > 1) {
-            rbSelected.setText(String.format("Livres sélectionnés dans le tableau (%d livres • %d exemplaires au total)",
-                    selectedCount, selectedCopies));
-        } else {
-            rbSelected.setText("Livres sélectionnés dans le tableau (aucun livre sélectionné actuellement)");
-            rbSelected.setDisable(true);
-        }
-        rbSelected.setToggleGroup(scopeGroup);
-
-        // Résultats de la recherche / filtre actuel
-        List<Livre> currentTableItems = (livreTableView != null && livreTableView.getItems() != null)
-                ? livreTableView.getItems().stream().filter(Objects::nonNull).toList()
-                : List.of();
-        int filterCount = currentTableItems.size();
-        int filterCopies = currentTableItems.stream().mapToInt(Livre::getNbExemplaires).sum();
-        boolean hasActiveFilter = (masterLivres != null && filterCount < masterLivres.size());
-
-        RadioButton rbFiltered = new RadioButton();
-        if (hasActiveFilter && filterCount > 0) {
-            rbFiltered.setText(String.format("Résultats du filtre de recherche actuel (%d livres • %d exemplaires)",
-                    filterCount, filterCopies));
-            rbFiltered.setDisable(false);
-        } else {
-            rbFiltered.setText("Résultats du filtre de recherche actuel (aucun filtre actif)");
-            rbFiltered.setDisable(true);
-        }
-        rbFiltered.setToggleGroup(scopeGroup);
-
-        // Sélection personnalisée de livres (Picker interactif)
-        RadioButton rbCustomPick = new RadioButton("🎯 Sélection personnalisée de livres (recherche et cases à cocher)…");
-        rbCustomPick.setToggleGroup(scopeGroup);
-
-        VBox customPickCard = new VBox(8);
-        customPickCard.setPadding(new Insets(10));
-        customPickCard.setStyle("-fx-background-color: #ffffff; -fx-border-color: #cbd5e1; -fx-border-radius: 8; -fx-background-radius: 8;");
-        customPickCard.setVisible(false);
-        customPickCard.setManaged(false);
-
-        Set<String> customPickedIsbns = new LinkedHashSet<>();
-        for (Livre l : selectedLivres) {
-            if (l.getIsbn() != null) customPickedIsbns.add(l.getIsbn());
+        for (Livre l : initialSelection) {
+            if (l != null && l.getIsbn() != null && basketLivres.stream().noneMatch(x -> x.getIsbn().equals(l.getIsbn()))) {
+                basketLivres.add(l);
+            }
         }
 
-        TextField tfPickerSearch = new TextField();
-        tfPickerSearch.setPromptText("🔍 Filtrer les livres par titre, auteur, ISBN...");
-        HBox.setHgrow(tfPickerSearch, Priority.ALWAYS);
+        // Champ de recherche et ajout rapide
+        TextField tfSearchAdd = new TextField();
+        tfSearchAdd.setPromptText("🔍 Taper un titre ou scanner un ISBN pour ajouter à la liste...");
+        HBox.setHgrow(tfSearchAdd, Priority.ALWAYS);
+        tfSearchAdd.setStyle("-fx-font-size: 12px;");
 
-        Button btnCheckAll = new Button("☑️ Tout cocher");
-        btnCheckAll.getStyleClass().add("btn-outline");
-        btnCheckAll.setStyle("-fx-font-size: 11px; -fx-padding: 4 8;");
+        Button btnAddBook = new Button("➕ Ajouter");
+        btnAddBook.getStyleClass().add("btn-blue");
+        btnAddBook.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-cursor: hand;");
 
-        Button btnUncheckAll = new Button("⬜ Tout décocher");
-        btnUncheckAll.getStyleClass().add("btn-outline");
-        btnUncheckAll.setStyle("-fx-font-size: 11px; -fx-padding: 4 8;");
+        HBox searchAddBox = new HBox(8, tfSearchAdd, btnAddBook);
+        searchAddBox.setAlignment(Pos.CENTER_LEFT);
 
-        HBox pickerToolbar = new HBox(8, tfPickerSearch, btnCheckAll, btnUncheckAll);
-        pickerToolbar.setAlignment(Pos.CENTER_LEFT);
+        Label lblAddFeedback = new Label();
+        lblAddFeedback.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+        lblAddFeedback.setVisible(false);
+        lblAddFeedback.setManaged(false);
 
-        FilteredList<Livre> pickerFilteredList = new FilteredList<>(masterLivres != null ? masterLivres : FXCollections.observableArrayList(), p -> true);
-        tfPickerSearch.textProperty().addListener((obs, oldV, q) -> {
-            String query = (q != null) ? q.trim().toLowerCase() : "";
-            pickerFilteredList.setPredicate(livre -> {
-                if (livre == null) return false;
-                if (query.isEmpty()) return true;
-                boolean matchTitre = livre.getTitre() != null && livre.getTitre().toLowerCase().contains(query);
-                boolean matchAuteur = livre.getAuteur() != null && livre.getAuteur().toLowerCase().contains(query);
-                boolean matchIsbn = livre.getIsbn() != null && livre.getIsbn().toLowerCase().contains(query);
-                return matchTitre || matchAuteur || matchIsbn;
-            });
+        // Suggestions instantanées sous la barre de recherche
+        ObservableList<Livre> suggestionsList = FXCollections.observableArrayList();
+        ListView<Livre> suggestionsView = new ListView<>(suggestionsList);
+        suggestionsView.setPrefHeight(105);
+        suggestionsView.setMaxHeight(120);
+        suggestionsView.setVisible(false);
+        suggestionsView.setManaged(false);
+        suggestionsView.setStyle("-fx-border-color: #93c5fd; -fx-border-radius: 6; -fx-background-radius: 6;");
+
+        suggestionsView.setCellFactory(lv -> new ListCell<>() {
+            private final Label title = new Label();
+            private final Label details = new Label();
+            private final Label addPill = new Label("➕ Ajouter");
+            private final HBox cellLayout = new HBox(8);
+            private final VBox textContainer = new VBox(2, title, details);
+            private final Region spacer = new Region();
+            {
+                title.setStyle("-fx-font-weight: bold; -fx-font-size: 11.5px; -fx-text-fill: #1e293b;");
+                details.setStyle("-fx-font-size: 10.5px; -fx-text-fill: #64748b;");
+                addPill.setStyle("-fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 2 6; -fx-background-radius: 4;");
+                HBox.setHgrow(textContainer, Priority.ALWAYS);
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+                cellLayout.setAlignment(Pos.CENTER_LEFT);
+                cellLayout.getChildren().addAll(textContainer, spacer, addPill);
+            }
+            @Override
+            protected void updateItem(Livre item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    title.setText(item.getTitre());
+                    String aut = (item.getAuteur() != null && !item.getAuteur().isBlank()) ? item.getAuteur() : "Auteur non renseigné";
+                    details.setText(aut + " • ISBN: " + (item.getIsbn() != null ? item.getIsbn() : "–") + " • " + item.getNbExemplaires() + " ex.");
+                    setGraphic(cellLayout);
+                }
+            }
         });
 
-        ListView<Livre> pickerListView = new ListView<>(pickerFilteredList);
-        pickerListView.setPrefHeight(180);
-        pickerListView.setMaxHeight(220);
-
-        Label lblPickerStatus = new Label();
-        lblPickerStatus.setStyle("-fx-font-size: 11.5px; -fx-font-weight: bold; -fx-text-fill: #1a66ff;");
-
-        Runnable updatePickerCount = () -> {
-            int countBooks = customPickedIsbns.size();
-            int countCopies = (masterLivres != null) ? masterLivres.stream()
-                    .filter(l -> customPickedIsbns.contains(l.getIsbn()))
-                    .mapToInt(Livre::getNbExemplaires)
-                    .sum() : 0;
-            lblPickerStatus.setText(String.format("✨ %d livre(s) sélectionné(s) • %d étiquette(s) au total", countBooks, countCopies));
-            rbCustomPick.setText(String.format("🎯 Sélection personnalisée de livres (%d livre%s • %d ex.)",
-                    countBooks, countBooks > 1 ? "s" : "", countCopies));
+        // Callback d'ajout dans le panier
+        Consumer<Livre> addBookToBasket = (livre) -> {
+            if (livre == null || livre.getIsbn() == null) return;
+            boolean already = basketLivres.stream().anyMatch(l -> livre.getIsbn().equalsIgnoreCase(l.getIsbn()));
+            if (already) {
+                lblAddFeedback.setText("ℹ️ \"" + livre.getTitre() + "\" est déjà dans votre liste d'impression.");
+                lblAddFeedback.setStyle("-fx-font-size: 11px; -fx-text-fill: #0284c7;");
+                lblAddFeedback.setVisible(true);
+                lblAddFeedback.setManaged(true);
+                return;
+            }
+            basketLivres.add(livre);
+            lblAddFeedback.setText("✅ \"" + livre.getTitre() + "\" (" + livre.getNbExemplaires() + " ex.) ajouté à la liste !");
+            lblAddFeedback.setStyle("-fx-font-size: 11px; -fx-text-fill: #16a34a;");
+            lblAddFeedback.setVisible(true);
+            lblAddFeedback.setManaged(true);
+            SoundService.playSuccess();
+            tfSearchAdd.clear();
+            suggestionsList.clear();
+            suggestionsView.setVisible(false);
+            suggestionsView.setManaged(false);
+            Platform.runLater(tfSearchAdd::requestFocus);
         };
 
-        pickerListView.setCellFactory(lv -> new ListCell<>() {
-            private final CheckBox checkBox = new CheckBox();
+        suggestionsView.setOnMouseClicked(e -> {
+            Livre sel = suggestionsView.getSelectionModel().getSelectedItem();
+            if (sel != null) {
+                addBookToBasket.accept(sel);
+            }
+        });
+
+        tfSearchAdd.textProperty().addListener((obs, oldV, q) -> {
+            lblAddFeedback.setVisible(false);
+            lblAddFeedback.setManaged(false);
+            String query = (q != null) ? q.trim().toLowerCase() : "";
+            if (query.isEmpty() || masterLivres == null) {
+                suggestionsList.clear();
+                suggestionsView.setVisible(false);
+                suggestionsView.setManaged(false);
+                return;
+            }
+            List<Livre> matches = masterLivres.stream()
+                    .filter(l -> l != null && (
+                            (l.getTitre() != null && l.getTitre().toLowerCase().contains(query)) ||
+                            (l.getAuteur() != null && l.getAuteur().toLowerCase().contains(query)) ||
+                            (l.getIsbn() != null && l.getIsbn().toLowerCase().contains(query))
+                    ))
+                    .limit(10)
+                    .toList();
+            suggestionsList.setAll(matches);
+            boolean has = !matches.isEmpty();
+            suggestionsView.setVisible(has);
+            suggestionsView.setManaged(has);
+        });
+
+        Runnable submitSearchAdd = () -> {
+            String query = tfSearchAdd.getText() != null ? tfSearchAdd.getText().trim() : "";
+            if (query.isEmpty()) return;
+            if (masterLivres == null || masterLivres.isEmpty()) return;
+
+            // 1. Recherche par ISBN exact (douchette ou saisie)
+            String cleanQueryIsbn = query.replaceAll("[^0-9X]", "");
+            Livre exactIsbn = masterLivres.stream()
+                    .filter(l -> l.getIsbn() != null && (
+                            l.getIsbn().equalsIgnoreCase(query) ||
+                            (!cleanQueryIsbn.isEmpty() && l.getIsbn().replaceAll("[^0-9X]", "").equalsIgnoreCase(cleanQueryIsbn))
+                    ))
+                    .findFirst().orElse(null);
+
+            if (exactIsbn != null) {
+                addBookToBasket.accept(exactIsbn);
+                return;
+            }
+
+            // 2. Recherche par Titre exact
+            Livre exactTitle = masterLivres.stream()
+                    .filter(l -> l.getTitre() != null && l.getTitre().equalsIgnoreCase(query))
+                    .findFirst().orElse(null);
+
+            if (exactTitle != null) {
+                addBookToBasket.accept(exactTitle);
+                return;
+            }
+
+            // 3. S'il n'y a qu'une seule suggestion
+            if (suggestionsList.size() == 1) {
+                addBookToBasket.accept(suggestionsList.get(0));
+                return;
+            }
+
+            // 4. Si aucune correspondance exacte
+            if (suggestionsList.isEmpty()) {
+                lblAddFeedback.setText("⚠️ Aucun livre trouvé pour : \"" + query + "\"");
+                lblAddFeedback.setStyle("-fx-font-size: 11px; -fx-text-fill: #dc2626;");
+                lblAddFeedback.setVisible(true);
+                lblAddFeedback.setManaged(true);
+                SoundService.playWarning();
+            } else {
+                lblAddFeedback.setText("💡 Plusieurs livres correspondent : cliquez sur celui de votre choix ci-dessous.");
+                lblAddFeedback.setStyle("-fx-font-size: 11px; -fx-text-fill: #0284c7;");
+                lblAddFeedback.setVisible(true);
+                lblAddFeedback.setManaged(true);
+            }
+        };
+
+        tfSearchAdd.setOnAction(e -> submitSearchAdd.run());
+        btnAddBook.setOnAction(e -> submitSearchAdd.run());
+
+        // Liste cumulative (panier) des livres sélectionnés
+        ListView<Livre> basketListView = new ListView<>(basketLivres);
+        basketListView.setPrefHeight(170);
+        basketListView.setMaxHeight(210);
+        basketListView.setStyle("-fx-border-color: #cbd5e1; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        Label placeholder = new Label("Votre liste d'impression est vide.\nTapez un titre ou scannez un ISBN ci-dessus pour ajouter des livres.");
+        placeholder.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 12px; -fx-alignment: CENTER; -fx-text-alignment: CENTER;");
+        basketListView.setPlaceholder(placeholder);
+
+        basketListView.setCellFactory(lv -> new ListCell<>() {
             private final Label titleLabel = new Label();
             private final Label subLabel = new Label();
             private final Label copiesBadge = new Label();
-            private final HBox layout = new HBox(10);
+            private final Button btnRemove = new Button("❌");
+            private final HBox layout = new HBox(8);
             private final VBox textContainer = new VBox(2);
             private final Region spacer = new Region();
 
@@ -257,20 +347,18 @@ public final class EtiquettesDialogHelper {
                 textContainer.getChildren().addAll(titleLabel, subLabel);
                 HBox.setHgrow(textContainer, Priority.ALWAYS);
                 HBox.setHgrow(spacer, Priority.ALWAYS);
-                layout.setAlignment(Pos.CENTER_LEFT);
-                layout.getChildren().addAll(checkBox, textContainer, spacer, copiesBadge);
 
-                checkBox.setOnAction(e -> {
-                    Livre livre = getItem();
-                    if (livre != null && livre.getIsbn() != null) {
-                        if (checkBox.isSelected()) {
-                            customPickedIsbns.add(livre.getIsbn());
-                        } else {
-                            customPickedIsbns.remove(livre.getIsbn());
-                        }
-                        updatePickerCount.run();
+                btnRemove.setStyle("-fx-cursor: hand; -fx-padding: 2 6; -fx-font-size: 10px; -fx-background-color: #fee2e2; -fx-text-fill: #991b1b; -fx-background-radius: 4;");
+                btnRemove.setTooltip(new Tooltip("Retirer de la liste"));
+                btnRemove.setOnAction(e -> {
+                    Livre item = getItem();
+                    if (item != null) {
+                        basketLivres.remove(item);
                     }
                 });
+
+                layout.setAlignment(Pos.CENTER_LEFT);
+                layout.getChildren().addAll(textContainer, spacer, copiesBadge, btnRemove);
             }
 
             @Override
@@ -280,102 +368,84 @@ public final class EtiquettesDialogHelper {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    titleLabel.setText(livre.getTitre());
+                    boolean nonRenseigne = CoverHelper.isTitreNonRenseigne(livre.getTitre());
+                    if (nonRenseigne) {
+                        titleLabel.setText("⚠️ " + livre.getTitre());
+                        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #dc2626;");
+                    } else {
+                        titleLabel.setText(livre.getTitre());
+                        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #1e293b;");
+                    }
                     String auteur = (livre.getAuteur() != null && !livre.getAuteur().isBlank()) ? livre.getAuteur() : "Auteur non renseigné";
                     subLabel.setText(auteur + " • ISBN: " + (livre.getIsbn() != null ? livre.getIsbn() : "–"));
 
                     int copies = livre.getNbExemplaires();
                     copiesBadge.setText("📦 " + copies + " ex.");
-                    if (copies == 0) {
-                        copiesBadge.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 2 6; -fx-background-radius: 4;");
-                    } else {
-                        copiesBadge.setStyle("-fx-background-color: #e0f2fe; -fx-text-fill: #0284c7; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 2 6; -fx-background-radius: 4;");
-                    }
+                    copiesBadge.setStyle("-fx-background-color: #e0f2fe; -fx-text-fill: #0284c7; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 2 6; -fx-background-radius: 4;");
 
-                    checkBox.setSelected(customPickedIsbns.contains(livre.getIsbn()));
                     setGraphic(layout);
                 }
             }
         });
 
-        pickerListView.setOnMouseClicked(e -> {
-            Livre clicked = pickerListView.getSelectionModel().getSelectedItem();
-            if (clicked != null && clicked.getIsbn() != null) {
-                if (customPickedIsbns.contains(clicked.getIsbn())) {
-                    customPickedIsbns.remove(clicked.getIsbn());
-                } else {
-                    customPickedIsbns.add(clicked.getIsbn());
+        // Barre d'outils et boutons sous la liste
+        Label lblBasketSummary = new Label();
+        lblBasketSummary.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #0284c7;");
+
+        Button btnAddAllMaster = new Button("📚 Tout le catalogue");
+        btnAddAllMaster.getStyleClass().add("btn-outline");
+        btnAddAllMaster.setStyle("-fx-font-size: 11px; -fx-padding: 4 8; -fx-cursor: hand;");
+        btnAddAllMaster.setOnAction(e -> {
+            if (masterLivres != null) {
+                for (Livre l : masterLivres) {
+                    if (l != null && l.getIsbn() != null && basketLivres.stream().noneMatch(x -> x.getIsbn().equals(l.getIsbn()))) {
+                        basketLivres.add(l);
+                    }
                 }
-                pickerListView.refresh();
-                updatePickerCount.run();
             }
         });
 
-        btnCheckAll.setOnAction(e -> {
-            for (Livre l : pickerFilteredList) {
-                if (l != null && l.getIsbn() != null) customPickedIsbns.add(l.getIsbn());
+        Button btnAddLatest = new Button("✨ 24 derniers ajouts");
+        btnAddLatest.getStyleClass().add("btn-outline");
+        btnAddLatest.setStyle("-fx-font-size: 11px; -fx-padding: 4 8; -fx-cursor: hand;");
+        btnAddLatest.setOnAction(e -> {
+            if (masterLivres != null) {
+                int count = Math.min(24, masterLivres.size());
+                for (int i = 0; i < count; i++) {
+                    Livre l = masterLivres.get(i);
+                    if (l != null && l.getIsbn() != null && basketLivres.stream().noneMatch(x -> x.getIsbn().equals(l.getIsbn()))) {
+                        basketLivres.add(l);
+                    }
+                }
             }
-            pickerListView.refresh();
-            updatePickerCount.run();
         });
 
-        btnUncheckAll.setOnAction(e -> {
-            for (Livre l : pickerFilteredList) {
-                if (l != null && l.getIsbn() != null) customPickedIsbns.remove(l.getIsbn());
-            }
-            pickerListView.refresh();
-            updatePickerCount.run();
-        });
+        Button btnClearBasket = new Button("🧹 Vider la liste");
+        btnClearBasket.getStyleClass().add("btn-outline");
+        btnClearBasket.setStyle("-fx-font-size: 11px; -fx-padding: 4 8; -fx-text-fill: #b91c1c; -fx-cursor: hand;");
+        btnClearBasket.setOnAction(e -> basketLivres.clear());
 
-        customPickCard.getChildren().addAll(pickerToolbar, pickerListView, lblPickerStatus);
+        Region barSpacer = new Region();
+        HBox.setHgrow(barSpacer, Priority.ALWAYS);
 
-        scopeGroup.selectedToggleProperty().addListener((obs, oldT, newT) -> {
-            boolean isCustom = (newT == rbCustomPick);
-            customPickCard.setVisible(isCustom);
-            customPickCard.setManaged(isCustom);
-        });
+        HBox basketToolbar = new HBox(8, lblBasketSummary, barSpacer, btnAddAllMaster, btnAddLatest, btnClearBasket);
+        basketToolbar.setAlignment(Pos.CENTER_LEFT);
 
-        updatePickerCount.run();
+        Runnable updateBasketCounter = () -> {
+            int booksCount = basketLivres.size();
+            int copiesCount = basketLivres.stream().mapToInt(Livre::getNbExemplaires).sum();
+            lblBasketSummary.setText(String.format("📋 %d livre(s) dans la liste • %d étiquette(s) au total", booksCount, copiesCount));
+        };
 
-        // Tous les exemplaires de la bibliothèque
-        int totalExemplaires = 0;
-        try {
-            totalExemplaires = exemplaireDao.countTotal();
-        } catch (SQLException ignored) {}
-
-        RadioButton rbAll = new RadioButton("Tous les exemplaires de la bibliothèque (Total : " + totalExemplaires + " exemplaires)");
-        rbAll.setToggleGroup(scopeGroup);
-
-        // Sélection par défaut
-        if (selectedCount > 0) {
-            rbSelected.setSelected(true);
-        } else if (hasActiveFilter && filterCount > 0) {
-            rbFiltered.setSelected(true);
-        } else {
-            rbAll.setSelected(true);
-        }
-
-        // Plage de numéros d'exemplaires
-        RadioButton rbRange = new RadioButton("Plage de numéros d'exemplaires :");
-        rbRange.setToggleGroup(scopeGroup);
-
-        TextField tfStartId = new TextField("1");
-        tfStartId.setPrefWidth(70);
-        TextField tfEndId = new TextField("50");
-        tfEndId.setPrefWidth(70);
-        HBox rangeBox = new HBox(8, rbRange, new Label("du #"), tfStartId, new Label("au #"), tfEndId);
-        rangeBox.setAlignment(Pos.CENTER_LEFT);
-
-        // Derniers exemplaires
-        RadioButton rbLatest = new RadioButton("Derniers exemplaires enregistrés :");
-        rbLatest.setToggleGroup(scopeGroup);
-        ComboBox<Integer> cbLatestCount = new ComboBox<>(FXCollections.observableArrayList(10, 20, 50, 100));
-        cbLatestCount.setValue(24);
-        HBox latestBox = new HBox(8, rbLatest, new Label("les"), cbLatestCount, new Label("derniers"));
-        latestBox.setAlignment(Pos.CENTER_LEFT);
-
-        VBox scopeBox = new VBox(8, rbSelected, rbFiltered, rbCustomPick, customPickCard, rbAll, rangeBox, latestBox);
-        scopeBox.setPadding(new Insets(8, 12, 8, 12));
+        VBox scopeBox = new VBox(8,
+                lblScopeHelp,
+                searchAddBox,
+                suggestionsView,
+                lblAddFeedback,
+                basketListView,
+                basketToolbar
+        );
+        scopeBox.setPadding(new Insets(10, 12, 10, 12));
         scopeBox.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;");
 
         // 2. Format de planche A4
@@ -417,15 +487,26 @@ public final class EtiquettesDialogHelper {
         Label lblSheetSummary = new Label();
         lblSheetSummary.setWrapText(true);
 
+        Supplier<List<EtiquetteItem>> fetchItems = () -> {
+            try {
+                if (basketLivres.isEmpty()) {
+                    return List.of();
+                }
+                List<String> isbns = basketLivres.stream()
+                        .filter(Objects::nonNull)
+                        .map(Livre::getIsbn)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList();
+                return exemplaireDao.findEtiquettesByIsbns(isbns);
+            } catch (SQLException e) {
+                return List.of();
+            }
+        };
+
         Supplier<Integer> estimateCountSupplier = () -> {
             try {
-                return getEtiquettesItems(
-                        exemplaireDao,
-                        rbSelected.isSelected(), selectedLivres,
-                        rbCustomPick.isSelected(), customPickedIsbns,
-                        rbFiltered.isSelected(), currentTableItems,
-                        rbRange.isSelected(), tfStartId.getText(), tfEndId.getText(),
-                        rbLatest.isSelected(), cbLatestCount.getValue()).size();
+                return fetchItems.get().size();
             } catch (Exception ex) {
                 return 0;
             }
@@ -445,7 +526,7 @@ public final class EtiquettesDialogHelper {
             int remainingUnused = perPage - usedOnLast;
 
             if (count == 0) {
-                lblSheetSummary.setText("⚠️ Aucun exemplaire physique ne correspond aux critères choisis.");
+                lblSheetSummary.setText("⚠️ Votre liste d'impression est vide. Ajoutez au moins un livre ci-dessus pour générer les planches d'étiquettes.");
                 lblSheetSummary.setStyle("-fx-font-size: 11.5px; -fx-text-fill: #b45309; -fx-background-color: #fef3c7; -fx-padding: 8 12; -fx-background-radius: 6;");
             } else {
                 String offsetDetail = offset > 0 ? String.format(" (décalage de %d case(s) sur la page 1)", offset) : "";
@@ -485,10 +566,6 @@ public final class EtiquettesDialogHelper {
         });
 
         spStartOffset.valueProperty().addListener((obs, oldV, newV) -> updateSummary.run());
-        scopeGroup.selectedToggleProperty().addListener((obs, oldV, newV) -> updateSummary.run());
-        cbLatestCount.valueProperty().addListener((obs, oldV, newV) -> updateSummary.run());
-        tfStartId.textProperty().addListener((obs, oldV, newV) -> updateSummary.run());
-        tfEndId.textProperty().addListener((obs, oldV, newV) -> updateSummary.run());
 
         updateHint.run();
         updateSummary.run();
@@ -525,7 +602,7 @@ public final class EtiquettesDialogHelper {
         Label prevHeader = new Label("ÉCOLE ALBERT CAMUS PASTEUR");
         prevHeader.setStyle("-fx-font-size: 8px; -fx-font-weight: bold; -fx-text-fill: #475569;");
 
-        String sampleTitle = !selectedLivres.isEmpty() ? selectedLivres.get(0).getTitre() : "Exemple de livre";
+        String sampleTitle = !basketLivres.isEmpty() ? basketLivres.get(0).getTitre() : "Exemple de livre";
         Label prevTitle = new Label(sampleTitle);
         prevTitle.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #0f172a;");
         prevTitle.setWrapText(true);
@@ -540,6 +617,7 @@ public final class EtiquettesDialogHelper {
 
         Runnable updatePreview = () -> {
             prevHeader.setText(tfEnTete.getText().isBlank() ? "ÉCOLE ALBERT CAMUS PASTEUR" : tfEnTete.getText().toUpperCase());
+            prevTitle.setText(!basketLivres.isEmpty() ? basketLivres.get(0).getTitre() : "Exemple de livre");
             prevTitle.setVisible(chkTitle.isSelected());
             prevTitle.setManaged(chkTitle.isSelected());
             prevBars.setVisible(chkBarcode.isSelected());
@@ -549,6 +627,14 @@ public final class EtiquettesDialogHelper {
         tfEnTete.textProperty().addListener((obs, oldV, newV) -> updatePreview.run());
         chkTitle.selectedProperty().addListener((obs, oldV, newV) -> updatePreview.run());
         chkBarcode.selectedProperty().addListener((obs, oldV, newV) -> updatePreview.run());
+
+        basketLivres.addListener((javafx.collections.ListChangeListener<Livre>) c -> {
+            updateBasketCounter.run();
+            updateSummary.run();
+            updatePreview.run();
+        });
+        updateBasketCounter.run();
+        updatePreview.run();
 
         HBox previewContainer = new HBox(previewCard);
         previewContainer.setAlignment(Pos.CENTER);
@@ -580,21 +666,6 @@ public final class EtiquettesDialogHelper {
 
         Button btnSaveHtml = new Button("💾 Enregistrer le fichier HTML…");
         btnSaveHtml.getStyleClass().add("btn-outline");
-
-        // Helper pour récupérer les étiquettes avec les filtres sélectionnés
-        Supplier<List<EtiquetteItem>> fetchItems = () -> {
-            try {
-                return getEtiquettesItems(
-                        exemplaireDao,
-                        rbSelected.isSelected(), selectedLivres,
-                        rbCustomPick.isSelected(), customPickedIsbns,
-                        rbFiltered.isSelected(), currentTableItems,
-                        rbRange.isSelected(), tfStartId.getText(), tfEndId.getText(),
-                        rbLatest.isSelected(), cbLatestCount.getValue());
-            } catch (SQLException e) {
-                return List.of();
-            }
-        };
 
         // ── CAS 1 : Affichage dans le calque modal In-App ──
         if (modalOverlay != null && modalCard != null) {

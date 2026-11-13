@@ -245,16 +245,39 @@ public final class DouchetteDialogHelper {
         colIsbn.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getIsbn()));
         colIsbn.setStyle("-fx-alignment: CENTER;");
 
-        TableColumn<DouchetteSessionItem, String> colTitre = new TableColumn<>("Titre, Auteur & Classification");
+        TableColumn<DouchetteSessionItem, DouchetteSessionItem> colTitre = new TableColumn<>("Titre, Auteur & Classification");
         colTitre.setPrefWidth(260);
-        colTitre.setCellValueFactory(c -> {
-            DouchetteSessionItem it = c.getValue();
-            String s = it.getTitre();
-            if (!it.getAuteur().isBlank()) s += " — " + it.getAuteur();
-            if (it.getGenre() != null && !it.getGenre().isBlank()) {
-                s += "  [" + it.getGenre() + (it.getNiveau() != null && !it.getNiveau().isBlank() ? " • " + it.getNiveau() : "") + "]";
+        colTitre.setCellValueFactory(c -> new javafx.beans.property.SimpleObjectProperty<>(c.getValue()));
+        colTitre.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(DouchetteSessionItem it, boolean empty) {
+                super.updateItem(it, empty);
+                if (empty || it == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    String s = it.getTitre();
+                    if (!it.getAuteur().isBlank()) s += " — " + it.getAuteur();
+                    if (it.getGenre() != null && !it.getGenre().isBlank()) {
+                        s += "  [" + it.getGenre() + (it.getNiveau() != null && !it.getNiveau().isBlank() ? " • " + it.getNiveau() : "") + "]";
+                    }
+                    if (CoverHelper.isTitreNonRenseigne(it.getTitre())) {
+                        setText(null);
+                        Label warn = new Label("⚠️ ");
+                        Label lbl = new Label(s);
+                        lbl.setStyle("-fx-text-fill: #DC2626; -fx-font-weight: 800;");
+                        HBox b = new HBox(warn, lbl);
+                        b.setAlignment(Pos.CENTER_LEFT);
+                        setGraphic(b);
+                        setStyle("-fx-background-color: rgba(254, 226, 226, 0.45);");
+                    } else {
+                        setText(s);
+                        setGraphic(null);
+                        setStyle("");
+                    }
+                }
             }
-            return new SimpleStringProperty(s);
         });
 
         TableColumn<DouchetteSessionItem, String> colEx = new TableColumn<>("N° Ex.");
@@ -280,6 +303,9 @@ public final class DouchetteDialogHelper {
                     if (rem.isBlank() || rem.equals("🟢 Bon état")) {
                         badge.setText("🟢 Bon état");
                         badge.setStyle("-fx-background-color: #dafbe1; -fx-text-fill: #1a7f37; -fx-padding: 2 7; -fx-background-radius: 10; -fx-font-size: 11px;");
+                    } else if (rem.contains("renseigner") || rem.contains("Titre")) {
+                        badge.setText("⚠️ Titre à renseigner");
+                        badge.setStyle("-fx-background-color: #fee2e2; -fx-text-fill: #991b1b; -fx-padding: 2 7; -fx-background-radius: 10; -fx-font-size: 11px; -fx-font-weight: bold; -fx-border-color: #fca5a5; -fx-border-radius: 10;");
                     } else if (rem.contains("Mauvais") || rem.contains("Abîmé") || rem.contains("Détérioré")) {
                         badge.setText("⚠️ " + rem.replace("⚠️", "").trim());
                         badge.setStyle("-fx-background-color: #ffebe9; -fx-text-fill: #cf222e; -fx-padding: 2 7; -fx-background-radius: 10; -fx-font-size: 11px; -fx-font-weight: bold;");
@@ -554,16 +580,18 @@ public final class DouchetteDialogHelper {
                 protected DouchetteSessionItem call() throws Exception {
                     String timeStr = java.time.LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
                     MetadataResult meta = metadataService.rechercher(cleanIsbn);
+                    boolean isNonTrouve = !meta.isFound();
                     String titre = meta.isFound() ? meta.getTitre() : "Livre ISBN " + cleanIsbn;
                     String auteur = meta.isFound() ? meta.getAuteur() : "";
                     String editeur = meta.isFound() ? meta.getEditeur() : "";
                     String cover = meta.getCouvertureUrl();
+                    String remarque = isNonTrouve ? "⚠️ Titre à renseigner" : "";
 
                     Livre nLivre = new Livre(cleanIsbn, titre, auteur, editeur, cover,
                             meta.getGenre(), meta.getTheme(), meta.getNiveau(), meta.getDescription());
                     livreDao.insert(nLivre);
 
-                    int newExId = exemplaireDao.insert(new Exemplaire(cleanIsbn, Exemplaire.Statut.DISPONIBLE, LocalDate.now(), ""));
+                    int newExId = exemplaireDao.insert(new Exemplaire(cleanIsbn, Exemplaire.Statut.DISPONIBLE, LocalDate.now(), remarque));
                     return new DouchetteSessionItem(
                             cleanIsbn,
                             titre,
@@ -573,7 +601,7 @@ public final class DouchetteDialogHelper {
                             meta.getSource(),
                             cover,
                             timeStr,
-                            "",
+                            remarque,
                             meta.getGenre(),
                             meta.getTheme(),
                             meta.getNiveau()
@@ -588,14 +616,21 @@ public final class DouchetteDialogHelper {
                 sessionItems.add(0, item);
                 lblSessionTotal.setText("📦 " + sessionItems.size() + " livre(s) scanné(s) dans cette session");
 
-                String classNotice = (item.getGenre() != null && !item.getGenre().isBlank()
-                        ? " [" + item.getGenre() + (item.getNiveau() != null && !item.getNiveau().isBlank() ? " • " + item.getNiveau() : "") + "]" : "");
-                String exNotice = item.getExemplaireId() > 0 ? " (Exemplaire #" + item.getExemplaireId() + ")" : "";
-                lblFeedback.setText("✅ " + item.getTitre() + exNotice + classNotice + " [" + item.getSource() + "] enregistré !");
-                lblFeedback.setStyle("-fx-font-size: 12px; -fx-text-fill: #28a745; -fx-font-weight: bold;");
-
-                SoundService.playSuccess();
-                AnimationHelper.flashSuccess(scanField);
+                boolean nonRenseigne = CoverHelper.isTitreNonRenseigne(item.getTitre());
+                if (nonRenseigne) {
+                    lblFeedback.setText("⚠️ Livre non reconnu en ligne : enregistré comme '" + item.getTitre() + "' (Ex. #" + item.getExemplaireId() + ") — À compléter via ✏️");
+                    lblFeedback.setStyle("-fx-font-size: 12px; -fx-text-fill: #DC2626; -fx-font-weight: bold;");
+                    SoundService.playWarning();
+                    AnimationHelper.flashWarning(scanField);
+                } else {
+                    String classNotice = (item.getGenre() != null && !item.getGenre().isBlank()
+                            ? " [" + item.getGenre() + (item.getNiveau() != null && !item.getNiveau().isBlank() ? " • " + item.getNiveau() : "") + "]" : "");
+                    String exNotice = item.getExemplaireId() > 0 ? " (Exemplaire #" + item.getExemplaireId() + ")" : "";
+                    lblFeedback.setText("✅ " + item.getTitre() + exNotice + classNotice + " [" + item.getSource() + "] enregistré !");
+                    lblFeedback.setStyle("-fx-font-size: 12px; -fx-text-fill: #28a745; -fx-font-weight: bold;");
+                    SoundService.playSuccess();
+                    AnimationHelper.flashSuccess(scanField);
+                }
 
                 scanField.clear();
                 Platform.runLater(scanField::requestFocus);

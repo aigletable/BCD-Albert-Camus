@@ -240,14 +240,32 @@ public class InventaireController {
     private void configureLivreTable() {
         colTitre.setCellValueFactory(new PropertyValueFactory<>("titre"));
         colTitre.setCellFactory(col -> new TableCell<>() {
+            private final Label iconLbl = new Label("⚠️");
+            private final Label titleLbl = new Label();
+            private final Label badge = new Label("À renseigner");
+            private final HBox warnBox = new HBox(6, iconLbl, titleLbl, badge);
+
+            {
+                warnBox.setAlignment(Pos.CENTER_LEFT);
+                badge.setStyle("-fx-background-color: #fee2e2; -fx-text-fill: #991b1b; -fx-font-weight: 800; -fx-font-size: 10px; -fx-padding: 1 6; -fx-background-radius: 999; -fx-border-color: #fca5a5; -fx-border-radius: 999;");
+                titleLbl.setStyle("-fx-font-weight: 800; -fx-text-fill: #dc2626;");
+            }
+
             @Override
             protected void updateItem(String titre, boolean empty) {
                 super.updateItem(titre, empty);
                 if (empty || titre == null) {
                     setText(null);
                     setGraphic(null);
+                    setStyle("");
+                } else if (fr.ecole.bcd.view.CoverHelper.isTitreNonRenseigne(titre)) {
+                    setText(null);
+                    titleLbl.setText(titre);
+                    setGraphic(warnBox);
+                    setStyle("-fx-background-color: rgba(254, 226, 226, 0.45);");
                 } else {
                     setText(titre);
+                    setGraphic(null);
                     setStyle("-fx-font-weight: 700;");
                 }
             }
@@ -437,23 +455,37 @@ public class InventaireController {
                         setGraphic(null);
                         setText(null);
                     } else {
-                        titleLabel.setText(livre.getTitre());
-                        authorLabel.setText(livre.getAuteur() != null && !livre.getAuteur().isBlank() ? livre.getAuteur() : "Auteur non renseigné");
-
-                        // Statut pill
-                        if (livre.getNbDisponibles() > 0 && livre.getNbDisponibles() == livre.getNbExemplaires()) {
-                            statusPill.setText("Disponible");
-                            statusPill.getStyleClass().setAll("pill-green");
-                        } else if (livre.getNbDisponibles() > 0) {
-                            statusPill.setText("En partie disponible (" + livre.getNbDisponibles() + "/" + livre.getNbExemplaires() + ")");
-                            statusPill.getStyleClass().setAll("pill-orange");
-                        } else if (livre.getNbExemplaires() > 0) {
-                            statusPill.setText("En prêt (0 dispo)");
-                            statusPill.getStyleClass().setAll("pill-red");
+                        boolean nonRenseigne = fr.ecole.bcd.view.CoverHelper.isTitreNonRenseigne(livre.getTitre());
+                        if (nonRenseigne) {
+                            titleLabel.setText("⚠️ " + livre.getTitre());
+                            titleLabel.setStyle("-fx-font-weight: 800; -fx-text-fill: #DC2626;");
+                            statusPill.setText("⚠️ Titre à renseigner !");
+                            statusPill.setStyle("-fx-background-color: #FEE2E2; -fx-text-fill: #991B1B; -fx-font-weight: 800; -fx-border-color: #FCA5A5; -fx-border-radius: 999; -fx-background-radius: 999;");
+                            card.setStyle("-fx-background-color: #FEF2F2; -fx-border-color: #F87171; -fx-border-width: 1.5; -fx-border-radius: 8; -fx-background-radius: 8;");
                         } else {
-                            statusPill.setText("0 exemplaire");
-                            statusPill.getStyleClass().setAll("pill-blue");
+                            titleLabel.setText(livre.getTitre());
+                            titleLabel.setStyle("");
+                            card.setStyle("");
+                            // Statut pill
+                            if (livre.getNbDisponibles() > 0 && livre.getNbDisponibles() == livre.getNbExemplaires()) {
+                                statusPill.setText("Disponible");
+                                statusPill.getStyleClass().setAll("pill-green");
+                                statusPill.setStyle("");
+                            } else if (livre.getNbDisponibles() > 0) {
+                                statusPill.setText("En partie disponible (" + livre.getNbDisponibles() + "/" + livre.getNbExemplaires() + ")");
+                                statusPill.getStyleClass().setAll("pill-orange");
+                                statusPill.setStyle("");
+                            } else if (livre.getNbExemplaires() > 0) {
+                                statusPill.setText("En prêt (0 dispo)");
+                                statusPill.getStyleClass().setAll("pill-red");
+                                statusPill.setStyle("");
+                            } else {
+                                statusPill.setText("0 exemplaire");
+                                statusPill.getStyleClass().setAll("pill-blue");
+                                statusPill.setStyle("");
+                            }
                         }
+                        authorLabel.setText(livre.getAuteur() != null && !livre.getAuteur().isBlank() ? livre.getAuteur() : "Auteur non renseigné");
 
                         copiesLabel.setText("📦 " + livre.getNbExemplaires() + " ex.");
                         niveauBadge.setText(livre.getNiveau() != null && !livre.getNiveau().isBlank() ? livre.getNiveau() : "Cycle 2");
@@ -1038,7 +1070,14 @@ public class InventaireController {
         if (btnSearchCover != null) btnSearchCover.setDisable(false);
 
         // Métadonnées
-        lblTitre.setText(livre.getTitre());
+        boolean nonRenseigne = fr.ecole.bcd.view.CoverHelper.isTitreNonRenseigne(livre.getTitre());
+        if (nonRenseigne) {
+            lblTitre.setText("⚠️ " + livre.getTitre() + "  [Titre à renseigner !]");
+            lblTitre.setStyle("-fx-text-fill: #DC2626; -fx-font-weight: 800;");
+        } else {
+            lblTitre.setText(livre.getTitre());
+            lblTitre.setStyle("");
+        }
         lblAuteur.setText(livre.getAuteur() != null && !livre.getAuteur().isBlank()
                 ? livre.getAuteur() : "Auteur non renseigné");
         lblIsbn.setText(livre.getIsbn() != null ? livre.getIsbn() : "–");
