@@ -319,13 +319,14 @@ public class LivreMetadataService {
         if (results.isEmpty()) {
             String t = !cleanTitre.isEmpty() ? cleanTitre : "Ouvrage sans titre";
             LivreClassificationService.ClassificationResult cr = classifier.classifySimple(t, cleanAuteur, "", "");
+            String cover = findVerifiedCover("", "", t, cleanAuteur);
             results.add(new MetadataResult(
                     "",
                     t,
                     cleanAuteur,
                     "",
                     "",
-                    "",
+                    cover != null ? cover : "",
                     "Local / Manuel",
                     cr.getGenre(),
                     cr.getTheme(),
@@ -339,7 +340,27 @@ public class LivreMetadataService {
             ));
         }
 
-        return results;
+        // 5. Enrichissement systématique et immédiat des couvertures (Amazon CDN, OpenLibrary HD, Epagine)
+        // Permet d'avoir la couverture dès l'ajout par titre sans devoir la redemander après l'ajout !
+        List<MetadataResult> enriched = new ArrayList<>();
+        for (MetadataResult r : results) {
+            String verifiedCover = r.getCouvertureUrl();
+            if (verifiedCover == null || verifiedCover.isBlank()) {
+                String better = findVerifiedCover(r.getIsbn(), "", r.getTitre(), r.getAuteur());
+                if (better != null && !better.isBlank()) {
+                    verifiedCover = better;
+                }
+            }
+            enriched.add(new MetadataResult(
+                    r.getIsbn(), r.getTitre(), r.getAuteur(), r.getEditeur(),
+                    r.getDatePublication(), verifiedCover != null ? verifiedCover : "", r.getSource(),
+                    r.getGenre(), r.getTheme(), r.getNiveau(), r.getDescription(),
+                    r.getCollection(), r.getSubjects(), r.getDewey(), r.getAgeMention(),
+                    r.getPageCount()
+            ));
+        }
+
+        return enriched;
     }
 
     public List<MetadataResult> fetchFromOpenLibraryByTitleAuthor(String titre, String auteur, int maxResults) {
@@ -412,7 +433,7 @@ public class LivreMetadataService {
                 if (doc.has("cover_i")) {
                     long coverId = doc.optLong("cover_i", 0);
                     if (coverId > 0) {
-                        coverUrl = "https://covers.openlibrary.org/b/id/" + coverId + "-M.jpg";
+                        coverUrl = "https://covers.openlibrary.org/b/id/" + coverId + "-L.jpg";
                     }
                 }
 
@@ -1032,8 +1053,10 @@ public class LivreMetadataService {
             System.out.println("⚠️ Couverture API rejetée (placeholder) pour ISBN " + cleanIsbn + " : " + apiCover);
         }
 
+        boolean isRealIsbn = cleanIsbn != null && cleanIsbn.matches("^[0-9Xx]{10,13}$");
+
         String isbn10 = null;
-        if (cleanIsbn != null && !cleanIsbn.isBlank()) {
+        if (isRealIsbn) {
             if (cleanIsbn.length() == 10) {
                 isbn10 = cleanIsbn;
             } else if (cleanIsbn.length() == 13 && cleanIsbn.startsWith("978")) {
@@ -1042,7 +1065,7 @@ public class LivreMetadataService {
         }
 
         // 2. Amazon CDN (par ISBN-10) — Ultra-rapide (~200ms CloudFront) et catalogue jeunesse très riche
-        if (isbn10 != null && !isbn10.isBlank()) {
+        if (isRealIsbn && isbn10 != null && !isbn10.isBlank()) {
             String amzLarge = "https://images-na.ssl-images-amazon.com/images/P/" + isbn10 + ".01.LZZZZZZZ.jpg";
             if (isValidCoverUrl(amzLarge)) {
                 return amzLarge;
@@ -1054,7 +1077,7 @@ public class LivreMetadataService {
         }
 
         // 3. OpenLibrary Covers (par ISBN direct)
-        if (cleanIsbn != null && !cleanIsbn.isBlank()) {
+        if (isRealIsbn) {
             String olLarge = "https://covers.openlibrary.org/b/isbn/" + cleanIsbn + "-L.jpg?default=false";
             if (isValidCoverUrl(olLarge)) {
                 return olLarge;
@@ -1067,23 +1090,7 @@ public class LivreMetadataService {
             }
         }
 
-        // 4. Google Books zoom=1 (si non bridé par quota)
-        if (cleanIsbn != null && !cleanIsbn.isBlank()) {
-            String googleCover = findGoogleBooksCover(cleanIsbn);
-            if (googleCover != null && !googleCover.isBlank()) {
-                return googleCover;
-            }
-        }
-
-        // 5. OpenLibrary Medium (repli ISBN)
-        if (cleanIsbn != null && !cleanIsbn.isBlank()) {
-            String olMed = "https://covers.openlibrary.org/b/isbn/" + cleanIsbn + "-M.jpg?default=false";
-            if (isValidCoverUrl(olMed)) {
-                return olMed;
-            }
-        }
-
-        // 6. Recherche OpenLibrary par Titre et Auteur (récupère les classiques comme Chien bleu, Nina, etc.)
+        // 4. Recherche par Titre et Auteur (OpenLibrary Covers & Search)
         if (titre != null && !titre.isBlank() && !titre.toLowerCase().startsWith("livre isbn")) {
             String olTitleCover = findOpenLibraryCoverByTitle(titre, auteur);
             if (olTitleCover != null && !olTitleCover.isBlank()) {
@@ -1091,8 +1098,24 @@ public class LivreMetadataService {
             }
         }
 
+        // 5. Google Books zoom=1 (si ISBN réel)
+        if (isRealIsbn) {
+            String googleCover = findGoogleBooksCover(cleanIsbn);
+            if (googleCover != null && !googleCover.isBlank()) {
+                return googleCover;
+            }
+        }
+
+        // 6. OpenLibrary Medium (repli ISBN)
+        if (isRealIsbn) {
+            String olMed = "https://covers.openlibrary.org/b/isbn/" + cleanIsbn + "-M.jpg?default=false";
+            if (isValidCoverUrl(olMed)) {
+                return olMed;
+            }
+        }
+
         // 7. Epagine CDN (dernier recours — filtré > 3500 octets pour exclure les placeholders 2687 octets)
-        if (cleanIsbn != null && !cleanIsbn.isBlank()) {
+        if (isRealIsbn) {
             String epagineUrl = "https://images.epagine.fr/images/" + cleanIsbn + "/" + cleanIsbn + "_1_75.jpg";
             if (isValidCoverUrl(epagineUrl)) {
                 return epagineUrl;
@@ -1109,17 +1132,31 @@ public class LivreMetadataService {
         try {
             // Nettoyer le titre : ne garder que le titre principal avant ":" ou "("
             String cleanTitle = titre.split("[:(]")[0].trim();
-            if (cleanTitle.length() < 3) return null;
+            if (cleanTitle.length() < 2) return null;
 
+            String cover = searchOpenLibraryCoverApi(cleanTitle, auteur);
+            if (cover != null && !cover.isBlank()) return cover;
+
+            // Si non trouvé avec auteur (ex: orthographe différente), retenter avec le titre seul
+            if (auteur != null && !auteur.isBlank()) {
+                cover = searchOpenLibraryCoverApi(cleanTitle, null);
+                if (cover != null && !cover.isBlank()) return cover;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private String searchOpenLibraryCoverApi(String cleanTitle, String auteur) {
+        try {
             StringBuilder urlBuilder = new StringBuilder("https://openlibrary.org/search.json?title=");
             urlBuilder.append(URLEncoder.encode(cleanTitle, StandardCharsets.UTF_8));
-            if (auteur != null && !auteur.isBlank() && !auteur.equalsIgnoreCase("inconnu")) {
+            if (auteur != null && !auteur.isBlank() && !auteur.equalsIgnoreCase("inconnu") && !auteur.equalsIgnoreCase("collectif")) {
                 String cleanAut = auteur.split("[,;]")[0].trim();
                 if (cleanAut.length() >= 2) {
                     urlBuilder.append("&author=").append(URLEncoder.encode(cleanAut, StandardCharsets.UTF_8));
                 }
             }
-            urlBuilder.append("&limit=1");
+            urlBuilder.append("&limit=3&fields=cover_i,isbn");
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(urlBuilder.toString()))
                     .header("User-Agent", USER_AGENT)
@@ -1131,12 +1168,34 @@ public class LivreMetadataService {
             if (resp.statusCode() == 200 && resp.body() != null) {
                 JSONObject json = new JSONObject(resp.body());
                 if (json.has("docs") && !json.getJSONArray("docs").isEmpty()) {
-                    JSONObject doc = json.getJSONArray("docs").getJSONObject(0);
-                    if (doc.has("cover_i") && !doc.isNull("cover_i")) {
-                        long coverId = doc.getLong("cover_i");
-                        String coverUrl = "https://covers.openlibrary.org/b/id/" + coverId + "-L.jpg";
-                        if (isValidCoverUrl(coverUrl)) {
-                            return coverUrl;
+                    JSONArray docs = json.getJSONArray("docs");
+                    for (int i = 0; i < docs.length(); i++) {
+                        JSONObject doc = docs.getJSONObject(i);
+                        // 1. Essayer le cover_i direct en HD (Large)
+                        if (doc.has("cover_i") && !doc.isNull("cover_i")) {
+                            long coverId = doc.getLong("cover_i");
+                            if (coverId > 0) {
+                                String coverUrl = "https://covers.openlibrary.org/b/id/" + coverId + "-L.jpg";
+                                if (isValidCoverUrl(coverUrl)) {
+                                    return coverUrl;
+                                }
+                            }
+                        }
+                        // 2. Essayer les ISBN associés via Amazon CDN
+                        if (doc.has("isbn")) {
+                            JSONArray isbns = doc.getJSONArray("isbn");
+                            for (int j = 0; j < Math.min(isbns.length(), 5); j++) {
+                                String is = cleanIsbn(isbns.getString(j));
+                                if (is.length() == 10 || is.length() == 13) {
+                                    String is10 = is.length() == 10 ? is : toIsbn10(is);
+                                    if (is10 != null && !is10.isBlank()) {
+                                        String amzUrl = "https://images-na.ssl-images-amazon.com/images/P/" + is10 + ".01.LZZZZZZZ.jpg";
+                                        if (isValidCoverUrl(amzUrl)) {
+                                            return amzUrl;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -1344,8 +1344,46 @@ public class InventaireController {
         grid.add(cbTheme, 1, 6);
         grid.add(new Label("Niveau scolaire :"), 0, 7);
         grid.add(cbNiveau, 1, 7);
+
+        Button btnFindCoverSimple = new Button("🔍 Trouver image");
+        btnFindCoverSimple.getStyleClass().add("btn-outline");
+        btnFindCoverSimple.setStyle("-fx-font-size: 11px; -fx-padding: 4 8;");
+        btnFindCoverSimple.setOnAction(e -> {
+            String t = tfTitre.getText().trim();
+            String a = tfAuteur.getText().trim();
+            String is = tfIsbn.getText().trim();
+            if (!t.isEmpty() || !is.isEmpty()) {
+                btnFindCoverSimple.setDisable(true);
+                lblSearchStatus.setText("🔍 Recherche d'image de couverture en haute résolution…");
+                lblSearchStatus.setStyle("-fx-text-fill: #0366d6; -fx-font-size: 11px;");
+                Task<String> tCover = new Task<>() {
+                    @Override
+                    protected String call() {
+                        return metadataService.findVerifiedCover(is, "", t, a);
+                    }
+                };
+                tCover.setOnSucceeded(ev -> {
+                    btnFindCoverSimple.setDisable(false);
+                    String found = tCover.getValue();
+                    if (found != null && !found.isBlank()) {
+                        tfCouverture.setText(found);
+                        lblSearchStatus.setText("✅ Couverture trouvée et attachée !");
+                        lblSearchStatus.setStyle("-fx-text-fill: #166534; -fx-font-weight: bold; -fx-font-size: 11px;");
+                    } else {
+                        lblSearchStatus.setText("ℹ️ Aucune image trouvée en ligne pour ce livre.");
+                        lblSearchStatus.setStyle("-fx-text-fill: #d97706; -fx-font-size: 11px;");
+                    }
+                });
+                tCover.setOnFailed(ev -> btnFindCoverSimple.setDisable(false));
+                new Thread(tCover).start();
+            }
+        });
+        HBox coverBox = new HBox(8, tfCouverture, btnFindCoverSimple);
+        HBox.setHgrow(tfCouverture, Priority.ALWAYS);
+        coverBox.setAlignment(Pos.CENTER_LEFT);
+
         grid.add(new Label("URL Couverture :"), 0, 8);
-        grid.add(tfCouverture, 1, 8);
+        grid.add(coverBox, 1, 8);
         grid.add(new Label("Description / Résumé :"), 0, 9);
         grid.add(taDescription, 1, 9);
         grid.add(new Label("Exemplaire(s) initiaux :"), 0, 10);
@@ -1511,12 +1549,21 @@ public class InventaireController {
                         cleanIsbn = "CAMUS-" + (System.currentTimeMillis() % 100000);
                     }
                 }
+                String cover = tfCouverture.getText().trim();
+                if (cover.isEmpty()) {
+                    try {
+                        String autoC = metadataService.findVerifiedCover(cleanIsbn, "", tfTitre.getText().trim(), tfAuteur.getText().trim());
+                        if (autoC != null && !autoC.isBlank()) {
+                            cover = autoC;
+                        }
+                    } catch (Exception ignored) {}
+                }
                 Livre newLivre = new Livre(
                         cleanIsbn,
                         tfTitre.getText().trim(),
                         tfAuteur.getText().trim(),
                         tfEditeur.getText().trim(),
-                        tfCouverture.getText().trim(),
+                        cover,
                         cbGenre.getValue() != null && !cbGenre.getValue().isBlank() ? cbGenre.getValue().trim() : null,
                         cbTheme.getValue() != null && !cbTheme.getValue().isBlank() ? cbTheme.getValue().trim() : null,
                         cbNiveau.getValue() != null && !cbNiveau.getValue().isBlank() ? cbNiveau.getValue().trim() : null,

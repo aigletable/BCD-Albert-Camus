@@ -178,10 +178,27 @@ public final class LivreVerificationDialogHelper {
         tfCouvertureUrl.setVisible(false);
         tfCouvertureUrl.setManaged(false);
 
-        Button btnChangeCover = new Button("📷 Image / URL");
+        Button btnAutoFindCover = new Button("🔍 Trouver couverture");
+        btnAutoFindCover.setStyle("-fx-background-color: #e0f2fe; -fx-text-fill: #0369a1; -fx-border-color: #bae6fd; -fx-border-radius: 5; -fx-font-size: 11px; -fx-cursor: hand; -fx-font-weight: bold; -fx-padding: 4 8;");
+        btnAutoFindCover.setTooltip(new Tooltip("Recherche automatique haute résolution sur Amazon CDN, OpenLibrary HD et Epagine"));
+
+        Button btnChangeCover = new Button("✏️ URL image");
         btnChangeCover.setStyle("-fx-background-color: #f1f5f9; -fx-border-color: #cbd5e1; -fx-border-radius: 5; -fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 4 8;");
 
-        coverPane.getChildren().addAll(coverContainer, btnChangeCover);
+        ProgressIndicator coverSpinner = new ProgressIndicator();
+        coverSpinner.setPrefSize(16, 16);
+        coverSpinner.setVisible(false);
+
+        Label lblCoverStatus = new Label();
+        lblCoverStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #64748b;");
+        lblCoverStatus.setWrapText(true);
+        lblCoverStatus.setMaxWidth(135);
+        lblCoverStatus.setAlignment(Pos.CENTER);
+
+        HBox coverBtns = new HBox(4, btnAutoFindCover, btnChangeCover);
+        coverBtns.setAlignment(Pos.CENTER);
+
+        coverPane.getChildren().addAll(coverContainer, coverBtns, coverSpinner, lblCoverStatus);
 
         // Formulaire champs à droite
         GridPane formGrid = new GridPane();
@@ -339,6 +356,53 @@ public final class LivreVerificationDialogHelper {
             coverContainer.getChildren().setAll(vectorCover);
         };
 
+        // Recherche automatique de couverture ultra-rapide (Amazon CDN, OpenLibrary HD, Epagine)
+        Runnable runFindCover = () -> {
+            String title = tfTitre.getText().trim();
+            String author = tfAuteur.getText().trim();
+            String code = tfCode.getText().trim();
+            if (title.isEmpty() && code.isEmpty()) {
+                lblCoverStatus.setText("⚠️ Titre requis");
+                lblCoverStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #dc2626;");
+                return;
+            }
+
+            btnAutoFindCover.setDisable(true);
+            coverSpinner.setVisible(true);
+            lblCoverStatus.setText("Recherche image…");
+            lblCoverStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #2563eb;");
+
+            Task<String> coverTask = new Task<>() {
+                @Override
+                protected String call() {
+                    return metadataService.findVerifiedCover(code, "", title, author);
+                }
+            };
+            coverTask.setOnSucceeded(e -> {
+                btnAutoFindCover.setDisable(false);
+                coverSpinner.setVisible(false);
+                String c = coverTask.getValue();
+                if (c != null && !c.isBlank()) {
+                    tfCouvertureUrl.setText(c);
+                    refreshCoverDisplay.run();
+                    lblCoverStatus.setText("✅ Couverture trouvée");
+                    lblCoverStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #166534; -fx-font-weight: bold;");
+                } else {
+                    lblCoverStatus.setText("ℹ️ Aucune image trouvée");
+                    lblCoverStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #d97706;");
+                }
+            });
+            coverTask.setOnFailed(e -> {
+                btnAutoFindCover.setDisable(false);
+                coverSpinner.setVisible(false);
+                lblCoverStatus.setText("⚠️ Erreur réseau");
+                lblCoverStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #dc2626;");
+            });
+            new Thread(coverTask).start();
+        };
+
+        btnAutoFindCover.setOnAction(e -> runFindCover.run());
+
         // Bouton changer couverture
         btnChangeCover.setOnAction(e -> {
             TextInputDialog prompt = new TextInputDialog(tfCouvertureUrl.getText());
@@ -348,6 +412,7 @@ public final class LivreVerificationDialogHelper {
             prompt.setContentText("URL (https://…) :");
             prompt.showAndWait().ifPresent(newUrl -> {
                 tfCouvertureUrl.setText(newUrl.trim());
+                lblCoverStatus.setText(newUrl.isBlank() ? "" : "📷 URL personnalisée");
                 refreshCoverDisplay.run();
             });
         });
@@ -404,8 +469,13 @@ public final class LivreVerificationDialogHelper {
 
             if (meta.getCouvertureUrl() != null && !meta.getCouvertureUrl().isBlank()) {
                 tfCouvertureUrl.setText(meta.getCouvertureUrl());
+                lblCoverStatus.setText("✅ Couverture active");
+                lblCoverStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #166534; -fx-font-weight: bold;");
             } else {
                 tfCouvertureUrl.clear();
+                lblCoverStatus.setText("");
+                // Recherche automatique immédiate de couverture
+                Platform.runLater(runFindCover::run);
             }
             refreshCoverDisplay.run();
             validateOk.run();
@@ -480,8 +550,27 @@ public final class LivreVerificationDialogHelper {
                     card.setAlignment(Pos.CENTER_LEFT);
                     card.setStyle("-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8 12; -fx-cursor: hand;");
 
-                    Label lblIcon = new Label(CoverHelper.getStyleForGenre(cand.getGenre()).icon());
-                    lblIcon.setStyle("-fx-font-size: 20px;");
+                    Node visualGraphic;
+                    String cUrl = cand.getCouvertureUrl();
+                    if (cUrl != null && !cUrl.isBlank() && (cUrl.startsWith("http://") || cUrl.startsWith("https://"))) {
+                        ImageView miniThumb = new ImageView();
+                        miniThumb.setFitWidth(36);
+                        miniThumb.setFitHeight(48);
+                        miniThumb.setPreserveRatio(true);
+                        Rectangle miniClip = new Rectangle(36, 48);
+                        miniClip.setArcWidth(6);
+                        miniClip.setArcHeight(6);
+                        miniThumb.setClip(miniClip);
+                        Image mImg = new Image(cUrl, 36, 48, true, true, true);
+                        miniThumb.setImage(mImg);
+                        StackPane thumbWrap = new StackPane(miniThumb);
+                        thumbWrap.setPrefSize(36, 48);
+                        visualGraphic = thumbWrap;
+                    } else {
+                        Label lblIcon = new Label(CoverHelper.getStyleForGenre(cand.getGenre()).icon());
+                        lblIcon.setStyle("-fx-font-size: 20px;");
+                        visualGraphic = lblIcon;
+                    }
 
                     VBox info = new VBox(2);
                     HBox.setHgrow(info, Priority.ALWAYS);
@@ -508,7 +597,7 @@ public final class LivreVerificationDialogHelper {
                         lblStatus.setStyle("-fx-font-size: 11.5px; -fx-text-fill: #166534; -fx-font-weight: bold;");
                     });
 
-                    card.getChildren().addAll(lblIcon, info, btnSelectThis);
+                    card.getChildren().addAll(visualGraphic, info, btnSelectThis);
                     candidatesList.getChildren().add(card);
                 }
 
@@ -551,7 +640,16 @@ public final class LivreVerificationDialogHelper {
             validateOk.run();
             lblStatus.setText("⚡ Mode saisie manuelle activé avec code BCD interne garanti unique.");
             lblStatus.setStyle("-fx-font-size: 11.5px; -fx-text-fill: #475569; -fx-font-weight: bold;");
+            if (!tfTitre.getText().isBlank()) {
+                runFindCover.run();
+            }
             Platform.runLater(tfTitre::requestFocus);
+        });
+
+        tfTitre.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (!isNowFocused && (tfCouvertureUrl.getText() == null || tfCouvertureUrl.getText().isBlank()) && tfTitre.getText().trim().length() >= 3) {
+                runFindCover.run();
+            }
         });
 
         // Initialisation si titre passé en paramètre
@@ -585,6 +683,17 @@ public final class LivreVerificationDialogHelper {
                 String niveau = cbNiveau.getValue() != null && !cbNiveau.getValue().isBlank() ? cbNiveau.getValue().trim() : "Cycle 2 (CP-CE2)";
                 String desc = taDescription.getText() != null && !taDescription.getText().isBlank() ? taDescription.getText().trim() : null;
                 String coverUrl = tfCouvertureUrl.getText() != null && !tfCouvertureUrl.getText().isBlank() ? tfCouvertureUrl.getText().trim() : null;
+
+                // Si aucune couverture n'est encore renseignée, résolution automatique immédiate
+                // comme pour le scan ISBN, pour garantir la présence de la couverture dès l'ajout en base !
+                if (coverUrl == null || coverUrl.isBlank()) {
+                    try {
+                        String autoC = metadataService.findVerifiedCover(code, "", cleanTitre, cleanAuteur);
+                        if (autoC != null && !autoC.isBlank()) {
+                            coverUrl = autoC;
+                        }
+                    } catch (Exception ignored) {}
+                }
 
                 Livre newLivre = new Livre(code, cleanTitre, cleanAuteur, cleanEditeur, coverUrl, genre, theme, niveau, desc);
 

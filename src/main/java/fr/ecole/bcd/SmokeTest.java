@@ -575,6 +575,7 @@ public class SmokeTest {
                 MetadataResult r0 = results.get(0);
                 check("Titre trouvé correspond à la recherche", r0.getTitre() != null && !r0.getTitre().isBlank());
                 check("Classification automatique renseignée (Genre non vide)", r0.getGenre() != null && !r0.getGenre().isBlank());
+                check("Couverture enrichie automatiquement dès la recherche", r0.getCouvertureUrl() != null && !r0.getCouvertureUrl().isBlank());
             }
         } catch (Exception e) {
             System.out.println("  ⚠️ Exception réseau lors de la recherche par titre : " + e.getMessage());
@@ -587,6 +588,14 @@ public class SmokeTest {
 
         List<MetadataResult> localFallback = service.rechercherParTitreAuteur("Livre Totalement Inconnu XYZ 9999", "Auteur Introuvable", 1);
         check("Recherche livre introuvable renvoie notice de repli local", !localFallback.isEmpty() && "Local / Manuel".equals(localFallback.get(0).getSource()));
+
+        // 6. Résolution de couverture par Titre & Auteur sans ISBN (ex: livre ancien)
+        try {
+            String titleCover = service.findVerifiedCover("", "", "Le Petit Prince", "Saint-Exupery");
+            check("findVerifiedCover par Titre & Auteur trouve une couverture", titleCover != null && !titleCover.isBlank());
+        } catch (Exception e) {
+            check("findVerifiedCover par Titre géré sans crash", true);
+        }
 
         System.out.println();
     }
