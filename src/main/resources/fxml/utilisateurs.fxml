@@ -75,7 +75,7 @@
             </HBox>
 
             <!-- Tableau des utilisateurs -->
-            <TableView fx:id="tableView" VBox.vgrow="ALWAYS">
+            <TableView fx:id="tableView" VBox.vgrow="ALWAYS" minHeight="240">
                 <columns>
                     <TableColumn fx:id="colNumero" text="NUMÉRO" prefWidth="95"/>
                     <TableColumn fx:id="colNom" text="NOM &amp; PRÉNOM" prefWidth="250"/>

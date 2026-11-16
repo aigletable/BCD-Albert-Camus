@@ -7,16 +7,19 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import fr.ecole.bcd.database.DatabaseManager;
@@ -350,7 +353,8 @@ public class MainApp extends Application {
         VBox.setVgrow(tabPane, Priority.ALWAYS);
 
         /* ── 4. Scène et fenêtre ─────────────────────────────────────── */
-        Scene scene = new Scene(root, 1080, 720);
+        // Dimensions confortables et spacieuses si l'utilisateur dé-maximise la fenêtre
+        Scene scene = new Scene(root, 1200, 780);
 
         btnTheme.setOnAction(e -> ThemeService.toggleTheme(scene, btnTheme));
         ThemeService.initTheme(scene, btnTheme);
@@ -360,9 +364,25 @@ public class MainApp extends Application {
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldT, newT) -> refreshHeaderKpis(kpiLivres, kpiPrets));
 
         stage.setTitle("BCD Express – École Albert Camus Pasteur (Meudon)");
-        stage.setMinWidth(950);
+        stage.setMinWidth(960);
         stage.setMinHeight(620);
         stage.setScene(scene);
+
+        // Calquer immédiatement sur la grandeur maximale de l'écran (Plein écran / Maximisé pour Mac & écran BCD)
+        try {
+            Screen screen = Screen.getPrimary();
+            if (screen != null) {
+                Rectangle2D visualBounds = screen.getVisualBounds();
+                stage.setX(visualBounds.getMinX());
+                stage.setY(visualBounds.getMinY());
+                stage.setWidth(visualBounds.getWidth());
+                stage.setHeight(visualBounds.getHeight());
+            }
+        } catch (Exception ignored) {}
+        try {
+            stage.setMaximized(true);
+        } catch (Exception ignored) {}
+
         stage.show();
 
         System.out.println("✅ BCD Express démarré avec succès (École Albert Camus Pasteur - Meudon).");
@@ -370,8 +390,12 @@ public class MainApp extends Application {
 
     /**
      * Charge une vue FXML et instancie son contrôleur associé dans un nouvel onglet {@link Tab}.
-     * Le contrôleur instancié est enregistré dans les {@code userData} de l'onglet pour permettre
-     * son rafraîchissement automatique lors de la sélection de l'onglet.
+     * Le contenu est enveloppé dans un {@link ScrollPane} adaptatif et invisible :
+     * <ul>
+     *   <li>En plein écran : le contenu s'étire et remplit 100% de la fenêtre (fitToWidth &amp; fitToHeight).</li>
+     *   <li>En mode fenêtré ou écran réduit : les ascenseurs s'activent pour garantir qu'aucun bouton ni tableau ne soit écrasé.</li>
+     * </ul>
+     * Le contrôleur instancié est enregistré dans les {@code userData} de l'onglet.
      *
      * @param title l'intitulé textuel affiché dans l'onglet
      * @param fxmlPath le chemin du fichier FXML dans les ressources de l'application
@@ -382,7 +406,22 @@ public class MainApp extends Application {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Node content = loader.load();
-            tab.setContent(content);
+
+            if (content instanceof Region region) {
+                // Tailles minimales ergonomiques garanties (évite tout écrasement des contrôles)
+                region.setMinWidth(960);
+                region.setMinHeight(580);
+            }
+
+            ScrollPane scrollPane = new ScrollPane(content);
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            scrollPane.getStyleClass().add("tab-scroll-pane");
+            scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; -fx-border-width: 0;");
+
+            tab.setContent(scrollPane);
             tab.setUserData(loader.getController());
         } catch (IOException e) {
             System.err.println("❌ Erreur de chargement FXML : " + fxmlPath);

@@ -134,7 +134,7 @@
         </HBox>
 
         <!-- ── 6. Tableau des exemplaires du récolement ─────────────────────── -->
-        <TableView fx:id="recolementTable" VBox.vgrow="ALWAYS">
+        <TableView fx:id="recolementTable" VBox.vgrow="ALWAYS" minHeight="240">
             <columns>
                 <TableColumn fx:id="colId" text="EXEMPLAIRE" prefWidth="95"/>
                 <TableColumn fx:id="colTitre" text="LIVRE (TITRE &amp; AUTEUR)" prefWidth="260"/>

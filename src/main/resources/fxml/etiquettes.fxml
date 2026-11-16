@@ -70,7 +70,7 @@
                 </HBox>
 
                 <!-- Tableau principal -->
-                <TableView fx:id="tableLivres" VBox.vgrow="ALWAYS"
+                <TableView fx:id="tableLivres" VBox.vgrow="ALWAYS" minHeight="240"
                            style="-fx-background-radius: 10px; -fx-border-radius: 10px; -fx-border-color: #E2E8F0;">
                     <columns>
                         <TableColumn fx:id="colSelect" text="☑️" prefWidth="52" style="-fx-alignment: CENTER;"/>

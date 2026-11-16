@@ -902,4 +902,21 @@
     -fx-text-fill: #B91C1C;
 }
 
+/* ── 29. ScrollPane d'Onglet Adaptatif (Plein écran & Fenêtré Universel) ── */
+.tab-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.tab-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.tab-scroll-pane:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+
 

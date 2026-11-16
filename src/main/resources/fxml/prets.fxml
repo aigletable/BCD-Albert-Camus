@@ -98,7 +98,7 @@
     </HBox>
 
     <!-- ── 4. Tableau des emprunts en cours ───────────────────────────── -->
-    <TableView fx:id="pretsTableView" VBox.vgrow="ALWAYS">
+    <TableView fx:id="pretsTableView" VBox.vgrow="ALWAYS" minHeight="240">
         <columns>
             <TableColumn fx:id="colExId" text="N° EX." prefWidth="85"/>
             <TableColumn fx:id="colLivre" text="LIVRE" prefWidth="300"/>

@@ -113,7 +113,7 @@
 
         <!-- Colonne Gauche : Catalogue (Cartes en mode Grille ou Tableau en mode Liste) -->
         <VBox spacing="10">
-            <TableView fx:id="livreTableView" VBox.vgrow="ALWAYS">
+            <TableView fx:id="livreTableView" VBox.vgrow="ALWAYS" minHeight="240">
                 <columns>
                     <TableColumn fx:id="colCard" text="CATALOGUE DES LIVRES" prefWidth="560"/>
                     <!-- Colonnes pour le mode Liste tabulaire -->
@@ -237,7 +237,7 @@
                     </HBox>
 
                     <!-- Tableau des exemplaires physiques -->
-                    <TableView fx:id="exemplaireTableView" VBox.vgrow="ALWAYS">
+                    <TableView fx:id="exemplaireTableView" VBox.vgrow="ALWAYS" minHeight="140">
                         <columns>
                             <TableColumn fx:id="colExId" text="N° ID" prefWidth="65"/>
                             <TableColumn fx:id="colExStatut" text="STATUT" prefWidth="110"/>
