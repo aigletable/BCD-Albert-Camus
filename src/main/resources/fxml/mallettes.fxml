@@ -217,6 +217,64 @@
                             </VBox>
                         </placeholder>
                     </TableView>
+
+                    <!-- 3. Fiche détaillée / Aperçu du livre sélectionné (comme dans l'onglet Livres) -->
+                    <VBox fx:id="cardBookPreview" visible="false" managed="false" spacing="8"
+                          style="-fx-background-color: #F8FAFC; -fx-border-color: #BFDBFE; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12;">
+
+                        <!-- En-tête de la carte d'aperçu -->
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <Label text="📖 Aperçu de l'ouvrage sélectionné"
+                                   style="-fx-font-weight: 800; -fx-font-size: 12px; -fx-text-fill: #1E3A8A;"/>
+                            <Label fx:id="lblPreviewExemplaireId" text="#--"
+                                   style="-fx-font-family: monospace; -fx-font-weight: 800; -fx-font-size: 11px; -fx-background-color: #DBEAFE; -fx-text-fill: #1D4ED8; -fx-padding: 1 6; -fx-background-radius: 4;"/>
+                            <Label fx:id="lblPreviewDispoBadge" text="DISPONIBLE"
+                                   style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-padding: 1 6; -fx-background-radius: 4; -fx-background-color: #DCFCE7; -fx-text-fill: #15803D;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="btnClosePreview" text="✕" onAction="#handleCloseBookPreview"
+                                    style="-fx-background-color: transparent; -fx-text-fill: #64748B; -fx-font-size: 11px; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 0 4;"/>
+                        </HBox>
+
+                        <HBox spacing="12" alignment="TOP_LEFT">
+                            <!-- Boîte Couverture -->
+                            <StackPane fx:id="previewCoverBox" minWidth="68" maxWidth="68" minHeight="92" maxHeight="92"
+                                       style="-fx-background-color: #E2E8F0; -fx-background-radius: 6; -fx-alignment: center;">
+                                <ImageView fx:id="imgPreviewCover" fitWidth="68" fitHeight="92" preserveRatio="true"/>
+                            </StackPane>
+
+                            <!-- Métadonnées & Résumé -->
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label fx:id="lblPreviewTitre" text="Titre du livre" wrapText="true"
+                                       style="-fx-font-weight: 800; -fx-font-size: 13.5px; -fx-text-fill: #0F172A;"/>
+                                <Label fx:id="lblPreviewAuteur" text="Auteur du livre" wrapText="true"
+                                       style="-fx-font-size: 11.5px; -fx-text-fill: #64748B; -fx-font-weight: 500;"/>
+
+                                <!-- Badges Genre, Thème, Niveau, ISBN -->
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <Label fx:id="lblPreviewGenre" text="Roman" styleClass="badge-genre"/>
+                                    <Label fx:id="lblPreviewTheme" text="Aventure" styleClass="badge-theme"/>
+                                    <Label fx:id="lblPreviewNiveau" text="Cycle 3" styleClass="badge-niveau"/>
+                                    <Label fx:id="lblPreviewIsbn" text="ISBN"
+                                           style="-fx-font-family: monospace; -fx-font-size: 10px; -fx-text-fill: #64748B; -fx-background-color: #F1F5F9; -fx-padding: 1 6; -fx-background-radius: 4;"/>
+                                </HBox>
+
+                                <!-- Résumé du livre -->
+                                <Label fx:id="lblPreviewDescription" text="Description..." wrapText="true"
+                                       style="-fx-font-size: 11px; -fx-text-fill: #475569; -fx-font-style: italic;"/>
+                            </VBox>
+                        </HBox>
+
+                        <!-- Actions : Ressources pédagogiques & Retrait -->
+                        <HBox spacing="8" alignment="CENTER_LEFT" style="-fx-padding: 4 0 0 0;">
+                            <Button fx:id="btnPreviewRessources" text="📚 Ressources pédagogiques (0)"
+                                    styleClass="btn-blue" onAction="#handlePreviewRessources"
+                                    style="-fx-font-size: 11px; -fx-font-weight: 700; -fx-cursor: hand;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="btnPreviewRetirer" text="❌ Retirer de la mallette"
+                                    styleClass="btn-outline" onAction="#handlePreviewRetirer"
+                                    style="-fx-font-size: 11px; -fx-text-fill: #DC2626; -fx-cursor: hand;"/>
+                        </HBox>
+                    </VBox>
                 </VBox>
 
             </VBox>

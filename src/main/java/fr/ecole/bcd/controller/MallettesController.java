@@ -1,9 +1,11 @@
 package fr.ecole.bcd.controller;
 
 import fr.ecole.bcd.MainApp;
+import fr.ecole.bcd.database.LivreDao;
 import fr.ecole.bcd.database.MalletteDao;
 import fr.ecole.bcd.database.UtilisateurDao;
 import fr.ecole.bcd.model.Exemplaire;
+import fr.ecole.bcd.model.Livre;
 import fr.ecole.bcd.model.Mallette;
 import fr.ecole.bcd.model.MalletteItem;
 import fr.ecole.bcd.service.EmpruntService.RegleMetierException;
@@ -13,6 +15,7 @@ import fr.ecole.bcd.service.MalletteService;
 import fr.ecole.bcd.service.RessourcePedagogiqueService;
 import fr.ecole.bcd.service.SoundService;
 import fr.ecole.bcd.view.AnimationHelper;
+import fr.ecole.bcd.view.CoverHelper;
 import fr.ecole.bcd.view.DialogHelper;
 import fr.ecole.bcd.view.RessourcesPedagogiquesDialog;
 import javafx.application.Platform;
@@ -25,16 +28,22 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 
 import java.io.File;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Contrôleur de l'onglet Mallettes Pédagogiques & Thématiques.
@@ -103,17 +112,37 @@ public class MallettesController {
     @FXML private TableColumn<MalletteItem, Void> colItemRessources;
     @FXML private TableColumn<MalletteItem, Void> colItemAction;
 
+    // ── Fiche Aperçu rapide du livre sélectionné ─────────────────────────
+    @FXML private VBox cardBookPreview;
+    @FXML private Label lblPreviewExemplaireId;
+    @FXML private Label lblPreviewDispoBadge;
+    @FXML private Button btnClosePreview;
+    @FXML private StackPane previewCoverBox;
+    @FXML private ImageView imgPreviewCover;
+    @FXML private Label lblPreviewTitre;
+    @FXML private Label lblPreviewAuteur;
+    @FXML private Label lblPreviewGenre;
+    @FXML private Label lblPreviewTheme;
+    @FXML private Label lblPreviewNiveau;
+    @FXML private Label lblPreviewIsbn;
+    @FXML private Label lblPreviewDescription;
+    @FXML private Button btnPreviewRessources;
+    @FXML private Button btnPreviewRetirer;
+
     // ── Services & DAOs ──────────────────────────────────────────────────
     private final MalletteService malletteService = new MalletteService();
     private final MalletteDao malletteDao = new MalletteDao();
+    private final LivreDao livreDao = new LivreDao();
     private final UtilisateurDao utilisateurDao = new UtilisateurDao();
     private final RessourcePedagogiqueService ressourceService = new RessourcePedagogiqueService();
+    private static final Map<String, Image> COVER_IMAGE_CACHE = new ConcurrentHashMap<>();
 
     private final ObservableList<Mallette> masterMallettes = FXCollections.observableArrayList();
     private FilteredList<Mallette> filteredMallettes;
     private final ObservableList<MalletteItem> currentItems = FXCollections.observableArrayList();
 
     private Mallette selectedMallette = null;
+    private MalletteItem selectedBookItem = null;
 
     // =====================================================================
     //  Initialisation
@@ -299,6 +328,37 @@ public class MallettesController {
         });
 
         itemsTable.setItems(currentItems);
+
+        // Clip d'arrondi sur la couverture de la fiche d'aperçu
+        if (imgPreviewCover != null) {
+            Rectangle clip = new Rectangle(68, 92);
+            clip.setArcWidth(8);
+            clip.setArcHeight(8);
+            imgPreviewCover.setClip(clip);
+        }
+
+        // Clic / Sélection d'un livre dans la mallette -> affichage de l'aperçu complet
+        itemsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
+            showBookPreview(newV);
+        });
+
+        // Double-clic sur un livre dans la mallette -> ouvre directement les ressources pédagogiques
+        itemsTable.setRowFactory(tv -> {
+            TableRow<MalletteItem> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    MalletteItem item = row.getItem();
+                    if (item != null) {
+                        RessourcesPedagogiquesDialog.openForLivre(item.getIsbn(), item.getTitre(), item.getAuteur(), () -> {
+                            refreshMalletteDetails();
+                            itemsTable.refresh();
+                            showBookPreview(item);
+                        });
+                    }
+                }
+            });
+            return row;
+        });
     }
 
     private void configureFilters() {
@@ -408,6 +468,7 @@ public class MallettesController {
             vboxDetailContent.setVisible(false);
             vboxDetailContent.setManaged(false);
             currentItems.clear();
+            showBookPreview(null);
             return;
         }
 
@@ -415,6 +476,7 @@ public class MallettesController {
         vboxEmptySelection.setManaged(false);
         vboxDetailContent.setVisible(true);
         vboxDetailContent.setManaged(true);
+        showBookPreview(null);
 
         lblDetailCode.setText(selectedMallette.getCode());
         lblDetailTitre.setText(selectedMallette.getTitre());
@@ -476,6 +538,157 @@ public class MallettesController {
             refreshMalletteDetails();
             itemsTable.refresh();
         });
+    }
+
+    // =====================================================================
+    //  Fiche Aperçu rapide du livre sélectionné dans la mallette
+    // =====================================================================
+
+    private void showBookPreview(MalletteItem item) {
+        if (cardBookPreview == null) return;
+        selectedBookItem = item;
+
+        if (item == null) {
+            cardBookPreview.setVisible(false);
+            cardBookPreview.setManaged(false);
+            return;
+        }
+
+        cardBookPreview.setVisible(true);
+        cardBookPreview.setManaged(true);
+
+        lblPreviewExemplaireId.setText("#" + item.getExemplaireId());
+
+        boolean dispo = item.getStatutExemplaire() == Exemplaire.Statut.DISPONIBLE;
+        lblPreviewDispoBadge.setText(dispo ? "En boîte" : "Prêté");
+        lblPreviewDispoBadge.setStyle(dispo
+                ? "-fx-background-color: #DCFCE7; -fx-text-fill: #15803D; -fx-font-size: 10px; -fx-padding: 1 6; -fx-background-radius: 4; -fx-font-weight: 700;"
+                : "-fx-background-color: #FEF3C7; -fx-text-fill: #B45309; -fx-font-size: 10px; -fx-padding: 1 6; -fx-background-radius: 4; -fx-font-weight: 700;");
+
+        lblPreviewTitre.setText(item.getTitre());
+        lblPreviewAuteur.setText(item.getAuteur() != null && !item.getAuteur().isBlank()
+                ? item.getAuteur() : "Auteur non renseigné");
+
+        String genre = item.getGenre() != null && !item.getGenre().isBlank() ? item.getGenre() : "–";
+        lblPreviewGenre.setText(genre);
+        lblPreviewGenre.getStyleClass().setAll("badge-genre", CoverHelper.getStyleForGenre(genre).badgeClass());
+
+        String theme = item.getTheme() != null && !item.getTheme().isBlank() ? item.getTheme() : "–";
+        lblPreviewTheme.setText(theme);
+
+        Livre livre = null;
+        try {
+            livre = livreDao.findByIsbn(item.getIsbn());
+        } catch (SQLException ignored) {}
+
+        if (livre != null) {
+            lblPreviewNiveau.setText(livre.getNiveau() != null && !livre.getNiveau().isBlank() ? livre.getNiveau() : "–");
+            lblPreviewIsbn.setText("ISBN : " + (livre.getIsbn() != null ? livre.getIsbn() : item.getIsbn()));
+            lblPreviewDescription.setText(livre.getDescription() != null && !livre.getDescription().isBlank()
+                    ? livre.getDescription() : "Aucun résumé renseigné.");
+            loadPreviewCover(livre);
+        } else {
+            lblPreviewNiveau.setText("–");
+            lblPreviewIsbn.setText("ISBN : " + item.getIsbn());
+            lblPreviewDescription.setText("Aucun résumé renseigné.");
+            Livre fakeLivre = new Livre(item.getIsbn(), item.getTitre(), item.getAuteur(), "", "", item.getGenre(), item.getTheme(), "", "");
+            loadPreviewCover(fakeLivre);
+        }
+
+        try {
+            int count = ressourceService.compterRessourcesParIsbn(item.getIsbn());
+            btnPreviewRessources.setText("📚 Ressources pédagogiques (" + count + ")");
+        } catch (Exception ex) {
+            btnPreviewRessources.setText("📚 Ressources pédagogiques (0)");
+        }
+    }
+
+    private void loadPreviewCover(Livre livre) {
+        if (previewCoverBox == null || imgPreviewCover == null) return;
+        previewCoverBox.getChildren().removeIf(n -> n != imgPreviewCover);
+
+        String url = livre != null ? livre.getCouvertureUrl() : null;
+        if (url != null && !url.isBlank()) {
+            Image cached = COVER_IMAGE_CACHE.get(url);
+            if (cached != null && !cached.isError()) {
+                imgPreviewCover.setImage(cached);
+                imgPreviewCover.setVisible(true);
+            } else {
+                imgPreviewCover.setImage(null);
+                imgPreviewCover.setVisible(false);
+                try {
+                    Image img = new Image(url, true);
+                    img.progressProperty().addListener((obs, oldV, progress) -> {
+                        if (progress.doubleValue() >= 1.0 && !img.isError()) {
+                            COVER_IMAGE_CACHE.put(url, img);
+                            Platform.runLater(() -> {
+                                previewCoverBox.getChildren().removeIf(n -> n != imgPreviewCover);
+                                imgPreviewCover.setImage(img);
+                                imgPreviewCover.setVisible(true);
+                            });
+                        }
+                    });
+                    img.errorProperty().addListener((obs, oldV, hasErr) -> {
+                        if (hasErr) {
+                            Platform.runLater(() -> {
+                                previewCoverBox.getChildren().removeIf(n -> n != imgPreviewCover);
+                                previewCoverBox.getChildren().add(0, CoverHelper.createStyledCover(livre, 68, 92));
+                            });
+                        }
+                    });
+                    imgPreviewCover.setImage(img);
+                    imgPreviewCover.setVisible(true);
+                } catch (Exception e) {
+                    imgPreviewCover.setImage(null);
+                    imgPreviewCover.setVisible(false);
+                    previewCoverBox.getChildren().add(0, CoverHelper.createStyledCover(livre, 68, 92));
+                }
+            }
+        } else {
+            imgPreviewCover.setImage(null);
+            imgPreviewCover.setVisible(false);
+            previewCoverBox.getChildren().add(0, CoverHelper.createStyledCover(livre, 68, 92));
+        }
+    }
+
+    @FXML
+    private void handleCloseBookPreview() {
+        itemsTable.getSelectionModel().clearSelection();
+        showBookPreview(null);
+    }
+
+    @FXML
+    private void handlePreviewRessources() {
+        if (selectedBookItem == null) return;
+        RessourcesPedagogiquesDialog.openForLivre(
+                selectedBookItem.getIsbn(), selectedBookItem.getTitre(), selectedBookItem.getAuteur(),
+                () -> {
+                    refreshMalletteDetails();
+                    itemsTable.refresh();
+                    showBookPreview(selectedBookItem);
+                }
+        );
+    }
+
+    @FXML
+    private void handlePreviewRetirer() {
+        if (selectedBookItem != null && selectedMallette != null) {
+            boolean confirm = DialogHelper.showConfirmation(
+                    "Retirer l'ouvrage",
+                    "Retirer de la mallette",
+                    "Voulez-vous retirer '" + selectedBookItem.getTitre() + "' (ex. #" + selectedBookItem.getExemplaireId() + ") de cette mallette ?"
+            );
+            if (confirm) {
+                try {
+                    malletteService.retirerLivre(selectedMallette.getId(), selectedBookItem.getExemplaireId());
+                    showBookPreview(null);
+                    refreshMalletteDetails();
+                    loadDataKeepSelection();
+                } catch (SQLException ex) {
+                    showError("Erreur", ex.getMessage());
+                }
+            }
+        }
     }
 
     // =====================================================================
