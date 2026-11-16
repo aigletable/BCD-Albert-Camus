@@ -236,11 +236,9 @@
                         </HBox>
 
                         <HBox spacing="12" alignment="TOP_LEFT">
-                            <!-- Boîte Couverture -->
-                            <StackPane fx:id="previewCoverBox" minWidth="68" maxWidth="68" minHeight="92" maxHeight="92"
-                                       style="-fx-background-color: #E2E8F0; -fx-background-radius: 6; -fx-alignment: center;">
-                                <ImageView fx:id="imgPreviewCover" fitWidth="68" fitHeight="92" preserveRatio="true"/>
-                            </StackPane>
+                            <!-- Boîte Couverture (vectorielle ou image avec repli garanti) -->
+                            <StackPane fx:id="previewCoverBox" minWidth="76" maxWidth="76" minHeight="104" maxHeight="104"
+                                       style="-fx-background-color: #E2E8F0; -fx-background-radius: 8; -fx-alignment: center;"/>
 
                             <!-- Métadonnées & Résumé -->
                             <VBox spacing="4" HBox.hgrow="ALWAYS">

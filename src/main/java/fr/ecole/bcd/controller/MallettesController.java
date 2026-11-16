@@ -118,7 +118,6 @@ public class MallettesController {
     @FXML private Label lblPreviewDispoBadge;
     @FXML private Button btnClosePreview;
     @FXML private StackPane previewCoverBox;
-    @FXML private ImageView imgPreviewCover;
     @FXML private Label lblPreviewTitre;
     @FXML private Label lblPreviewAuteur;
     @FXML private Label lblPreviewGenre;
@@ -329,12 +328,12 @@ public class MallettesController {
 
         itemsTable.setItems(currentItems);
 
-        // Clip d'arrondi sur la couverture de la fiche d'aperçu
-        if (imgPreviewCover != null) {
-            Rectangle clip = new Rectangle(68, 92);
+        // Clip d'arrondi sur la boîte de couverture
+        if (previewCoverBox != null) {
+            Rectangle clip = new Rectangle(76, 104);
             clip.setArcWidth(8);
             clip.setArcHeight(8);
-            imgPreviewCover.setClip(clip);
+            previewCoverBox.setClip(clip);
         }
 
         // Clic / Sélection d'un livre dans la mallette -> affichage de l'aperçu complet
@@ -342,18 +341,22 @@ public class MallettesController {
             showBookPreview(newV);
         });
 
-        // Double-clic sur un livre dans la mallette -> ouvre directement les ressources pédagogiques
+        // Clic simple = mise à jour immédiate de l'aperçu, Double-clic = ouverture des ressources pédagogiques
         itemsTable.setRowFactory(tv -> {
             TableRow<MalletteItem> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
-                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                if (!row.isEmpty()) {
                     MalletteItem item = row.getItem();
-                    if (item != null) {
-                        RessourcesPedagogiquesDialog.openForLivre(item.getIsbn(), item.getTitre(), item.getAuteur(), () -> {
-                            refreshMalletteDetails();
-                            itemsTable.refresh();
-                            showBookPreview(item);
-                        });
+                    if (event.getClickCount() == 1) {
+                        showBookPreview(item);
+                    } else if (event.getClickCount() == 2) {
+                        if (item != null) {
+                            RessourcesPedagogiquesDialog.openForLivre(item.getIsbn(), item.getTitre(), item.getAuteur(), () -> {
+                                refreshMalletteDetails();
+                                itemsTable.refresh();
+                                showBookPreview(item);
+                            });
+                        }
                     }
                 }
             });
@@ -526,6 +529,15 @@ public class MallettesController {
                 int totalRessources = ressourceService.compterRessourcesPourMallette(selectedMallette.getId());
                 btnRessourcesMallette.setText("📚 Ressources" + (totalRessources > 0 ? " (" + totalRessources + ")" : ""));
             }
+
+            if (!items.isEmpty()) {
+                if (selectedBookItem == null) {
+                    itemsTable.getSelectionModel().select(0);
+                    showBookPreview(items.get(0));
+                }
+            } else {
+                showBookPreview(null);
+            }
         } catch (SQLException e) {
             showError("Erreur de chargement des livres", e.getMessage());
         }
@@ -604,50 +616,57 @@ public class MallettesController {
     }
 
     private void loadPreviewCover(Livre livre) {
-        if (previewCoverBox == null || imgPreviewCover == null) return;
-        previewCoverBox.getChildren().removeIf(n -> n != imgPreviewCover);
+        if (previewCoverBox == null) return;
+        previewCoverBox.getChildren().clear();
 
-        String url = livre != null ? livre.getCouvertureUrl() : null;
+        // 1. Appliquer le clip arrondi sur la boîte conteneur
+        Rectangle clip = new Rectangle(76, 104);
+        clip.setArcWidth(8);
+        clip.setArcHeight(8);
+        previewCoverBox.setClip(clip);
+
+        // 2. Afficher immédiatement la couverture vectorielle de qualité Apple Books (JAMAIS de vide !)
+        StackPane placeholderCover = CoverHelper.createStyledCover(livre, 76, 104);
+        previewCoverBox.getChildren().setAll(placeholderCover);
+
+        // 3. Charger l'image réelle si une URL valide existe
+        String url = (livre != null) ? livre.getCouvertureUrl() : null;
         if (url != null && !url.isBlank()) {
             Image cached = COVER_IMAGE_CACHE.get(url);
-            if (cached != null && !cached.isError()) {
-                imgPreviewCover.setImage(cached);
-                imgPreviewCover.setVisible(true);
+            if (cached != null) {
+                if (!cached.isError()) {
+                    ImageView iv = new ImageView(cached);
+                    iv.setFitWidth(76);
+                    iv.setFitHeight(104);
+                    iv.setPreserveRatio(true);
+                    iv.setSmooth(true);
+                    previewCoverBox.getChildren().setAll(iv);
+                }
             } else {
-                imgPreviewCover.setImage(null);
-                imgPreviewCover.setVisible(false);
                 try {
                     Image img = new Image(url, true);
                     img.progressProperty().addListener((obs, oldV, progress) -> {
                         if (progress.doubleValue() >= 1.0 && !img.isError()) {
                             COVER_IMAGE_CACHE.put(url, img);
                             Platform.runLater(() -> {
-                                previewCoverBox.getChildren().removeIf(n -> n != imgPreviewCover);
-                                imgPreviewCover.setImage(img);
-                                imgPreviewCover.setVisible(true);
+                                if (selectedBookItem != null && livre != null && livre.getIsbn().equals(selectedBookItem.getIsbn())) {
+                                    ImageView iv = new ImageView(img);
+                                    iv.setFitWidth(76);
+                                    iv.setFitHeight(104);
+                                    iv.setPreserveRatio(true);
+                                    iv.setSmooth(true);
+                                    previewCoverBox.getChildren().setAll(iv);
+                                }
                             });
                         }
                     });
                     img.errorProperty().addListener((obs, oldV, hasErr) -> {
                         if (hasErr) {
-                            Platform.runLater(() -> {
-                                previewCoverBox.getChildren().removeIf(n -> n != imgPreviewCover);
-                                previewCoverBox.getChildren().add(0, CoverHelper.createStyledCover(livre, 68, 92));
-                            });
+                            COVER_IMAGE_CACHE.put(url, img);
                         }
                     });
-                    imgPreviewCover.setImage(img);
-                    imgPreviewCover.setVisible(true);
-                } catch (Exception e) {
-                    imgPreviewCover.setImage(null);
-                    imgPreviewCover.setVisible(false);
-                    previewCoverBox.getChildren().add(0, CoverHelper.createStyledCover(livre, 68, 92));
-                }
+                } catch (Exception ignored) {}
             }
-        } else {
-            imgPreviewCover.setImage(null);
-            imgPreviewCover.setVisible(false);
-            previewCoverBox.getChildren().add(0, CoverHelper.createStyledCover(livre, 68, 92));
         }
     }
 
