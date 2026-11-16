@@ -63,7 +63,8 @@ fr.ecole.bcd/
 │   └── CsvImportService.java          ← Import CSV flexible (élèves / enseignants)
 ├── controller/
 │   ├── PretsController.java           ← Contrôleur onglet Prêts & Retours (Retour rapide, Prêt, Retards, Panier)
-│   ├── InventaireController.java      ← Contrôleur catalogue & livres (Allégé de 4057 à 2276 lignes)
+│   ├── InventaireController.java      ← Contrôleur catalogue & livres
+│   ├── EtiquettesController.java      ← Contrôleur page dédiée Étiquettes (tableau à cocher, qté exemplaires, recherche rapide)
 │   ├── UtilisateursController.java    ← Contrôleur utilisateurs & passage d'année scolaire
 │   ├── RecolementController.java      ← Contrôleur récolement physique & inventaire
 │   └── MallettesController.java       ← Contrôleur mallettes thématiques & séries
@@ -79,6 +80,7 @@ resources/
 ├── css/app.css                        ← Styles personnalisés (thème, badges, fiches, statut)
 ├── fxml/prets.fxml                    ← Écran Prêts & Retours (Bandeau retour rapide + tableau)
 ├── fxml/inventaire.fxml               ← Écran Inventaire & Livres (SplitPane catalogue + fiche)
+├── fxml/etiquettes.fxml               ← Écran dédié Impression Étiquettes (tableau à cocher + réglages planche A4)
 ├── fxml/utilisateurs.fxml             ← Écran Utilisateurs (avec bouton import CSV)
 └── sql/schema.sql                     ← Schéma de la base de données
 ```
@@ -171,6 +173,15 @@ resources/
   - Nouvel emprunt assisté avec contrôle des quotas et alertes retards.
   - Prolongation de prêt (+7j) avec renouvellement unique.
 - [x] `PretsController.java` — contrôleur avec gestion douchette multi-formats et export CSV des retards.
+
+### Interface Étiquettes & Codes-barres (Page dédiée ✅)
+- [x] `etiquettes.fxml` & `EtiquettesController.java` — **Page dédiée complète d'impression d'étiquettes** :
+  - **Tableau à cocher interactif** : sélection simple et visuelle des livres à imprimer.
+  - **Gestion intelligente des exemplaires multiples** : dialogue automatique demandant si l'on souhaite imprimer tous les exemplaires ou une quantité précise (`[Tous]`, `[1 seul]`, `[Personnaliser...]`), avec Spinner ajustable directement sur la ligne.
+  - **Recherche & Ajout ultra-rapide** : saisie du titre ou scan ISBN + touche <kbd>Entrée</kbd> ➔ livre trouvé, coché et validé instantanément (« tape le nom, valide et ça part »).
+  - **Génération directe A4** : choix du format de planche (Standard 24, Avery 21, Compact 30, Grand 14, Tranches 65), gestion de l'offset anti-gaspillage, en-tête d'école personnalisable et aperçu temps réel.
+  - **Bouton d'impression en 1 clic** : ouvre la planche haute précision prête à imprimer dans le navigateur par défaut.
+
 
 ### Tests
 - [x] `SmokeTest.java` — **119 tests fonctionnels, 100% passés** ✅
