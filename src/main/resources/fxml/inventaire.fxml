@@ -30,6 +30,8 @@
 
         <Button fx:id="btnBoiteVerif" text="📦 Boîte à vérifier" styleClass="btn-outline"
                 onAction="#handleOpenBoiteVerification"/>
+        <Button fx:id="btnAddByTitle" text="📖 Par Titre (sans ISBN)" styleClass="btn-outline"
+                onAction="#handleAddByTitle"/>
         <Button fx:id="btnAddLivre" text="➕ Ajouter un livre" styleClass="btn-blue"
                 onAction="#handleAddLivre"/>
         <Button fx:id="btnImportCsv" text="📥 Importer" styleClass="btn-outline"
@@ -38,6 +40,7 @@
         <!-- Menu déroulant "Plus v" regroupant les outils secondaires -->
         <MenuButton text="Plus ▾" styleClass="btn-outline">
             <items>
+                <MenuItem text="📖 Ajouter par Titre / Auteur (sans ISBN)" onAction="#handleAddByTitle"/>
                 <MenuItem text="📦 Boîte à vérifier &amp; anomalies de stock" onAction="#handleOpenBoiteVerification"/>
                 <MenuItem text="⚡ Mode Douchette (Ajout rapide)" onAction="#handleModeDouchette"/>
                 <MenuItem text="🏷️ Imprimer Étiquettes cotes/barres" onAction="#handleEtiquettes"/>

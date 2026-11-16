@@ -26,6 +26,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.Window;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -225,7 +226,11 @@ public final class DouchetteDialogHelper {
         spinner.setPrefSize(20, 20);
         spinner.setVisible(false);
 
-        HBox topInputBox = new HBox(10, scanField, spinner);
+        Button btnSansCode = new Button("📖 Sans code-barres (Titre / Auteur)");
+        btnSansCode.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #1e293b; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-font-weight: bold; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 9 14;");
+        btnSansCode.setTooltip(new Tooltip("Ajouter un livre sans code-barres (recherche par titre/auteur avec fiche de vérification et code BCD sans quitter le Mode Douchette)"));
+
+        HBox topInputBox = new HBox(10, scanField, btnSansCode, spinner);
         HBox.setHgrow(scanField, Priority.ALWAYS);
         topInputBox.setAlignment(Pos.CENTER_LEFT);
 
@@ -381,6 +386,50 @@ public final class DouchetteDialogHelper {
         Button btnUndoLast = new Button("↩️ Annuler dernier scan (Ctrl+Z)");
         btnUndoLast.setStyle("-fx-background-color: #fff; -fx-border-color: #d0d7de; -fx-border-radius: 6; -fx-font-size: 12px; -fx-cursor: hand; -fx-font-weight: bold;");
         btnUndoLast.setOnAction(e -> undoLastScan(sessionItems, lblSessionTotal, lblFeedback, scanField, exemplaireDao));
+
+        btnSansCode.setOnAction(e -> {
+            Window owner = dialog.getDialogPane().getScene() != null ? dialog.getDialogPane().getScene().getWindow() : null;
+            LivreVerificationDialogHelper.openAddByTitleDialog(
+                    owner,
+                    livreDao,
+                    exemplaireDao,
+                    boiteVerificationDao,
+                    metadataService,
+                    null,
+                    null,
+                    newLivre -> {
+                        if (newLivre == null) return;
+                        try {
+                            List<Exemplaire> exList = exemplaireDao.findByIsbn(newLivre.getIsbn());
+                            int exId = !exList.isEmpty() ? exList.get(exList.size() - 1).getId() : -1;
+                            String timeStr = java.time.LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                            DouchetteSessionItem item = new DouchetteSessionItem(
+                                    newLivre.getIsbn(),
+                                    newLivre.getTitre(),
+                                    newLivre.getAuteur() != null ? newLivre.getAuteur() : "",
+                                    newLivre.getEditeur() != null ? newLivre.getEditeur() : "",
+                                    exId,
+                                    "Titre / Manuel",
+                                    newLivre.getCouvertureUrl(),
+                                    timeStr,
+                                    "🟢 Bon état",
+                                    newLivre.getGenre(),
+                                    newLivre.getTheme(),
+                                    newLivre.getNiveau()
+                            );
+                            sessionItems.add(0, item);
+                            lblSessionTotal.setText("📦 " + sessionItems.size() + " livre(s) scanné(s) dans cette session");
+                            lblFeedback.setText("✅ Livre sans code-barres '" + newLivre.getTitre() + "' ajouté (Code: " + newLivre.getIsbn() + ", Ex. #" + exId + ").");
+                            lblFeedback.setStyle("-fx-font-size: 12px; -fx-text-fill: #166534; -fx-font-weight: bold;");
+                            SoundService.playSuccess();
+                            AnimationHelper.flashSuccess(scanField);
+                            Platform.runLater(scanField::requestFocus);
+                        } catch (Exception ex) {
+                            DialogHelper.showError("Erreur", "Erreur lors de l'ajout à la session : " + ex.getMessage());
+                        }
+                    }
+            );
+        });
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);

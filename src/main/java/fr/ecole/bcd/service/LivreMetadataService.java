@@ -18,6 +18,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -234,6 +235,395 @@ public class LivreMetadataService {
                 result.getAgeMention(),
                 result.getPageCount()
         );
+    }
+
+    // =====================================================================
+    //  Point d'entrée : Recherche par Titre & Auteur (sans ISBN)
+    // =====================================================================
+
+    /**
+     * Recherche des correspondances bibliographiques par Titre et Auteur (sans ISBN).
+     * <p>
+     * Interroge en cascade :
+     * <ol>
+     *   <li><b>OpenLibrary Search API</b> : rapide, sans quota journalier bloquant, renvoie les ISBN officiels et couvertures.</li>
+     *   <li><b>Google Books API</b> : si accessible sans quota.</li>
+     *   <li><b>BNF SRU (Unimarc)</b> : catalogue national officiel avec classification précise.</li>
+     *   <li><b>Génération locale intelligente</b> : si réseau indisponible ou aucun résultat,
+     *       génère une proposition de fiche avec classification automatique.</li>
+     * </ol>
+     * </p>
+     *
+     * @param titre       titre ou mots-clés de l'ouvrage (obligatoire ou partiel)
+     * @param auteur      nom ou prénom de l'auteur (facultatif)
+     * @param maxResults  nombre maximal de résultats souhaités (1 à 10)
+     * @return une liste de résultats bibliographiques classés
+     */
+    public List<MetadataResult> rechercherParTitreAuteur(String titre, String auteur, int maxResults) {
+        String cleanTitre = titre != null ? titre.trim() : "";
+        String cleanAuteur = auteur != null ? auteur.trim() : "";
+        if (cleanTitre.isEmpty() && cleanAuteur.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        int limit = Math.max(1, Math.min(maxResults, 10));
+        List<MetadataResult> results = new ArrayList<>();
+
+        // 1. OpenLibrary Search API (prioritaire car pas de rate-limiting strict et données riches)
+        try {
+            List<MetadataResult> olResults = fetchFromOpenLibraryByTitleAuthor(cleanTitre, cleanAuteur, limit);
+            if (olResults != null && !olResults.isEmpty()) {
+                results.addAll(olResults);
+            }
+        } catch (Exception ignored) {}
+
+        // 2. Google Books API (si pas assez de résultats et service dispo)
+        if (results.size() < limit) {
+            try {
+                int needed = limit - results.size();
+                List<MetadataResult> gResults = fetchFromGoogleByTitleAuthor(cleanTitre, cleanAuteur, needed);
+                if (gResults != null) {
+                    for (MetadataResult gr : gResults) {
+                        boolean exists = results.stream().anyMatch(r ->
+                                r.getTitre().equalsIgnoreCase(gr.getTitre()) ||
+                                (!r.getIsbn().isEmpty() && r.getIsbn().equalsIgnoreCase(gr.getIsbn()))
+                        );
+                        if (!exists) {
+                            results.add(gr);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 3. BNF SRU (fonds français de référence)
+        if (results.size() < limit) {
+            try {
+                int needed = limit - results.size();
+                List<MetadataResult> bnfResults = fetchFromBnfByTitleAuthor(cleanTitre, cleanAuteur, needed);
+                if (bnfResults != null) {
+                    for (MetadataResult br : bnfResults) {
+                        boolean exists = results.stream().anyMatch(r ->
+                                r.getTitre().equalsIgnoreCase(br.getTitre()) ||
+                                (!r.getIsbn().isEmpty() && r.getIsbn().equalsIgnoreCase(br.getIsbn()))
+                        );
+                        if (!exists) {
+                            results.add(br);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 4. Si aucune source en ligne n'a répondu (ou hors-ligne), générer au moins une notice locale intelligente
+        if (results.isEmpty()) {
+            String t = !cleanTitre.isEmpty() ? cleanTitre : "Ouvrage sans titre";
+            LivreClassificationService.ClassificationResult cr = classifier.classifySimple(t, cleanAuteur, "", "");
+            results.add(new MetadataResult(
+                    "",
+                    t,
+                    cleanAuteur,
+                    "",
+                    "",
+                    "",
+                    "Local / Manuel",
+                    cr.getGenre(),
+                    cr.getTheme(),
+                    cr.getNiveau(),
+                    "",
+                    "",
+                    Collections.emptyList(),
+                    "",
+                    "",
+                    0
+            ));
+        }
+
+        return results;
+    }
+
+    public List<MetadataResult> fetchFromOpenLibraryByTitleAuthor(String titre, String auteur, int maxResults) {
+        List<MetadataResult> list = new ArrayList<>();
+        try {
+            StringBuilder q = new StringBuilder("https://openlibrary.org/search.json?");
+            List<String> params = new ArrayList<>();
+            if (titre != null && !titre.isBlank()) {
+                params.add("title=" + URLEncoder.encode(titre.trim(), StandardCharsets.UTF_8));
+            }
+            if (auteur != null && !auteur.isBlank()) {
+                params.add("author=" + URLEncoder.encode(auteur.trim(), StandardCharsets.UTF_8));
+            }
+            params.add("limit=" + Math.max(1, Math.min(maxResults, 10)));
+            params.add("fields=title,author_name,publisher,first_publish_year,isbn,cover_i,subject");
+            q.append(String.join("&", params));
+
+            HttpRequest request = HttpRequest.newBuilder(URI.create(q.toString()))
+                    .header("User-Agent", USER_AGENT)
+                    .timeout(TIMEOUT)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) return list;
+
+            JSONObject json = new JSONObject(response.body());
+            if (!json.has("docs")) return list;
+            JSONArray docs = json.getJSONArray("docs");
+
+            for (int i = 0; i < docs.length(); i++) {
+                JSONObject doc = docs.getJSONObject(i);
+                String docTitle = doc.optString("title", "");
+                if (docTitle.isBlank()) continue;
+
+                String docAuthor = "";
+                if (doc.has("author_name")) {
+                    JSONArray aArr = doc.getJSONArray("author_name");
+                    List<String> aList = new ArrayList<>();
+                    for (int j = 0; j < Math.min(aArr.length(), 3); j++) {
+                        aList.add(aArr.getString(j));
+                    }
+                    docAuthor = String.join(", ", aList);
+                }
+
+                String docPublisher = "";
+                if (doc.has("publisher")) {
+                    JSONArray pArr = doc.getJSONArray("publisher");
+                    if (pArr.length() > 0) docPublisher = pArr.getString(0);
+                }
+
+                String docYear = doc.has("first_publish_year") ? String.valueOf(doc.getInt("first_publish_year")) : "";
+
+                String foundIsbn = "";
+                if (doc.has("isbn")) {
+                    JSONArray iArr = doc.getJSONArray("isbn");
+                    for (int j = 0; j < iArr.length(); j++) {
+                        String is = iArr.getString(j).replaceAll("[^0-9Xx]", "");
+                        if (is.length() == 13) {
+                            foundIsbn = is;
+                            break;
+                        }
+                    }
+                    if (foundIsbn.isEmpty() && iArr.length() > 0) {
+                        foundIsbn = iArr.getString(0).replaceAll("[^0-9Xx]", "");
+                    }
+                }
+
+                String coverUrl = "";
+                if (doc.has("cover_i")) {
+                    long coverId = doc.optLong("cover_i", 0);
+                    if (coverId > 0) {
+                        coverUrl = "https://covers.openlibrary.org/b/id/" + coverId + "-M.jpg";
+                    }
+                }
+
+                List<String> subjects = new ArrayList<>();
+                if (doc.has("subject")) {
+                    JSONArray sArr = doc.getJSONArray("subject");
+                    for (int j = 0; j < Math.min(sArr.length(), 6); j++) {
+                        subjects.add(sArr.getString(j));
+                    }
+                }
+
+                LivreClassificationService.ClassificationResult cr = classifier.classify(
+                        docTitle, docAuthor, docPublisher, "", subjects, "", "", "", 0
+                );
+
+                list.add(new MetadataResult(foundIsbn, docTitle, docAuthor, docPublisher, docYear, coverUrl, "OpenLibrary",
+                        cr.getGenre(), cr.getTheme(), cr.getNiveau(), "", "", subjects, "", "", 0));
+            }
+        } catch (Exception ignored) {}
+        return list;
+    }
+
+    public List<MetadataResult> fetchFromGoogleByTitleAuthor(String titre, String auteur, int maxResults) {
+        List<MetadataResult> list = new ArrayList<>();
+        try {
+            StringBuilder q = new StringBuilder();
+            if (titre != null && !titre.isBlank()) {
+                q.append("intitle:").append(titre.trim());
+            }
+            if (auteur != null && !auteur.isBlank()) {
+                if (q.length() > 0) q.append("+");
+                q.append("inauthor:").append(auteur.trim());
+            }
+            String encodedQ = URLEncoder.encode(q.toString(), StandardCharsets.UTF_8);
+            String url = "https://www.googleapis.com/books/v1/volumes?q=" + encodedQ
+                    + "&langRestrict=fr&maxResults=" + Math.max(1, Math.min(maxResults, 10));
+
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                    .header("User-Agent", USER_AGENT)
+                    .timeout(TIMEOUT)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) return list;
+
+            JSONObject json = new JSONObject(response.body());
+            if (json.optInt("totalItems", 0) == 0 || !json.has("items")) return list;
+
+            JSONArray items = json.getJSONArray("items");
+            for (int i = 0; i < items.length(); i++) {
+                JSONObject volumeInfo = items.getJSONObject(i).getJSONObject("volumeInfo");
+                String docTitle = volumeInfo.optString("title", "");
+                if (docTitle.isBlank()) continue;
+
+                List<String> authors = new ArrayList<>();
+                if (volumeInfo.has("authors")) {
+                    JSONArray arr = volumeInfo.getJSONArray("authors");
+                    for (int j = 0; j < arr.length(); j++) authors.add(arr.getString(j).trim());
+                }
+                String docAuthor = String.join(", ", authors);
+                String docPublisher = volumeInfo.optString("publisher", "");
+                String docDate = volumeInfo.optString("publishedDate", "");
+                String docDesc = volumeInfo.optString("description", "");
+                int pageCount = volumeInfo.optInt("pageCount", 0);
+
+                String foundIsbn = "";
+                if (volumeInfo.has("industryIdentifiers")) {
+                    JSONArray idArr = volumeInfo.getJSONArray("industryIdentifiers");
+                    for (int j = 0; j < idArr.length(); j++) {
+                        JSONObject idObj = idArr.getJSONObject(j);
+                        String type = idObj.optString("type", "");
+                        String val = idObj.optString("identifier", "");
+                        if ("ISBN_13".equalsIgnoreCase(type)) {
+                            foundIsbn = val;
+                            break;
+                        } else if (foundIsbn.isEmpty() && "ISBN_10".equalsIgnoreCase(type)) {
+                            foundIsbn = val;
+                        }
+                    }
+                }
+
+                String coverUrl = "";
+                if (volumeInfo.has("imageLinks")) {
+                    JSONObject img = volumeInfo.getJSONObject("imageLinks");
+                    coverUrl = img.optString("thumbnail", img.optString("smallThumbnail", ""));
+                    coverUrl = coverUrl.replace("http://", "https://");
+                }
+
+                List<String> subjects = new ArrayList<>();
+                if (volumeInfo.has("categories")) {
+                    JSONArray arr = volumeInfo.getJSONArray("categories");
+                    for (int j = 0; j < arr.length(); j++) subjects.add(arr.getString(j).trim());
+                }
+
+                LivreClassificationService.ClassificationResult cr = classifier.classify(
+                        docTitle, docAuthor, docPublisher, "", subjects, "", "", docDesc, pageCount
+                );
+
+                list.add(new MetadataResult(foundIsbn, docTitle, docAuthor, docPublisher, docDate, coverUrl, "GoogleBooks",
+                        cr.getGenre(), cr.getTheme(), cr.getNiveau(), docDesc, "", subjects, "", "", pageCount));
+            }
+        } catch (Exception ignored) {}
+        return list;
+    }
+
+    public List<MetadataResult> fetchFromBnfByTitleAuthor(String titre, String auteur, int maxResults) {
+        List<MetadataResult> list = new ArrayList<>();
+        try {
+            StringBuilder query = new StringBuilder();
+            if (titre != null && !titre.isBlank() && auteur != null && !auteur.isBlank()) {
+                query.append("(bib.title all \"").append(titre.replace("\"", "")).append("\" and bib.author all \"").append(auteur.replace("\"", "")).append("\")");
+            } else if (titre != null && !titre.isBlank()) {
+                query.append("(bib.title all \"").append(titre.replace("\"", "")).append("\")");
+            } else if (auteur != null && !auteur.isBlank()) {
+                query.append("(bib.author all \"").append(auteur.replace("\"", "")).append("\")");
+            } else {
+                return list;
+            }
+
+            String url = "https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&query="
+                    + URLEncoder.encode(query.toString(), StandardCharsets.UTF_8)
+                    + "&recordSchema=unimarcxchange&maximumRecords=" + Math.max(1, Math.min(maxResults, 10));
+
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                    .header("User-Agent", USER_AGENT)
+                    .timeout(TIMEOUT)
+                    .GET()
+                    .build();
+
+            HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() != 200 || response.body().length == 0) return list;
+
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
+            Document doc = dbf.newDocumentBuilder().parse(new ByteArrayInputStream(response.body()));
+
+            NodeList records = doc.getElementsByTagNameNS("*", "recordData");
+            if (records.getLength() == 0) records = doc.getElementsByTagName("srw:recordData");
+
+            for (int r = 0; r < records.getLength(); r++) {
+                Element rec = (Element) records.item(r);
+                NodeList dfNodes = rec.getElementsByTagNameNS("*", "datafield");
+                if (dfNodes.getLength() == 0) dfNodes = rec.getElementsByTagName("mxc:datafield");
+
+                String docTitle = "";
+                List<String> auteursList = new ArrayList<>();
+                String docEditeur = "";
+                String docDate = "";
+                String foundIsbn = "";
+                String collection = "";
+                String description = "";
+                String ageMention = "";
+                List<String> subjects = new ArrayList<>();
+                String dewey = "";
+                int pageCount = 0;
+
+                for (int i = 0; i < dfNodes.getLength(); i++) {
+                    Element df = (Element) dfNodes.item(i);
+                    String tag = df.getAttribute("tag");
+                    NodeList sfList = df.getElementsByTagNameNS("*", "subfield");
+                    if (sfList.getLength() == 0) sfList = df.getElementsByTagName("mxc:subfield");
+
+                    for (int j = 0; j < sfList.getLength(); j++) {
+                        Element sf = (Element) sfList.item(j);
+                        String code = sf.getAttribute("code");
+                        String text = sf.getTextContent().trim();
+
+                        if ("010".equals(tag) && "a".equals(code) && foundIsbn.isEmpty()) {
+                            foundIsbn = cleanIsbn(text);
+                        } else if ("073".equals(tag) && "a".equals(code) && foundIsbn.isEmpty()) {
+                            foundIsbn = cleanIsbn(text);
+                        } else if ("200".equals(tag)) {
+                            if ("a".equals(code) && docTitle.isEmpty()) docTitle = cleanTitle(text);
+                            else if ("f".equals(code)) auteursList.add(cleanAuthor(text));
+                        } else if ("210".equals(tag)) {
+                            if ("c".equals(code) && docEditeur.isEmpty()) docEditeur = cleanPublisher(text);
+                            else if ("d".equals(code) && docDate.isEmpty()) docDate = text;
+                        } else if ("215".equals(tag) && "a".equals(code)) {
+                            Matcher m = Pattern.compile("(\\d+)\\s*p").matcher(text);
+                            if (m.find()) {
+                                try { pageCount = Integer.parseInt(m.group(1)); } catch (Exception ignored) {}
+                            }
+                        } else if (("225".equals(tag) || "461".equals(tag)) && ("a".equals(code) || "t".equals(code))) {
+                            if (collection.isEmpty()) collection = text;
+                        } else if (("329".equals(tag) || "330".equals(tag)) && "a".equals(code)) {
+                            if (description.isEmpty()) description = text;
+                        } else if ("333".equals(tag) && "a".equals(code)) {
+                            if (ageMention.isEmpty()) ageMention = text;
+                        } else if (("606".equals(tag) || "608".equals(tag)) && "a".equals(code)) {
+                            subjects.add(text);
+                        } else if (("676".equals(tag) || "686".equals(tag)) && "a".equals(code)) {
+                            if (dewey.isEmpty()) dewey = text;
+                        } else if ("700".equals(tag) && "a".equals(code)) {
+                            String aut = cleanAuthor(text);
+                            if (!aut.isEmpty() && !auteursList.contains(aut)) auteursList.add(aut);
+                        }
+                    }
+                }
+
+                if (!docTitle.isEmpty()) {
+                    String docAuteur = String.join(", ", auteursList);
+                    LivreClassificationService.ClassificationResult cr = classifier.classify(
+                            docTitle, docAuteur, docEditeur, collection, subjects, dewey, ageMention, description, pageCount
+                    );
+                    list.add(new MetadataResult(foundIsbn, docTitle, docAuteur, docEditeur, docDate, "", "BNF",
+                            cr.getGenre(), cr.getTheme(), cr.getNiveau(), description, collection, subjects, dewey, ageMention, pageCount));
+                }
+            }
+        } catch (Exception ignored) {}
+        return list;
     }
 
     // =====================================================================

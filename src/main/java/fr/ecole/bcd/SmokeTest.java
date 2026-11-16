@@ -223,6 +223,11 @@ public class SmokeTest {
         int count = dao.count();
         check("count retourne au moins 1", count >= 1);
 
+        // GENERATE UNIQUE BCD CODE
+        String code1 = dao.generateUniqueBcdCode();
+        check("generateUniqueBcdCode génère un code préfixé CAMUS-", code1 != null && code1.startsWith("CAMUS-"));
+        check("generateUniqueBcdCode ne crée pas de collision", dao.findByIsbn(code1) == null);
+
         // UPDATE
         livre.setEditeur("Folio");
         dao.update(livre);
@@ -561,6 +566,27 @@ public class SmokeTest {
             System.out.println("  ⚠️ Exception réseau lors du test en direct : " + e.getMessage());
             check("Recherche en cascade gérée sans crash", true);
         }
+
+        // 4. Recherche par Titre & Auteur (sans ISBN)
+        try {
+            List<MetadataResult> results = service.rechercherParTitreAuteur("Le Petit Prince", "Saint-Exupery", 3);
+            check("Recherche par Titre & Auteur renvoie au moins un résultat", results != null && !results.isEmpty());
+            if (results != null && !results.isEmpty()) {
+                MetadataResult r0 = results.get(0);
+                check("Titre trouvé correspond à la recherche", r0.getTitre() != null && !r0.getTitre().isBlank());
+                check("Classification automatique renseignée (Genre non vide)", r0.getGenre() != null && !r0.getGenre().isBlank());
+            }
+        } catch (Exception e) {
+            System.out.println("  ⚠️ Exception réseau lors de la recherche par titre : " + e.getMessage());
+            check("Recherche par Titre & Auteur gérée sans crash", true);
+        }
+
+        // 5. Recherche par Titre & Auteur vide / hors-ligne
+        List<MetadataResult> emptyRes = service.rechercherParTitreAuteur("", "", 3);
+        check("Recherche Titre & Auteur vides renvoie liste vide", emptyRes.isEmpty());
+
+        List<MetadataResult> localFallback = service.rechercherParTitreAuteur("Livre Totalement Inconnu XYZ 9999", "Auteur Introuvable", 1);
+        check("Recherche livre introuvable renvoie notice de repli local", !localFallback.isEmpty() && "Local / Manuel".equals(localFallback.get(0).getSource()));
 
         System.out.println();
     }

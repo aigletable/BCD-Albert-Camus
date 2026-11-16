@@ -400,6 +400,23 @@ public class LivreDao {
         }
     }
 
+    /**
+     * Génère un code interne séquentiel unique sans collision pour les ouvrages
+     * anciens ou sans ISBN/code-barres (ex: CAMUS-0042).
+     *
+     * @return un identifiant unique garanti non existant dans la base
+     * @throws SQLException en cas d'erreur SQL
+     */
+    public String generateUniqueBcdCode() throws SQLException {
+        int total = count();
+        String candidate = "CAMUS-" + String.format("%04d", total + 1);
+        int offset = 1;
+        while (findByIsbn(candidate) != null) {
+            candidate = "CAMUS-" + String.format("%04d", total + 1 + offset++);
+        }
+        return candidate;
+    }
+
     // =====================================================================
     //  UPDATE
     // =====================================================================

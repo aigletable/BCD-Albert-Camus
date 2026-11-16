@@ -55,6 +55,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.FileChooser;
+import javafx.stage.Window;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -95,6 +96,7 @@ public class InventaireController {
     // ── Composants FXML — Actions & Recherche ───────────────────────────
     @FXML private TextField searchField;
     @FXML private Button btnBoiteVerif;
+    @FXML private Button btnAddByTitle;
     @FXML private Button btnModeDouchette;
     @FXML private Button btnOpenRecolement;
     @FXML private Button btnEtiquettes;
@@ -1221,8 +1223,36 @@ public class InventaireController {
     }
 
     // =====================================================================
-    //  Actions — Nouveau Livre (avec Google Books)
+    //  Actions — Nouveau Livre (par Titre ou par ISBN)
     // =====================================================================
+
+    @FXML
+    private void handleAddByTitle() {
+        Window owner = livreTableView != null && livreTableView.getScene() != null
+                ? livreTableView.getScene().getWindow() : null;
+        fr.ecole.bcd.view.LivreVerificationDialogHelper.openAddByTitleDialog(
+                owner,
+                livreDao,
+                exemplaireDao,
+                boiteVerificationDao,
+                metadataService,
+                null,
+                null,
+                newLivre -> {
+                    loadData();
+                    if (masterLivres != null) {
+                        for (Livre l : masterLivres) {
+                            if (newLivre.getIsbn().equals(l.getIsbn())) {
+                                livreTableView.getSelectionModel().select(l);
+                                livreTableView.scrollTo(l);
+                                break;
+                            }
+                        }
+                    }
+                    updateStatus("✅ Livre '" + newLivre.getTitre() + "' ajouté avec succès au catalogue.");
+                }
+        );
+    }
 
     @FXML
     private void handleAddLivre() {
@@ -1257,12 +1287,7 @@ public class InventaireController {
 
         btnGenCode.setOnAction(e -> {
             try {
-                int count = masterLivres != null ? masterLivres.size() : livreDao.count();
-                String candidate = "CAMUS-" + String.format("%04d", count + 1);
-                int offset = 1;
-                while (livreDao.findByIsbn(candidate) != null) {
-                    candidate = "CAMUS-" + String.format("%04d", count + 1 + offset++);
-                }
+                String candidate = livreDao.generateUniqueBcdCode();
                 tfIsbn.setText(candidate);
                 lblSearchStatus.setText("💡 Code BCD généré (" + candidate + ") pour ouvrage sans ISBN. Vous pourrez lui imprimer une étiquette code-barres.");
                 lblSearchStatus.setStyle("-fx-text-fill: #166534; -fx-font-weight: bold; -fx-font-size: 11px;");
@@ -1343,7 +1368,62 @@ public class InventaireController {
             String rawIsbn = tfIsbn.getText().trim();
             String clean = LivreMetadataService.cleanIsbn(rawIsbn);
             if (clean.isEmpty()) {
-                lblSearchStatus.setText("⚠️ Veuillez renseigner un ISBN valide.");
+                String queryTitre = tfTitre.getText().trim();
+                String queryAuteur = tfAuteur.getText().trim();
+                if (!queryTitre.isEmpty()) {
+                    btnSearchCascade.setDisable(true);
+                    spinner.setVisible(true);
+                    lblSearchStatus.setText("🔍 Recherche par Titre en ligne (OpenLibrary, Google Books, BNF)…");
+                    lblSearchStatus.setStyle("-fx-text-fill: #0366d6; -fx-font-size: 11px;");
+
+                    Task<List<MetadataResult>> taskTitre = new Task<>() {
+                        @Override
+                        protected List<MetadataResult> call() {
+                            return metadataService.rechercherParTitreAuteur(queryTitre, queryAuteur, 3);
+                        }
+                    };
+                    taskTitre.setOnSucceeded(e -> {
+                        btnSearchCascade.setDisable(false);
+                        spinner.setVisible(false);
+                        List<MetadataResult> foundList = taskTitre.getValue();
+                        if (foundList != null && !foundList.isEmpty()) {
+                            MetadataResult found = foundList.get(0);
+                            tfTitre.setText(found.getTitre());
+                            if (found.getAuteur() != null) tfAuteur.setText(found.getAuteur());
+                            if (found.getEditeur() != null) tfEditeur.setText(found.getEditeur());
+                            if (found.getCouvertureUrl() != null && !found.getCouvertureUrl().isBlank()) {
+                                tfCouverture.setText(found.getCouvertureUrl());
+                            }
+                            if (found.getGenre() != null && !found.getGenre().isBlank()) cbGenre.setValue(found.getGenre());
+                            if (found.getTheme() != null && !found.getTheme().isBlank()) cbTheme.setValue(found.getTheme());
+                            if (found.getNiveau() != null && !found.getNiveau().isBlank()) cbNiveau.setValue(found.getNiveau());
+                            if (found.getDescription() != null && !found.getDescription().isBlank()) taDescription.setText(found.getDescription());
+
+                            if (found.getIsbn() != null && !found.getIsbn().isBlank()) {
+                                tfIsbn.setText(found.getIsbn());
+                                lblSearchStatus.setText("✅ Livre trouvé via " + found.getSource() + " (ISBN officiel : " + found.getIsbn() + ") !");
+                            } else {
+                                btnGenCode.fire();
+                                lblSearchStatus.setText("✅ Informations trouvées via " + found.getSource() + " ! Code BCD généré.");
+                            }
+                            lblSearchStatus.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold; -fx-font-size: 11px;");
+                        } else {
+                            lblSearchStatus.setText("ℹ️ Aucun résultat en ligne pour ce titre. Saisie manuelle conservée.");
+                            lblSearchStatus.setStyle("-fx-text-fill: #d97706; -fx-font-size: 11px;");
+                        }
+                        validate.run();
+                    });
+                    taskTitre.setOnFailed(e -> {
+                        btnSearchCascade.setDisable(false);
+                        spinner.setVisible(false);
+                        lblSearchStatus.setText("⚠️ Échec réseau lors de la recherche. Saisie manuelle possible.");
+                        lblSearchStatus.setStyle("-fx-text-fill: #d73a49; -fx-font-size: 11px;");
+                    });
+                    new Thread(taskTitre).start();
+                    return;
+                }
+
+                lblSearchStatus.setText("⚠️ Veuillez renseigner un ISBN valide, ou au moins un Titre d'ouvrage.");
                 lblSearchStatus.setStyle("-fx-text-fill: #d73a49; -fx-font-size: 11px;");
                 return;
             }
