@@ -10,9 +10,11 @@ import fr.ecole.bcd.service.EmpruntService.RegleMetierException;
 import fr.ecole.bcd.model.Utilisateur;
 import fr.ecole.bcd.service.LivreClassificationService;
 import fr.ecole.bcd.service.MalletteService;
+import fr.ecole.bcd.service.RessourcePedagogiqueService;
 import fr.ecole.bcd.service.SoundService;
 import fr.ecole.bcd.view.AnimationHelper;
 import fr.ecole.bcd.view.DialogHelper;
+import fr.ecole.bcd.view.RessourcesPedagogiquesDialog;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -82,6 +84,7 @@ public class MallettesController {
     @FXML private Button btnRetournerMallette;
     @FXML private Button btnImprimerFiche;
     @FXML private Button btnImprimerEtiquette;
+    @FXML private Button btnRessourcesMallette;
     @FXML private Button btnEditMallette;
     @FXML private Button btnDeleteMallette;
 
@@ -97,12 +100,14 @@ public class MallettesController {
     @FXML private TableColumn<MalletteItem, String> colItemAuteur;
     @FXML private TableColumn<MalletteItem, String> colItemGenre;
     @FXML private TableColumn<MalletteItem, Exemplaire.Statut> colItemStatut;
+    @FXML private TableColumn<MalletteItem, Void> colItemRessources;
     @FXML private TableColumn<MalletteItem, Void> colItemAction;
 
     // ── Services & DAOs ──────────────────────────────────────────────────
     private final MalletteService malletteService = new MalletteService();
     private final MalletteDao malletteDao = new MalletteDao();
     private final UtilisateurDao utilisateurDao = new UtilisateurDao();
+    private final RessourcePedagogiqueService ressourceService = new RessourcePedagogiqueService();
 
     private final ObservableList<Mallette> masterMallettes = FXCollections.observableArrayList();
     private FilteredList<Mallette> filteredMallettes;
@@ -212,6 +217,55 @@ public class MallettesController {
                 }
             }
         });
+
+        // Colonne Ressources Pédagogiques
+        if (colItemRessources != null) {
+            colItemRessources.setCellFactory(col -> new TableCell<>() {
+                private final Button btnRessource = new Button();
+                {
+                    btnRessource.setOnAction(e -> {
+                        MalletteItem item = getTableView().getItems().get(getIndex());
+                        if (item != null) {
+                            RessourcesPedagogiquesDialog.openForLivre(
+                                    item.getIsbn(), item.getTitre(), item.getAuteur(),
+                                    () -> {
+                                        refreshMalletteDetails();
+                                        itemsTable.refresh();
+                                    }
+                            );
+                        }
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void val, boolean empty) {
+                    super.updateItem(val, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        MalletteItem item = getTableView().getItems().get(getIndex());
+                        if (item != null) {
+                            try {
+                                int count = ressourceService.compterRessourcesParIsbn(item.getIsbn());
+                                if (count > 0) {
+                                    btnRessource.setText("📎 " + count + " doc" + (count > 1 ? "s" : ""));
+                                    btnRessource.setStyle("-fx-background-color: #E0F2FE; -fx-text-fill: #0369A1; -fx-font-weight: 700; -fx-font-size: 11px; -fx-padding: 2 6; -fx-background-radius: 6; -fx-cursor: hand;");
+                                } else {
+                                    btnRessource.setText("➕ Ajouter");
+                                    btnRessource.setStyle("-fx-background-color: transparent; -fx-text-fill: #64748B; -fx-font-size: 11px; -fx-padding: 2 4; -fx-cursor: hand;");
+                                }
+                            } catch (Exception ex) {
+                                btnRessource.setText("📎 0");
+                            }
+                            setGraphic(btnRessource);
+                            setAlignment(Pos.CENTER);
+                        } else {
+                            setGraphic(null);
+                        }
+                    }
+                }
+            });
+        }
 
         // Colonne Action (Retirer)
         colItemAction.setCellFactory(col -> new TableCell<>() {
@@ -405,9 +459,23 @@ public class MallettesController {
             currentItems.setAll(items);
             lblDetailNbLivresTag.setText(items.size() + " livre" + (items.size() > 1 ? "s" : ""));
             btnPreterMallette.setDisable(items.isEmpty());
+
+            if (btnRessourcesMallette != null) {
+                int totalRessources = ressourceService.compterRessourcesPourMallette(selectedMallette.getId());
+                btnRessourcesMallette.setText("📚 Ressources" + (totalRessources > 0 ? " (" + totalRessources + ")" : ""));
+            }
         } catch (SQLException e) {
             showError("Erreur de chargement des livres", e.getMessage());
         }
+    }
+
+    @FXML
+    private void handleRessourcesMallette() {
+        if (selectedMallette == null) return;
+        RessourcesPedagogiquesDialog.openForMallette(selectedMallette, () -> {
+            refreshMalletteDetails();
+            itemsTable.refresh();
+        });
     }
 
     // =====================================================================

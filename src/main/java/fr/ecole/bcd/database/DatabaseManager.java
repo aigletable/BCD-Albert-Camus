@@ -205,6 +205,22 @@ public final class DatabaseManager {
                 stmt.execute("ALTER TABLE livres ADD COLUMN description TEXT DEFAULT '';");
             } catch (SQLException ignored) {}
 
+            try {
+                stmt.execute("CREATE TABLE IF NOT EXISTS ressources_pedagogiques ("
+                        + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        + "isbn TEXT DEFAULT NULL, "
+                        + "mallette_id INTEGER DEFAULT NULL, "
+                        + "titre TEXT NOT NULL, "
+                        + "type TEXT NOT NULL CHECK (type IN ('LIEN_WEB', 'PDF', 'DOCUMENT', 'AUTRE')), "
+                        + "url_ou_chemin TEXT NOT NULL, "
+                        + "description TEXT DEFAULT '', "
+                        + "date_ajout TEXT NOT NULL DEFAULT (DATE('now')), "
+                        + "FOREIGN KEY (isbn) REFERENCES livres(isbn) ON DELETE CASCADE, "
+                        + "FOREIGN KEY (mallette_id) REFERENCES mallettes(id) ON DELETE CASCADE);");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_ressources_isbn ON ressources_pedagogiques(isbn);");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_ressources_mallette ON ressources_pedagogiques(mallette_id);");
+            } catch (SQLException ignored) {}
+
             System.out.println("✅ Base de données initialisée (" + count + " instructions exécutées).");
 
         } catch (SQLException e) {

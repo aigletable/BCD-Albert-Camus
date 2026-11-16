@@ -20,12 +20,14 @@ import fr.ecole.bcd.service.LivreClassificationService.ClassificationResult;
 import fr.ecole.bcd.service.LivreMetadataService;
 import fr.ecole.bcd.service.LivreMetadataService.MetadataResult;
 import fr.ecole.bcd.service.InventaireSessionService;
+import fr.ecole.bcd.service.RessourcePedagogiqueService;
 import fr.ecole.bcd.service.SoundService;
 import fr.ecole.bcd.view.AnimationHelper;
 import fr.ecole.bcd.view.BoiteVerificationDialogHelper;
 import fr.ecole.bcd.view.DialogHelper;
 import fr.ecole.bcd.view.DouchetteDialogHelper;
 import fr.ecole.bcd.view.EtiquettesDialogHelper;
+import fr.ecole.bcd.view.RessourcesPedagogiquesDialog;
 
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -106,6 +108,7 @@ public class InventaireController {
     @FXML private Button btnAddLivre;
     @FXML private Button btnEditLivre;
     @FXML private Button btnDeleteLivre;
+    @FXML private Button btnRessourcesLivre;
 
     // ── Composants FXML — Filtres Thématiques & Niveaux ────────────────
     @FXML private ComboBox<String> genreFilter;
@@ -177,6 +180,7 @@ public class InventaireController {
     private final LivreBatchImportService batchImportService = new LivreBatchImportService();
     private final LivreClassificationService classificationService = new LivreClassificationService();
     private final BoiteVerificationDao boiteVerificationDao = new BoiteVerificationDao();
+    private final RessourcePedagogiqueService ressourcePedagogiqueService = new RessourcePedagogiqueService();
 
     // ── Données observables ─────────────────────────────────────────────
     private final ObservableList<Livre> masterLivres = FXCollections.observableArrayList();
@@ -222,6 +226,7 @@ public class InventaireController {
         btnEditExemplaire.setDisable(true);
         if (btnReassignExemplaire != null) btnReassignExemplaire.setDisable(true);
         if (btnSearchCover != null) btnSearchCover.setDisable(true);
+        if (btnRessourcesLivre != null) btnRessourcesLivre.setDisable(true);
 
         // Chargement initial des données
         loadData();
@@ -1052,6 +1057,7 @@ public class InventaireController {
             btnEditLivre.setDisable(true);
             btnDeleteLivre.setDisable(true);
             if (btnSearchCover != null) btnSearchCover.setDisable(true);
+            if (btnRessourcesLivre != null) btnRessourcesLivre.setDisable(true);
             if (boxBadges != null) {
                 boxBadges.setVisible(false);
                 boxBadges.setManaged(false);
@@ -1070,6 +1076,10 @@ public class InventaireController {
         btnEditLivre.setDisable(false);
         btnDeleteLivre.setDisable(false);
         if (btnSearchCover != null) btnSearchCover.setDisable(false);
+        if (btnRessourcesLivre != null) {
+            btnRessourcesLivre.setDisable(false);
+            updateRessourcesButton(livre);
+        }
 
         // Métadonnées
         boolean nonRenseigne = fr.ecole.bcd.view.CoverHelper.isTitreNonRenseigne(livre.getTitre());
@@ -1650,6 +1660,29 @@ public class InventaireController {
         });
 
         dialog.showAndWait();
+    }
+
+    // =====================================================================
+    //  Actions — Ressources Pédagogiques du Livre
+    // =====================================================================
+
+    private void updateRessourcesButton(Livre livre) {
+        if (btnRessourcesLivre == null || livre == null) return;
+        try {
+            int count = ressourcePedagogiqueService.compterRessourcesParIsbn(livre.getIsbn());
+            btnRessourcesLivre.setText("📚 Ressources pédagogiques" + (count > 0 ? " (" + count + ")" : ""));
+        } catch (Exception ignored) {
+            btnRessourcesLivre.setText("📚 Ressources pédagogiques");
+        }
+    }
+
+    @FXML
+    private void handleRessourcesLivre() {
+        Livre selected = livreTableView.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
+        RessourcesPedagogiquesDialog.openForLivre(selected.getIsbn(), selected.getTitre(), selected.getAuteur(), () -> {
+            updateRessourcesButton(selected);
+        });
     }
 
     // =====================================================================

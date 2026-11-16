@@ -176,3 +176,27 @@ CREATE TABLE IF NOT EXISTS boite_verification (
 CREATE INDEX IF NOT EXISTS idx_boite_verif_statut
     ON boite_verification(statut);
 
+-- =============================================================================
+-- Table : ressources_pedagogiques
+-- Ressources pédagogiques associées à un livre (ISBN) et/ou à une mallette
+-- (fiches d'exploitation, liens Éduscol, rallye-lecture, questionnaires PDF...)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS ressources_pedagogiques (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    isbn             TEXT DEFAULT NULL,
+    mallette_id      INTEGER DEFAULT NULL,
+    titre            TEXT NOT NULL,
+    type             TEXT NOT NULL CHECK (type IN ('LIEN_WEB', 'PDF', 'DOCUMENT', 'AUTRE')),
+    url_ou_chemin    TEXT NOT NULL,
+    description      TEXT DEFAULT '',
+    date_ajout       TEXT NOT NULL DEFAULT (DATE('now')),
+    FOREIGN KEY (isbn) REFERENCES livres(isbn) ON DELETE CASCADE,
+    FOREIGN KEY (mallette_id) REFERENCES mallettes(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_ressources_isbn
+    ON ressources_pedagogiques(isbn);
+CREATE INDEX IF NOT EXISTS idx_ressources_mallette
+    ON ressources_pedagogiques(mallette_id);
+
+

@@ -169,6 +169,8 @@
                                 onAction="#handleImprimerFiche"/>
                         <Button fx:id="btnImprimerEtiquette" text="🏷️ Étiquette Caisse" styleClass="btn-outline"
                                 onAction="#handleImprimerEtiquette"/>
+                        <Button fx:id="btnRessourcesMallette" text="📚 Ressources" styleClass="btn-outline"
+                                onAction="#handleRessourcesMallette"/>
                         <Region HBox.hgrow="ALWAYS"/>
                         <Button fx:id="btnEditMallette" text="✏️" styleClass="btn-outline"
                                 onAction="#handleEditMallette"/>
@@ -204,6 +206,7 @@
                             <TableColumn fx:id="colItemAuteur" text="Auteur" prefWidth="120"/>
                             <TableColumn fx:id="colItemGenre" text="Genre" prefWidth="90"/>
                             <TableColumn fx:id="colItemStatut" text="Disponibilité" prefWidth="100"/>
+                            <TableColumn fx:id="colItemRessources" text="Ressources" prefWidth="110"/>
                             <TableColumn fx:id="colItemAction" text="Action" prefWidth="85"/>
                         </columns>
                         <placeholder>

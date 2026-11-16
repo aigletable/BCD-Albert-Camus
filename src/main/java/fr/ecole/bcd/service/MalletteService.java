@@ -5,6 +5,7 @@ import fr.ecole.bcd.database.EmpruntDao;
 import fr.ecole.bcd.database.ExemplaireDao;
 import fr.ecole.bcd.database.LivreDao;
 import fr.ecole.bcd.database.MalletteDao;
+import fr.ecole.bcd.database.RessourcePedagogiqueDao;
 import fr.ecole.bcd.model.*;
 import fr.ecole.bcd.service.EmpruntService.RegleMetierException;
 
@@ -518,6 +519,9 @@ public class MalletteService {
         }
         List<MalletteItem> items = malletteDao.getItems(malletteId);
 
+        RessourcePedagogiqueDao ressourceDao = new RessourcePedagogiqueDao();
+        List<RessourcePedagogique> ressources = ressourceDao.findAllForMallette(malletteId);
+
         String barcodeSvg = BarcodeService.generateCode39Svg(mallette.getCode(), 45);
 
         StringBuilder rows = new StringBuilder();
@@ -610,6 +614,7 @@ public class MalletteService {
                 + rows.toString()
                 + "  </tbody>\n"
                 + "</table>\n"
+                + ressourceHtmlSection(ressources)
                 + "<div class='sign-block'>\n"
                 + "  <div class='sign-col'>\n"
                 + "    <p><strong>Emprunté par :</strong> " + escapeHtml(mallette.getEmprunteurComplet()) + "</p>\n"
@@ -628,6 +633,31 @@ public class MalletteService {
             writer.write(html);
         }
         return tempFile;
+    }
+
+    private String ressourceHtmlSection(List<RessourcePedagogique> ressources) {
+        if (ressources == null || ressources.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='margin-top: 18px; margin-bottom: 16px;'>\n")
+          .append("  <h3 style='font-size: 13px; color: #1e3a8a; margin: 0 0 6px 0; border-bottom: 1px solid #93c5fd; padding-bottom: 4px;'>📚 Pistes & Ressources pédagogiques associées (")
+          .append(ressources.size()).append(")</h3>\n")
+          .append("  <table style='margin-bottom: 10px;'>\n")
+          .append("    <thead><tr><th style='width: 30px;'>Type</th><th>Titre de la ressource</th><th style='width: 140px;'>Livre associé</th><th>Lien / Document</th></tr></thead>\n")
+          .append("    <tbody>\n");
+        for (RessourcePedagogique r : ressources) {
+            String cible = r.isFichierLocal() ? new File(r.getUrlOuChemin()).getName() : r.getUrlOuChemin();
+            String livreAssocie = (r.getLivreTitre() != null && !r.getLivreTitre().isBlank()) ? r.getLivreTitre() : "Mallette entière";
+            sb.append("      <tr>")
+              .append("<td style='text-align: center;'>").append(r.getIcone()).append("</td>")
+              .append("<td><strong>").append(escapeHtml(r.getTitre())).append("</strong>")
+              .append(r.getDescription().isBlank() ? "" : "<br><span style='font-size: 10px; color: #64748b; font-style: italic;'>" + escapeHtml(r.getDescription()) + "</span>")
+              .append("</td>")
+              .append("<td><span style='font-size: 11px; color: #0369a1;'>").append(escapeHtml(livreAssocie)).append("</span></td>")
+              .append("<td><span style='font-family: monospace; font-size: 10px; color: #475569;'>").append(escapeHtml(cible)).append("</span></td>")
+              .append("</tr>\n");
+        }
+        sb.append("    </tbody>\n  </table>\n</div>\n");
+        return sb.toString();
     }
 
     /**

@@ -23,6 +23,7 @@ import fr.ecole.bcd.service.LivreMetadataService.MetadataResult;
 import fr.ecole.bcd.service.MalletteService;
 import fr.ecole.bcd.service.PassageAnneeService;
 import fr.ecole.bcd.service.PassageAnneeService.PassageAnneeReport;
+import fr.ecole.bcd.service.RessourcePedagogiqueService;
 import fr.ecole.bcd.service.SoundService;
 import fr.ecole.bcd.service.ThemeService;
 import java.time.LocalDate;
@@ -114,6 +115,7 @@ public class SmokeTest {
             testThemeService();
             testOperationsParTitre();
             testMallettesPedagogiques();
+            testRessourcesPedagogiques();
             testBoiteVerificationEtZeroExemplaires();
             testSoundService();
             testBackupService();
@@ -1050,6 +1052,7 @@ public class SmokeTest {
             stmt.execute("DELETE FROM inventaire_lignes WHERE session_id NOT IN (SELECT id FROM sessions_inventaire)");
             stmt.execute("DELETE FROM mallettes WHERE code LIKE 'TEST-%' OR titre LIKE '%TEST%' OR code LIKE 'MAL-TEST%'");
             stmt.execute("DELETE FROM mallette_items WHERE mallette_id NOT IN (SELECT id FROM mallettes)");
+            stmt.execute("DELETE FROM ressources_pedagogiques WHERE isbn LIKE 'TEST-%' OR titre LIKE '%TEST%' OR description LIKE '%TEST%'");
         }
     }
 
@@ -1256,6 +1259,111 @@ public class SmokeTest {
         // 8. Suppression de la mallette de test
         malletteDao.delete(mallette.getId());
         check("Suppression de la mallette", malletteDao.findById(mallette.getId()) == null);
+
+        System.out.println();
+    }
+
+    // =====================================================================
+    //  FEATURE : Ressources Pédagogiques (Fiches d'activités, Liens Web, PDF)
+    // =====================================================================
+
+    private static void testRessourcesPedagogiques() throws Exception {
+        System.out.println("── Feature : Ressources Pédagogiques (Fiches & Mallettes) ──");
+
+        RessourcePedagogiqueDao resDao = new RessourcePedagogiqueDao();
+        RessourcePedagogiqueService resService = new RessourcePedagogiqueService(resDao);
+        LivreDao livreDao = new LivreDao();
+        ExemplaireDao exDao = new ExemplaireDao();
+        MalletteDao malletteDao = new MalletteDao();
+        MalletteService malletteService = new MalletteService();
+
+        // 1. Détection de types et normalisation d'URL
+        check("Type détecté pour URL web",
+                RessourcePedagogique.TypeRessource.detecterType("https://eduscol.education.fr/sequence") == RessourcePedagogique.TypeRessource.LIEN_WEB);
+        check("Type détecté pour fichier .pdf",
+                RessourcePedagogique.TypeRessource.detecterType("/chemin/vers/questionnaire.pdf") == RessourcePedagogique.TypeRessource.PDF);
+        check("Type détecté pour fichier .docx",
+                RessourcePedagogique.TypeRessource.detecterType("exercices.docx") == RessourcePedagogique.TypeRessource.DOCUMENT);
+        check("Normalisation URL ajoute https:// si manquant",
+                RessourcePedagogiqueService.normaliserUrl("www.eduscol.fr").equals("https://www.eduscol.fr"));
+
+        // 2. Création d'un livre et d'une mallette de test
+        String isbnTest = "TEST-ISBN-RES-01";
+        Livre livre = new Livre(isbnTest, "TEST Les secrets de la forêt", "Auteur Forêt", "Editeur", "", "Album", "Nature", "Cycle 2", "Album jeunesse sur la nature.");
+        livreDao.insert(livre);
+
+        Exemplaire ex = new Exemplaire(isbnTest, Statut.DISPONIBLE, LocalDate.now());
+        exDao.insert(ex);
+
+        Mallette mallette = malletteService.creerMalletteAvecLivres("TEST Mallette Forêt & Nature", "Nature", "Cycle 2", "Découverte de la faune et flore.", List.of("TEST Les secrets de la forêt"));
+
+        // 3. Ajout de ressources pédagogiques via Service
+        RessourcePedagogique resWeb = resService.ajouterRessource(
+                isbnTest, null, "Séquence Éduscol Forêt",
+                RessourcePedagogique.TypeRessource.LIEN_WEB,
+                "https://eduscol.education.fr/sequence-foret",
+                "Guide pédagogique pour le cycle 2"
+        );
+        check("Insertion ressource web avec ID généré", resWeb.getId() > 0);
+
+        // Fichier local factice
+        File tempDoc = File.createTempFile("test_fiche_activite_", ".pdf");
+        Files.writeString(tempDoc.toPath(), "%PDF-1.4 TEST PDF CONTENT");
+
+        RessourcePedagogique resPdf = resService.ajouterRessource(
+                isbnTest, null, "Questionnaire de lecture CE1",
+                RessourcePedagogique.TypeRessource.PDF,
+                tempDoc.getAbsolutePath(),
+                "10 questions avec corrigé inclus"
+        );
+        check("Insertion ressource PDF avec copie de sauvegarde", resPdf.getId() > 0 && resPdf.isFichierLocal());
+        tempDoc.delete();
+
+        // Ressource générale attachée à la mallette entière
+        RessourcePedagogique resMallette = resService.ajouterRessource(
+                null, mallette.getId(), "Dossier Pédagogique Forêt (Classe entière)",
+                RessourcePedagogique.TypeRessource.LIEN_WEB,
+                "https://education.gouv.fr/dossier-foret",
+                "Projet pluridisciplinaire Sciences et Français"
+        );
+        check("Insertion ressource globale mallette", resMallette.getId() > 0 && resMallette.getMalletteId() == mallette.getId());
+
+        // 4. Interrogations et compteurs
+        List<RessourcePedagogique> listByIsbn = resService.getRessourcesParIsbn(isbnTest);
+        check("findByIsbn retourne les 2 ressources du livre", listByIsbn.size() == 2);
+        check("compterRessourcesParIsbn compte 2 ressources", resService.compterRessourcesParIsbn(isbnTest) == 2);
+
+        List<RessourcePedagogique> listAllMallette = resService.getToutesRessourcesPourMallette(mallette.getId());
+        check("getToutesRessourcesPourMallette agrège mallette + livres", listAllMallette.size() == 3);
+        check("compterRessourcesPourMallette retourne 3", resService.compterRessourcesPourMallette(mallette.getId()) == 3);
+
+        // 5. Test Fiche A4 Mallette intégrant les ressources pédagogiques
+        File ficheHtml = malletteService.genererFicheContenuHtml(mallette.getId());
+        String ficheContent = Files.readString(ficheHtml.toPath());
+        check("Fiche A4 contient la section Ressources Pédagogiques",
+                ficheContent.contains("Pistes & Ressources pédagogiques associées"));
+        check("Fiche A4 liste la ressource web Éduscol",
+                ficheContent.contains("Séquence Éduscol Forêt"));
+        check("Fiche A4 liste la ressource mallette globale",
+                ficheContent.contains("Dossier Pédagogique Forêt"));
+        ficheHtml.delete();
+
+        // 6. Modification et Suppression
+        resWeb.setTitre("Séquence Éduscol Forêt V2");
+        check("Mise à jour d'une ressource", resService.modifierRessource(resWeb));
+        RessourcePedagogique updated = resDao.findById(resWeb.getId());
+        check("Vérification titre mis à jour", updated != null && updated.getTitre().contains("V2"));
+
+        check("Suppression ressource", resService.supprimerRessource(resPdf.getId()));
+        check("Ressource supprimée non retrouvée", resDao.findById(resPdf.getId()) == null);
+
+        // Nettoyage mallette et livre test
+        malletteDao.delete(mallette.getId());
+        resDao.delete(resWeb.getId());
+        resDao.delete(resMallette.getId());
+        exDao.delete(ex.getId());
+        livreDao.delete(isbnTest);
+        check("Nettoyage des données de test terminé", resDao.findById(resWeb.getId()) == null);
 
         System.out.println();
     }

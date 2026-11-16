@@ -4,5 +4,6 @@ target/
 *.db-shm
 *.db-wal
 backups/
+documents_bcd/
 dependency-reduced-pom.xml
 
