@@ -330,7 +330,7 @@ public class MallettesController {
 
         // Clip d'arrondi sur la boîte de couverture
         if (previewCoverBox != null) {
-            Rectangle clip = new Rectangle(76, 104);
+            Rectangle clip = new Rectangle(88, 120);
             clip.setArcWidth(8);
             clip.setArcHeight(8);
             previewCoverBox.setClip(clip);
@@ -620,13 +620,13 @@ public class MallettesController {
         previewCoverBox.getChildren().clear();
 
         // 1. Appliquer le clip arrondi sur la boîte conteneur
-        Rectangle clip = new Rectangle(76, 104);
+        Rectangle clip = new Rectangle(88, 120);
         clip.setArcWidth(8);
         clip.setArcHeight(8);
         previewCoverBox.setClip(clip);
 
         // 2. Afficher immédiatement la couverture vectorielle de qualité Apple Books (JAMAIS de vide !)
-        StackPane placeholderCover = CoverHelper.createStyledCover(livre, 76, 104);
+        StackPane placeholderCover = CoverHelper.createStyledCover(livre, 88, 120);
         previewCoverBox.getChildren().setAll(placeholderCover);
 
         // 3. Charger l'image réelle si une URL valide existe
@@ -636,8 +636,8 @@ public class MallettesController {
             if (cached != null) {
                 if (!cached.isError()) {
                     ImageView iv = new ImageView(cached);
-                    iv.setFitWidth(76);
-                    iv.setFitHeight(104);
+                    iv.setFitWidth(88);
+                    iv.setFitHeight(120);
                     iv.setPreserveRatio(true);
                     iv.setSmooth(true);
                     previewCoverBox.getChildren().setAll(iv);
@@ -651,8 +651,8 @@ public class MallettesController {
                             Platform.runLater(() -> {
                                 if (selectedBookItem != null && livre != null && livre.getIsbn().equals(selectedBookItem.getIsbn())) {
                                     ImageView iv = new ImageView(img);
-                                    iv.setFitWidth(76);
-                                    iv.setFitHeight(104);
+                                    iv.setFitWidth(88);
+                                    iv.setFitHeight(120);
                                     iv.setPreserveRatio(true);
                                     iv.setSmooth(true);
                                     previewCoverBox.getChildren().setAll(iv);
