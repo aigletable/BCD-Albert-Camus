@@ -2324,9 +2324,16 @@ public class InventaireController {
 
     @FXML
     private void handleEtiquettes() {
-        EtiquettesDialogHelper.openEtiquettesDialog(
-                exemplaireDao, livreTableView, masterLivres,
-                modalOverlay, modalCard, this::closeModal
-        );
+        List<Livre> selected = (livreTableView != null && livreTableView.getSelectionModel().getSelectedItems() != null)
+                ? livreTableView.getSelectionModel().getSelectedItems().stream().filter(Objects::nonNull).toList()
+                : List.of();
+
+        MainApp.selectTab("Étiquettes");
+        Object ctrl = MainApp.getTabController("Étiquettes");
+        if (ctrl instanceof fr.ecole.bcd.controller.EtiquettesController ec) {
+            if (!selected.isEmpty()) {
+                ec.selectLivres(selected);
+            }
+        }
     }
 }

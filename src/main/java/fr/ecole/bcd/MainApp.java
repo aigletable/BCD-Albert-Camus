@@ -89,6 +89,11 @@ public class MainApp extends Application {
     private static Stage primaryStage;
 
     /**
+     * Référence statique vers le TabPane principal pour navigation inter-onglets.
+     */
+    private static TabPane mainTabPane;
+
+    /**
      * Récupère l'instance singleton de {@code MainApp}.
      *
      * @return l'instance courante de l'application
@@ -104,6 +109,39 @@ public class MainApp extends Application {
      */
     public static Stage getPrimaryStage() {
         return primaryStage;
+    }
+
+    /**
+     * Bascule automatiquement vers l'onglet dont le titre contient le texte spécifié.
+     *
+     * @param titleContains sous-chaîne du titre de l'onglet
+     */
+    public static void selectTab(String titleContains) {
+        if (mainTabPane != null) {
+            for (Tab tab : mainTabPane.getTabs()) {
+                if (tab.getText() != null && tab.getText().contains(titleContains)) {
+                    mainTabPane.getSelectionModel().select(tab);
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Récupère le contrôleur associé à un onglet donné.
+     *
+     * @param titleContains sous-chaîne du titre de l'onglet
+     * @return le contrôleur instancié ou {@code null}
+     */
+    public static Object getTabController(String titleContains) {
+        if (mainTabPane != null) {
+            for (Tab tab : mainTabPane.getTabs()) {
+                if (tab.getText() != null && tab.getText().contains(titleContains)) {
+                    return tab.getUserData();
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -214,12 +252,16 @@ public class MainApp extends Application {
         /* ── 2. Construire les onglets ────────────────────────────────── */
         TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        mainTabPane = tabPane;
 
         // Onglet Prêts & Retours (FXML chargé)
         tabPane.getTabs().add(createFxmlTab("📖  Prêts & Retours", "/fxml/prets.fxml"));
 
         // Onglet Inventaire & Livres (FXML chargé)
         tabPane.getTabs().add(createFxmlTab("📚  Inventaire & Livres", "/fxml/inventaire.fxml"));
+
+        // Onglet Étiquettes & Codes-barres (FXML chargé)
+        tabPane.getTabs().add(createFxmlTab("🏷️  Étiquettes", "/fxml/etiquettes.fxml"));
 
         // Onglet Récolement & Inventaire physique (FXML chargé)
         tabPane.getTabs().add(createFxmlTab("📋  Récolement", "/fxml/recolement.fxml"));
@@ -238,6 +280,8 @@ public class MainApp extends Application {
                     rc.loadData();
                 } else if (controller instanceof fr.ecole.bcd.controller.InventaireController ic) {
                     ic.loadData();
+                } else if (controller instanceof fr.ecole.bcd.controller.EtiquettesController ec) {
+                    ec.loadData();
                 } else if (controller instanceof fr.ecole.bcd.controller.PretsController pc) {
                     pc.loadData();
                 } else if (controller instanceof fr.ecole.bcd.controller.UtilisateursController uc) {

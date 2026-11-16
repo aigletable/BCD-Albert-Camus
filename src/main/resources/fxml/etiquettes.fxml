@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+    Page Dédiée : Impression des Étiquettes & Codes-barres — BCD Express
+    - Sélection des livres par case à cocher (liste à point)
+    - Gestion intelligente des exemplaires multiples (choix du nombre d'étiquettes)
+    - Recherche & Ajout ultra-rapide (tape le nom + Entrée = validé et coché)
+    - Génération haute précision sur planches A4 (Avery / Agipa standard)
+-->
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="fr.ecole.bcd.controller.EtiquettesController">
+
+    <VBox spacing="14" styleClass="tab-content">
+
+        <!-- ── 1. En-tête de la page ────────────────────────────────────── -->
+        <HBox spacing="14" alignment="CENTER_LEFT">
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label text="Impression des Étiquettes &amp; Codes-barres" styleClass="screen-title"/>
+                <Label text="Cochez les livres à imprimer, choisissez les quantités d'exemplaires et lancez l'impression de vos planches A4."
+                       style="-fx-text-fill: #64748B; -fx-font-size: 12px;"/>
+            </VBox>
+
+            <!-- Actions globales -->
+            <Button text="🔄 Actualiser" styleClass="btn-outline" onAction="#handleActualiser"/>
+            <Button text="☑️ Tout cocher" styleClass="btn-outline" onAction="#handleToutCocher"/>
+            <Button text="⬜ Tout décocher" styleClass="btn-outline" onAction="#handleToutDecocher"/>
+            <Button text="✨ 24 derniers ajouts" styleClass="btn-outline" onAction="#handleCocherDerniers"/>
+        </HBox>
+
+        <!-- ── 2. Bandeau d'ajout & recherche ultra-rapide ("tape le nom, valide et ça part") ── -->
+        <HBox spacing="12" alignment="CENTER_LEFT"
+              style="-fx-background-color: white; -fx-border-color: #93C5FD; -fx-border-width: 1.5px; -fx-border-radius: 12px; -fx-background-radius: 12px; -fx-padding: 10px 16px; -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.08), 8, 0, 0, 2);">
+            <Label text="⚡ Recherche &amp; Ajout rapide :"
+                   style="-fx-font-weight: 800; -fx-text-fill: #1D4ED8; -fx-font-size: 12.5px;"/>
+            <TextField fx:id="txtRechercheRapide"
+                       promptText="Tapez le titre d'un livre ou scannez son code-barres (puis appuyez sur Entrée)..."
+                       HBox.hgrow="ALWAYS"
+                       style="-fx-font-size: 13px; -fx-padding: 7px 12px; -fx-background-radius: 8px;"
+                       onAction="#handleValiderRechercheRapide"/>
+            <Button fx:id="btnValiderRapide" text="➕ Valider / Ajouter (Entrée)"
+                    styleClass="btn-blue"
+                    style="-fx-font-weight: 700; -fx-font-size: 12px; -fx-padding: 8px 16px; -fx-cursor: hand;"
+                    onAction="#handleValiderRechercheRapide"/>
+            <Label fx:id="lblActionFeedback" text=""
+                   style="-fx-font-weight: 700; -fx-font-size: 12px; -fx-text-fill: #16A34A;"
+                   visible="false" managed="false"/>
+        </HBox>
+
+        <!-- ── 3. Corps principal : Tableau des livres (Gauche) + Paramètres d'impression (Droite) ── -->
+        <HBox spacing="16" VBox.vgrow="ALWAYS">
+
+            <!-- Colonne Gauche : Tableau des livres avec cases à cocher -->
+            <VBox spacing="10" HBox.hgrow="ALWAYS">
+
+                <!-- Barre de filtrage de la table -->
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtFiltre" promptText="🔍 Filtrer la liste par titre, auteur, ISBN..."
+                               HBox.hgrow="ALWAYS"
+                               style="-fx-font-size: 12px; -fx-padding: 6px 10px; -fx-background-radius: 6px;"/>
+                    <CheckBox fx:id="chkFiltreSelectionnes" text="✨ Afficher uniquement les livres cochés"
+                              style="-fx-font-weight: 600; -fx-font-size: 12px; -fx-text-fill: #334155; -fx-cursor: hand;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblTableTotal" text="Chargement..."
+                           style="-fx-text-fill: #64748B; -fx-font-size: 12px; -fx-font-weight: 600;"/>
+                </HBox>
+
+                <!-- Tableau principal -->
+                <TableView fx:id="tableLivres" VBox.vgrow="ALWAYS"
+                           style="-fx-background-radius: 10px; -fx-border-radius: 10px; -fx-border-color: #E2E8F0;">
+                    <columns>
+                        <TableColumn fx:id="colSelect" text="☑️" prefWidth="52" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colTitre" text="TITRE DU LIVRE" prefWidth="280"/>
+                        <TableColumn fx:id="colAuteur" text="AUTEUR &amp; ÉDITEUR" prefWidth="180"/>
+                        <TableColumn fx:id="colIsbn" text="ISBN" prefWidth="120" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colExemplaires" text="EN BCD" prefWidth="95" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colQuantite" text="ÉTIQUETTES À IMPRIMER" prefWidth="180" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colGenre" text="GENRE" prefWidth="110" style="-fx-alignment: CENTER;"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="Aucun livre trouvé dans le catalogue." style="-fx-text-fill: #94A3B8; -fx-font-size: 13px;"/>
+                    </placeholder>
+                </TableView>
+
+                <!-- Astuce d'utilisation sous le tableau -->
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Label text="💡 Conseil :" style="-fx-font-weight: bold; -fx-font-size: 11.5px; -fx-text-fill: #0284C7;"/>
+                    <Label text="Cochez les livres à imprimer. Pour les livres ayant plusieurs exemplaires, vous pouvez choisir la quantité exacte d'étiquettes."
+                           style="-fx-font-size: 11.5px; -fx-text-fill: #64748B;"/>
+                </HBox>
+            </VBox>
+
+            <!-- Colonne Droite : Paramètres de planche A4, Aperçu et Bouton d'impression -->
+            <VBox spacing="14" prefWidth="340" minWidth="320" maxWidth="380">
+
+                <!-- 1. Résumé en direct -->
+                <VBox spacing="8" styleClass="kpi-card"
+                      style="-fx-background-color: white; -fx-border-color: #E2E8F0; -fx-border-radius: 12px; -fx-background-radius: 12px; -fx-padding: 14px;">
+                    <Label text="📊 Résumé de votre tirage"
+                           style="-fx-font-weight: 800; -fx-font-size: 13.5px; -fx-text-fill: #0F172A;"/>
+
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="📚" style="-fx-font-size: 18px;"/>
+                        <VBox spacing="1" HBox.hgrow="ALWAYS">
+                            <Label text="Livres sélectionnés" style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+                            <Label fx:id="lblNbLivresChoisis" text="0 livre"
+                                   style="-fx-font-weight: 800; -fx-font-size: 15px; -fx-text-fill: #1E293B;"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="🏷️" style="-fx-font-size: 18px;"/>
+                        <VBox spacing="1" HBox.hgrow="ALWAYS">
+                            <Label text="Total d'étiquettes" style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+                            <Label fx:id="lblNbEtiquettesTotal" text="0 étiquette"
+                                   style="-fx-font-weight: 800; -fx-font-size: 15px; -fx-text-fill: #1D4ED8;"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="📄" style="-fx-font-size: 18px;"/>
+                        <VBox spacing="1" HBox.hgrow="ALWAYS">
+                            <Label text="Feuilles A4 requises" style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+                            <Label fx:id="lblNbFeuillesA4" text="0 feuille"
+                                   style="-fx-font-weight: 800; -fx-font-size: 15px; -fx-text-fill: #059669;"/>
+                        </VBox>
+                    </HBox>
+
+                    <Label fx:id="lblAntiGaspillageSummary" text="Aucune sélection."
+                           style="-fx-font-size: 11px; -fx-text-fill: #0284C7; -fx-background-color: #E0F2FE; -fx-padding: 6px 10px; -fx-background-radius: 6px;"
+                           wrapText="true"/>
+                </VBox>
+
+                <!-- 2. Réglages de la Planche A4 -->
+                <VBox spacing="10"
+                      style="-fx-background-color: white; -fx-border-color: #E2E8F0; -fx-border-radius: 12px; -fx-background-radius: 12px; -fx-padding: 14px;">
+                    <Label text="⚙️ Format &amp; Anti-gaspillage"
+                           style="-fx-font-weight: 800; -fx-font-size: 13.5px; -fx-text-fill: #0F172A;"/>
+
+                    <VBox spacing="4">
+                        <Label text="Format de planche A4 :" style="-fx-font-size: 11.5px; -fx-font-weight: 600; -fx-text-fill: #475569;"/>
+                        <ComboBox fx:id="cbFormat" prefWidth="310"/>
+                        <Label fx:id="lblFormatDesc" text="" style="-fx-font-size: 10.5px; -fx-text-fill: #0284C7;" wrapText="true"/>
+                    </VBox>
+
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Label text="Commencer à la case n° :" style="-fx-font-size: 11.5px; -fx-font-weight: 600; -fx-text-fill: #475569;"/>
+                        <Spinner fx:id="spStartOffset" prefWidth="75" editable="true"/>
+                        <Label text="(page 1)" style="-fx-font-size: 11px; -fx-text-fill: #64748B;"/>
+                    </HBox>
+
+                    <VBox spacing="4">
+                        <Label text="En-tête de l'école :" style="-fx-font-size: 11.5px; -fx-font-weight: 600; -fx-text-fill: #475569;"/>
+                        <TextField fx:id="txtEnTete" text="ÉCOLE ALBERT CAMUS PASTEUR"
+                                   style="-fx-font-size: 11.5px; -fx-background-radius: 6px;"/>
+                    </VBox>
+
+                    <VBox spacing="6">
+                        <CheckBox fx:id="chkTitle" text="Afficher le titre de l'ouvrage" selected="true"
+                                  style="-fx-font-size: 11.5px; -fx-cursor: hand;"/>
+                        <CheckBox fx:id="chkBarcode" text="Afficher le code-barres scannable" selected="true"
+                                  style="-fx-font-size: 11.5px; -fx-cursor: hand;"/>
+                        <CheckBox fx:id="chkBorders" text="Tracer les repères de découpe" selected="false"
+                                  style="-fx-font-size: 11.5px; -fx-cursor: hand;"/>
+                    </VBox>
+                </VBox>
+
+                <!-- 3. Aperçu visuel miniature -->
+                <VBox spacing="6" alignment="CENTER"
+                      style="-fx-background-color: white; -fx-border-color: #E2E8F0; -fx-border-radius: 12px; -fx-background-radius: 12px; -fx-padding: 10px;">
+                    <Label text="Aperçu d'une étiquette :" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748B;"/>
+                    <VBox fx:id="previewBox" alignment="CENTER" spacing="2"
+                          style="-fx-background-color: #FAFAFA; -fx-border-color: #94A3B8; -fx-border-style: dashed; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-padding: 6px 10px; -fx-pref-width: 200px; -fx-max-width: 220px;">
+                        <Label fx:id="lblPrevHeader" text="ÉCOLE ALBERT CAMUS PASTEUR" style="-fx-font-size: 8px; -fx-font-weight: bold; -fx-text-fill: #475569;"/>
+                        <Label fx:id="lblPrevTitre" text="Titre du livre sélectionné" style="-fx-font-size: 9.5px; -fx-font-weight: bold; -fx-text-fill: #0F172A;" wrapText="true"/>
+                        <Label fx:id="lblPrevBars" text="||| || |||| | ||| || |" style="-fx-font-family: monospace; -fx-font-size: 13px; -fx-font-weight: bold; -fx-letter-spacing: 2px;"/>
+                        <Label fx:id="lblPrevId" text="Ex. #42" style="-fx-font-family: monospace; -fx-font-size: 9.5px; -fx-font-weight: bold; -fx-text-fill: #0284C7;"/>
+                    </VBox>
+                </VBox>
+
+                <!-- 4. Grand bouton d'impression ("quand j'ai fini ça génère") -->
+                <VBox spacing="8">
+                    <Button fx:id="btnImprimer" text="🖨️ Générer &amp; Imprimer les étiquettes"
+                            style="-fx-background-color: #1A66FF; -fx-text-fill: white; -fx-font-weight: 800; -fx-font-size: 13.5px; -fx-background-radius: 10px; -fx-padding: 12px 18px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(26,102,255,0.35), 8, 0, 0, 2);"
+                            maxWidth="Infinity"
+                            onAction="#handleGenererEtImprimer"/>
+                    <Button text="💾 Enregistrer le fichier HTML..." styleClass="btn-outline"
+                            maxWidth="Infinity"
+                            onAction="#handleEnregistrerHtml"/>
+                </VBox>
+
+            </VBox>
+
+        </HBox>
+
+    </VBox>
+
+</StackPane>

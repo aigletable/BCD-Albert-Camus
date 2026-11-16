@@ -784,6 +784,18 @@ public class SmokeTest {
             tmpSheet.delete();
         }
 
+        // 4b. Test modèle EtiquetteSelectionRow (Page dédiée d'impression d'étiquettes)
+        Livre sampleLivre = new Livre("TEST-ISBN-ROW", "Livre Multi-Ex", "Auteur", "Éditeur", "", "Roman", "", "", "");
+        sampleLivre.setNbExemplaires(4);
+        fr.ecole.bcd.controller.EtiquettesController.EtiquetteSelectionRow row =
+                new fr.ecole.bcd.controller.EtiquettesController.EtiquetteSelectionRow(sampleLivre);
+        check("EtiquetteSelectionRow initialisé non coché", !row.isSelected());
+        check("EtiquetteSelectionRow quantite par défaut égale au nombre d'exemplaires", row.getQuantite() == 4);
+        row.setQuantite(2);
+        check("EtiquetteSelectionRow quantite modifiée", row.getQuantite() == 2);
+        row.setSelected(true);
+        check("EtiquetteSelectionRow coché", row.isSelected());
+
         // 5. Test génération planche Avery 21 avec décalage de départ anti-gaspillage (offset = 3)
         File tmpSheetOffset = File.createTempFile("test_planche_offset_", ".html");
         try {
