@@ -216,8 +216,10 @@ public final class DouchetteDialogHelper {
         scanField.setPromptText("🎯 Pointez votre douchette et scannez le code-barres ISBN…");
         scanField.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px;");
 
-        Label lblAntiDoublon = new Label("🛡️ Contrôle anti-doublon actif : confirmation demandée si le livre existe déjà, avec mise en boîte à vérifier si refusé.");
-        lblAntiDoublon.setStyle("-fx-font-size: 11.5px; -fx-text-fill: #475569; -fx-background-color: #f1f5f9; -fx-padding: 4 8; -fx-background-radius: 6;");
+        CheckBox chkAutoAdd = new CheckBox("⚡ Mode Rafale : ajouter automatiquement un exemplaire physique si le livre existe déjà (+1)");
+        chkAutoAdd.setSelected(true);
+        chkAutoAdd.setStyle("-fx-font-size: 11.5px; -fx-font-weight: bold; -fx-text-fill: #0369A1; -fx-background-color: #E0F2FE; -fx-padding: 4 8; -fx-background-radius: 6;");
+        chkAutoAdd.setTooltip(new Tooltip("Permet de biper des séries ou piles de livres en continu à la douchette sans boîte de dialogue bloquante"));
 
         Label lblFeedback = new Label("💡 Prêt pour le premier scan. Le curseur est positionné.");
         lblFeedback.setStyle("-fx-font-size: 12px; -fx-text-fill: #0969da; -fx-font-weight: bold;");
@@ -436,7 +438,7 @@ public final class DouchetteDialogHelper {
         HBox bottomBox = new HBox(12, lblSessionTotal, spacer, btnUndoLast);
         bottomBox.setAlignment(Pos.CENTER_LEFT);
 
-        VBox layout = new VBox(12, topInputBox, lblAntiDoublon, lblFeedback, table, bottomBox);
+        VBox layout = new VBox(12, topInputBox, chkAutoAdd, lblFeedback, table, bottomBox);
         layout.setPadding(new Insets(16));
         layout.setPrefWidth(860);
 
@@ -523,7 +525,41 @@ public final class DouchetteDialogHelper {
                     return;
                 }
 
-                // Pour les livres ordinaires (romans, BD, documentaires) : signal d'attention sonore et visuel
+                // Si le Mode Rafale est activé, ajout direct et continu d'exemplaire (+1) sans dialogue bloquant !
+                if (chkAutoAdd.isSelected()) {
+                    try {
+                        int newExId = exemplaireDao.insert(new Exemplaire(cleanIsbn, Exemplaire.Statut.DISPONIBLE, LocalDate.now(), ""));
+                        DouchetteSessionItem item = new DouchetteSessionItem(
+                                cleanIsbn,
+                                existing.getTitre(),
+                                existing.getAuteur() != null ? existing.getAuteur() : "",
+                                existing.getEditeur() != null ? existing.getEditeur() : "",
+                                newExId,
+                                "Rafale (+1)",
+                                existing.getCouvertureUrl(),
+                                timeStr,
+                                "🟢 Bon état",
+                                existing.getGenre(),
+                                existing.getTheme(),
+                                existing.getNiveau()
+                        );
+                        sessionItems.add(0, item);
+                        lblSessionTotal.setText("📦 " + sessionItems.size() + " livre(s) scanné(s) dans cette session");
+                        lblFeedback.setText("⚡ [Rafale] Exemplaire #" + newExId + " ajouté pour '" + existing.getTitre() + "' (" + (currentCopies + 1) + " ex. au total).");
+                        lblFeedback.setStyle("-fx-font-size: 12px; -fx-text-fill: #166534; -fx-font-weight: bold;");
+                        SoundService.playSuccess();
+                        AnimationHelper.flashSuccess(scanField);
+                    } catch (SQLException ex) {
+                        SoundService.playError();
+                        AnimationHelper.flashError(scanField);
+                        DialogHelper.showError("Erreur", "Impossible d'ajouter l'exemplaire : " + ex.getMessage());
+                    }
+                    scanField.clear();
+                    Platform.runLater(scanField::requestFocus);
+                    return;
+                }
+
+                // Pour les livres ordinaires en mode normal : signal d'attention sonore et visuel
                 SoundService.playWarning();
                 AnimationHelper.flashWarning(scanField);
 

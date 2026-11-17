@@ -263,6 +263,19 @@ public class SmokeTest {
         check("reassignExemplaireIsbn réassigne l'exemplaire vers cible", "TEST-TARGET-ISBN".equals(finalEx.getIsbn()));
         check("reassignExemplaireIsbn nettoie l'ancien livre", dao.findByIsbn("TEST-CORRECTED-ISBN") == null);
 
+        // DELETE BATCH (Suppression par lot ultra-rapide et sécurisée)
+        Livre b1 = new Livre("TEST-BATCH-1", "Livre Batch 1", "Auteur B1", "Ed", "");
+        Livre b2 = new Livre("TEST-BATCH-2", "Livre Batch 2", "Auteur B2", "Ed", "");
+        dao.insert(b1);
+        dao.insert(b2);
+        exDao.insert(new Exemplaire("TEST-BATCH-1", Statut.DISPONIBLE, java.time.LocalDate.now()));
+        exDao.insert(new Exemplaire("TEST-BATCH-2", Statut.DISPONIBLE, java.time.LocalDate.now()));
+        check("Livres batch insérés", dao.findByIsbn("TEST-BATCH-1") != null && dao.findByIsbn("TEST-BATCH-2") != null);
+        int deletedBatch = dao.deleteBatch(List.of("TEST-BATCH-1", "TEST-BATCH-2"));
+        check("deleteBatch retourne le bon compte", deletedBatch == 2);
+        check("deleteBatch supprime bien les livres", dao.findByIsbn("TEST-BATCH-1") == null && dao.findByIsbn("TEST-BATCH-2") == null);
+        check("deleteBatch cascade les exemplaires", exDao.findByIsbn("TEST-BATCH-1").isEmpty() && exDao.findByIsbn("TEST-BATCH-2").isEmpty());
+
         System.out.println();
     }
 

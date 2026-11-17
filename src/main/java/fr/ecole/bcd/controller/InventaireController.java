@@ -109,6 +109,13 @@ public class InventaireController {
     @FXML private Button btnEditLivre;
     @FXML private Button btnDeleteLivre;
     @FXML private Button btnRessourcesLivre;
+    @FXML private Button btnModeDouchetteTop;
+
+    // ── Barre d'actions groupées (Sélection multiple) ────────────────────
+    @FXML private HBox boxBatchActions;
+    @FXML private Label lblBatchCount;
+    @FXML private Button btnBatchLabels;
+    @FXML private Button btnBatchDelete;
 
     // ── Composants FXML — Filtres Thématiques & Niveaux ────────────────
     @FXML private ComboBox<String> genreFilter;
@@ -210,6 +217,11 @@ public class InventaireController {
         // Sélection d'un livre
         livreTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             showLivreDetail(newVal);
+        });
+
+        // Barre d'actions groupées (sélection multiple)
+        livreTableView.getSelectionModel().getSelectedItems().addListener((javafx.collections.ListChangeListener<Livre>) c -> {
+            updateBatchActionsBar();
         });
 
         // Sélection d'un exemplaire
@@ -576,10 +588,14 @@ public class InventaireController {
                 }
             });
 
+            MenuItem deleteBatchItem = new MenuItem("🗑️ Supprimer les livres sélectionnés…");
+            deleteBatchItem.setStyle("-fx-text-fill: #DC2626; -fx-font-weight: bold;");
+            deleteBatchItem.setOnAction(e -> handleDeleteLivre());
+
             MenuItem selectAllItem = new MenuItem("☑️ Tout sélectionner");
             selectAllItem.setOnAction(e -> livreTableView.getSelectionModel().selectAll());
 
-            contextMenu.getItems().addAll(printLabelsItem, new SeparatorMenuItem(),
+            contextMenu.getItems().addAll(printLabelsItem, deleteBatchItem, new SeparatorMenuItem(),
                     copyIsbnItem, copyAllSelectedIsbnsItem, copyTitleAuthorItem,
                     new SeparatorMenuItem(), selectAllItem);
 
@@ -587,9 +603,13 @@ public class InventaireController {
                 int selCount = livreTableView.getSelectionModel().getSelectedItems().size();
                 if (selCount > 1) {
                     printLabelsItem.setText("🏷️ Imprimer les étiquettes (" + selCount + " livres sélectionnés)…");
+                    deleteBatchItem.setText("🗑️ Supprimer les " + selCount + " livres sélectionnés…");
+                    deleteBatchItem.setVisible(true);
                     copyAllSelectedIsbnsItem.setVisible(true);
                 } else {
                     printLabelsItem.setText("🏷️ Imprimer les étiquettes de ce livre…");
+                    deleteBatchItem.setText("🗑️ Supprimer ce livre…");
+                    deleteBatchItem.setVisible(true);
                     copyAllSelectedIsbnsItem.setVisible(false);
                 }
             });
@@ -1827,12 +1847,100 @@ public class InventaireController {
 
     @FXML
     private void handleDeleteLivre() {
-        Livre selected = livreTableView.getSelectionModel().getSelectedItem();
-        if (selected == null) return;
+        List<Livre> selectedList = (livreTableView != null && livreTableView.getSelectionModel().getSelectedItems() != null)
+                ? livreTableView.getSelectionModel().getSelectedItems().stream().filter(Objects::nonNull).distinct().toList()
+                : List.of();
+
+        if (selectedList.isEmpty()) {
+            Livre single = livreTableView != null ? livreTableView.getSelectionModel().getSelectedItem() : null;
+            if (single != null) selectedList = List.of(single);
+        }
+
+        if (selectedList.isEmpty()) return;
 
         try {
-            // Vérifier si le livre est gelé par une session d'inventaire
             InventaireSessionService invService = new InventaireSessionService();
+
+            // CAS 1 : Suppression multiple (plusieurs livres sélectionnés)
+            if (selectedList.size() > 1) {
+                List<Livre> deletable = new ArrayList<>();
+                List<String> blockedBorrowed = new ArrayList<>();
+                List<String> blockedFrozen = new ArrayList<>();
+                int totalCopiesCount = 0;
+
+                for (Livre l : selectedList) {
+                    if (invService.isLivreGele(l.getIsbn())) {
+                        blockedFrozen.add(l.getTitre());
+                        continue;
+                    }
+                    List<Exemplaire> copies = exemplaireDao.findByIsbn(l.getIsbn());
+                    boolean hasBorrowed = copies.stream().anyMatch(c -> c.getStatut() == Statut.EMPRUNTE);
+                    if (hasBorrowed) {
+                        blockedBorrowed.add(l.getTitre());
+                    } else {
+                        deletable.add(l);
+                        totalCopiesCount += copies.size();
+                    }
+                }
+
+                if (!blockedBorrowed.isEmpty() || !blockedFrozen.isEmpty()) {
+                    StringBuilder warn = new StringBuilder();
+                    if (!blockedBorrowed.isEmpty()) {
+                        warn.append("• ").append(blockedBorrowed.size())
+                            .append(" livre(s) ont des exemplaires actuellement prêtés (retour requis).\n");
+                    }
+                    if (!blockedFrozen.isEmpty()) {
+                        warn.append("• ").append(blockedFrozen.size())
+                            .append(" livre(s) font partie d'une session d'inventaire active (stock gelé).\n");
+                    }
+                    if (deletable.isEmpty()) {
+                        showWarning("Suppression impossible", "Aucun des livres sélectionnés ne peut être supprimé :\n\n" + warn);
+                        return;
+                    } else {
+                        warn.append("\nSeuls les ").append(deletable.size()).append(" autres livres pourront être supprimés.");
+                        showWarning("Livres protégés ignorés", warn.toString());
+                    }
+                }
+
+                // Confirmation de suppression en masse
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                MainApp.prepareDialog(confirm);
+                confirm.setTitle("Confirmer la suppression par lot");
+                confirm.setHeaderText("Supprimer " + deletable.size() + " livre(s) sélectionné(s) ?");
+                confirm.setContentText("Cette action supprimera définitivement ces " + deletable.size()
+                        + " ouvrages et leurs " + totalCopiesCount + " exemplaire(s) physique(s) de la BCD.\n\n"
+                        + "⚠️ Cette opération est irréversible.");
+
+                // Si plus de 5 livres, confirmation renforcée par mot-clé pour éviter toute fausse manip
+                if (deletable.size() >= 5) {
+                    TextInputDialog securityDialog = new TextInputDialog();
+                    MainApp.prepareDialog(securityDialog);
+                    securityDialog.setTitle("Sécurité désherbage / Suppression massive");
+                    securityDialog.setHeaderText("⚠️ Suppression massive de " + deletable.size() + " livres (" + totalCopiesCount + " exemplaires)");
+                    securityDialog.setContentText("Pour confirmer la suppression définitive de ces " + deletable.size()
+                            + " livres, tapez le mot 'SUPPRIMER' ci-dessous :");
+
+                    Optional<String> res = securityDialog.showAndWait();
+                    if (res.isEmpty() || !"SUPPRIMER".equalsIgnoreCase(res.get().trim())) {
+                        showInfo("Suppression annulée", "Le mot de confirmation n'a pas été saisi. Aucun livre n'a été supprimé.");
+                        return;
+                    }
+                } else {
+                    if (confirm.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+                        return;
+                    }
+                }
+
+                List<String> isbns = deletable.stream().map(Livre::getIsbn).toList();
+                int deletedCount = livreDao.deleteBatch(isbns);
+                loadData();
+                showLivreDetail(null);
+                updateStatus("🗑️ " + deletedCount + " livre(s) supprimé(s) du catalogue (" + totalCopiesCount + " exemplaires retirés).");
+                return;
+            }
+
+            // CAS 2 : Suppression d'un livre unique
+            Livre selected = selectedList.get(0);
             if (invService.isLivreGele(selected.getIsbn())) {
                 showWarning("Suppression impossible",
                         "Ce livre fait partie d'une session d'inventaire active (stock gelé sur ce rayon).\n"
@@ -1840,10 +1948,8 @@ public class InventaireController {
                 return;
             }
 
-            // Vérifier s'il y a des exemplaires empruntés
             List<Exemplaire> copies = exemplaireDao.findByIsbn(selected.getIsbn());
             boolean hasBorrowed = copies.stream().anyMatch(c -> c.getStatut() == Statut.EMPRUNTE);
-
             if (hasBorrowed) {
                 showWarning("Suppression impossible",
                         "Ce livre ne peut pas être supprimé car un ou plusieurs de ses exemplaires sont actuellement prêtés.\n"
@@ -1852,6 +1958,7 @@ public class InventaireController {
             }
 
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            MainApp.prepareDialog(confirm);
             confirm.setTitle("Confirmer la suppression");
             confirm.setHeaderText("Supprimer '" + selected.getTitre() + "' ?");
             confirm.setContentText("Cette action supprimera définitivement le livre et ses "
@@ -2499,6 +2606,44 @@ public class InventaireController {
             if (!selected.isEmpty()) {
                 ec.selectLivres(selected);
             }
+        }
+    }
+
+    // =====================================================================
+    //  FEATURE : Actions groupées (Suppression et étiquetage par lot)
+    // =====================================================================
+
+    private void updateBatchActionsBar() {
+        if (boxBatchActions == null || livreTableView == null) return;
+        var selected = livreTableView.getSelectionModel().getSelectedItems();
+        int count = (selected != null) ? (int) selected.stream().filter(Objects::nonNull).count() : 0;
+        if (count > 1) {
+            boxBatchActions.setVisible(true);
+            boxBatchActions.setManaged(true);
+            if (lblBatchCount != null) {
+                lblBatchCount.setText("☑️ " + count + " livres sélectionnés");
+            }
+            if (btnBatchLabels != null) {
+                btnBatchLabels.setText("🏷️ Étiquettes (" + count + ")");
+            }
+            if (btnBatchDelete != null) {
+                btnBatchDelete.setText("🗑️ Supprimer les " + count + " livres");
+            }
+        } else {
+            boxBatchActions.setVisible(false);
+            boxBatchActions.setManaged(false);
+        }
+    }
+
+    @FXML
+    private void handleBatchLabels() {
+        handleEtiquettes();
+    }
+
+    @FXML
+    private void handleClearSelection() {
+        if (livreTableView != null) {
+            livreTableView.getSelectionModel().clearSelection();
         }
     }
 }

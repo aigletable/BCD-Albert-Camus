@@ -556,9 +556,10 @@ public class PretsController {
         dialog.setTitle("Enregistrer un nouveau prêt");
         dialog.setHeaderText("Recherchez l'emprunteur par nom puis indiquez le livre physique à prêter.");
 
-        ButtonType saveButtonType = new ButtonType("Valider le prêt", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
-        dialog.getDialogPane().setPrefWidth(560);
+        ButtonType saveAndNextButtonType = new ButtonType("Valider et élève suivant ➔", ButtonBar.ButtonData.APPLY);
+        ButtonType saveButtonType = new ButtonType("Valider et fermer", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveAndNextButtonType, saveButtonType, ButtonType.CANCEL);
+        dialog.getDialogPane().setPrefWidth(580);
 
         VBox contentBox = new VBox(12);
         contentBox.setPadding(new Insets(16, 20, 16, 20));
@@ -690,14 +691,19 @@ public class PretsController {
         dialog.getDialogPane().setContent(contentBox);
 
         Node saveBtn = dialog.getDialogPane().lookupButton(saveButtonType);
+        Node saveAndNextBtn = dialog.getDialogPane().lookupButton(saveAndNextButtonType);
         saveBtn.setDisable(true);
+        saveAndNextBtn.setDisable(true);
+        saveAndNextBtn.setStyle("-fx-background-color: #0284C7; -fx-text-fill: white; -fx-font-weight: bold;");
 
         // Stocke l'id d'exemplaire physique résolu (soit direct, soit via ISBN)
         final int[] resolvedExemplaireId = new int[]{-1};
 
-        // Mise à jour de l'état du bouton Enregistrer
+        // Mise à jour de l'état des boutons Enregistrer
         Runnable updateSaveBtnState = () -> {
-            saveBtn.setDisable(selectedUserProp.get() == null || tfExemplaireId.getText().isBlank());
+            boolean disable = selectedUserProp.get() == null || tfExemplaireId.getText().isBlank();
+            saveBtn.setDisable(disable);
+            saveAndNextBtn.setDisable(disable);
         };
 
         // Écouteur de sélection utilisateur
@@ -938,6 +944,53 @@ public class PretsController {
             } else {
                 lvBookSuggestions.setVisible(false);
                 lvBookSuggestions.setManaged(false);
+            }
+        });
+
+        // Enchaînement des prêts en continu pour une classe
+        Button btnSaveAndNext = (Button) saveAndNextBtn;
+        btnSaveAndNext.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            event.consume(); // Empêche la fermeture du dialogue pour enchaîner les prêts
+
+            Utilisateur user = selectedUserProp.get();
+            if (user == null) {
+                showWarning("Emprunteur manquant", "Veuillez sélectionner un élève ou enseignant.");
+                return;
+            }
+
+            if (resolvedExemplaireId[0] <= 0) {
+                checkExemplaire.run();
+            }
+
+            int exId = resolvedExemplaireId[0];
+            if (exId <= 0) {
+                showWarning("Exemplaire invalide", "Veuillez indiquer un exemplaire valide et disponible.");
+                return;
+            }
+
+            try {
+                Emprunt emprunt = empruntService.emprunter(user, exId);
+                loadData();
+                SoundService.playSuccess();
+                updateStatus("✅ Emprunt #" + emprunt.getId() + " validé pour "
+                        + user.getPrenom() + " " + user.getNom() + " (ex. #" + exId + ").");
+
+                // Réinitialiser pour l'élève suivant sans fermer le dialogue !
+                tfExemplaireId.clear();
+                resolvedExemplaireId[0] = -1;
+                lblExemplaireInfo.setText("✅ Prêt enregistré pour " + user.getPrenom() + " (" + user.getClasse() + ") ! Prêt pour le suivant.");
+                lblExemplaireInfo.setStyle("-fx-font-size: 11px; -fx-text-fill: #166534; -fx-font-weight: bold;");
+
+                selectedUserProp.set(null);
+                tfSearchUser.clear();
+                Platform.runLater(tfSearchUser::requestFocus);
+
+            } catch (RegleMetierException e) {
+                SoundService.playError();
+                showWarning("Prêt impossible", e.getMessage());
+            } catch (SQLException e) {
+                SoundService.playError();
+                showError("Erreur technique", e.getMessage());
             }
         });
 

@@ -626,6 +626,43 @@ public class LivreDao {
     }
 
     /**
+     * Supprime par lot une collection de livres et l'ensemble de leurs exemplaires physiques
+     * en une seule transaction SQLite atomique ultra-rapide.
+     *
+     * @param isbns liste des ISBNs ou codes internes des livres à supprimer
+     * @return le nombre total de livres supprimés
+     * @throws SQLException si une erreur SQL survient
+     */
+    public int deleteBatch(List<String> isbns) throws SQLException {
+        if (isbns == null || isbns.isEmpty()) return 0;
+        String sql = "DELETE FROM livres WHERE isbn = ?";
+        Connection conn = DatabaseManager.getConnection();
+        boolean oldAuto = conn.getAutoCommit();
+        try {
+            conn.setAutoCommit(false);
+            int count = 0;
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                for (String isbn : isbns) {
+                    if (isbn == null || isbn.isBlank()) continue;
+                    ps.setString(1, isbn.trim());
+                    ps.addBatch();
+                }
+                int[] res = ps.executeBatch();
+                for (int r : res) {
+                    if (r > 0 || r == Statement.SUCCESS_NO_INFO) count++;
+                }
+            }
+            conn.commit();
+            return count;
+        } catch (SQLException e) {
+            conn.rollback();
+            throw e;
+        } finally {
+            conn.setAutoCommit(oldAuto);
+        }
+    }
+
+    /**
      * Supprime un livre et l'ensemble de ses exemplaires physiques en effectuant une recherche par son titre.
      * Recherche d'abord une correspondance exacte, puis floue.
      *

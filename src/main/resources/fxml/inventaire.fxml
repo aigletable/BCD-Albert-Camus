@@ -28,25 +28,22 @@
         <Label text="Inventaire &amp; Livres" styleClass="screen-title"/>
         <Region HBox.hgrow="ALWAYS"/>
 
-        <Button fx:id="btnBoiteVerif" text="📦 Boîte à vérifier" styleClass="btn-outline"
-                onAction="#handleOpenBoiteVerification"/>
-        <Button fx:id="btnAddByTitle" text="📖 Par Titre (sans ISBN)" styleClass="btn-outline"
-                onAction="#handleAddByTitle"/>
+        <Button fx:id="btnModeDouchetteTop" text="⚡ Mode Douchette (Ajout rapide)"
+                style="-fx-background-color: #6366F1; -fx-text-fill: white; -fx-font-weight: 700; -fx-cursor: hand; -fx-background-radius: 6; -fx-padding: 7 14;"
+                onAction="#handleModeDouchette"/>
         <Button fx:id="btnAddLivre" text="➕ Ajouter un livre" styleClass="btn-blue"
                 onAction="#handleAddLivre"/>
-        <Button fx:id="btnImportCsv" text="📥 Importer" styleClass="btn-outline"
+        <Button fx:id="btnAddByTitle" text="📖 Sans code-barres" styleClass="btn-outline"
+                onAction="#handleAddByTitle"/>
+        <Button fx:id="btnImportCsv" text="📥 Importer CSV" styleClass="btn-outline"
                 onAction="#handleImportCsv"/>
 
-        <!-- Menu déroulant "Plus v" regroupant les outils secondaires -->
-        <MenuButton text="Plus ▾" styleClass="btn-outline">
+        <!-- Menu déroulant "Outils v" regroupant les fonctions secondaires -->
+        <MenuButton text="Outils ▾" styleClass="btn-outline">
             <items>
-                <MenuItem text="📖 Ajouter par Titre / Auteur (sans ISBN)" onAction="#handleAddByTitle"/>
-                <MenuItem text="📦 Boîte à vérifier &amp; anomalies de stock" onAction="#handleOpenBoiteVerification"/>
-                <MenuItem text="⚡ Mode Douchette (Ajout rapide)" onAction="#handleModeDouchette"/>
-                <MenuItem text="🏷️ Imprimer Étiquettes cotes/barres" onAction="#handleEtiquettes"/>
-                <MenuItem text="🪄 Classifier le catalogue" onAction="#handleClassifyCatalogue"/>
-                <MenuItem text="📋 Lancer un Récolement" onAction="#handleOpenRecolement"/>
-                <MenuItem text="🖼️ Vérifier les couvertures" onAction="#handleRefreshAllCovers"/>
+                <MenuItem text="📦 Boîte à vérifier &amp; anomalies" onAction="#handleOpenBoiteVerification"/>
+                <MenuItem text="🪄 Classifier le catalogue automatiquement" onAction="#handleClassifyCatalogue"/>
+                <MenuItem text="🖼️ Rafraîchir les couvertures" onAction="#handleRefreshAllCovers"/>
                 <SeparatorMenuItem/>
                 <MenuItem text="📤 Exporter le catalogue (CSV)" onAction="#handleExportCatalogue"/>
             </items>
@@ -130,6 +127,22 @@
                     <Label text="Aucun livre trouvé dans le catalogue." style="-fx-text-fill: #94A3B8; -fx-font-size: 13px;"/>
                 </placeholder>
             </TableView>
+
+            <!-- Barre d'actions groupées (visible dès que plusieurs livres sont sélectionnés) -->
+            <HBox fx:id="boxBatchActions" alignment="CENTER_LEFT" spacing="12"
+                  style="-fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8 14;"
+                  visible="false" managed="false">
+                <Label fx:id="lblBatchCount" text="☑️ 0 livres sélectionnés"
+                       style="-fx-font-weight: 700; -fx-font-size: 12px; -fx-text-fill: #1E293B;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnBatchLabels" text="🏷️ Étiquettes de la sélection" styleClass="btn-outline, btn-sm"
+                        onAction="#handleBatchLabels"/>
+                <Button fx:id="btnBatchDelete" text="🗑️ Supprimer la sélection" styleClass="btn-danger-outline, btn-sm"
+                        style="-fx-text-fill: #DC2626; -fx-border-color: #DC2626; -fx-font-weight: bold;"
+                        onAction="#handleDeleteLivre"/>
+                <Button text="✕" styleClass="btn-outline, btn-sm" onAction="#handleClearSelection"
+                        style="-fx-cursor: hand;"/>
+            </HBox>
 
             <HBox alignment="CENTER_LEFT" styleClass="status-bar">
                 <Label fx:id="statusLabel" text="Chargement du catalogue…"/>
