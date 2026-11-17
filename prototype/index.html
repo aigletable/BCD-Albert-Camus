@@ -1,1548 +1,409 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BCD Express — Prototype Interactif & Enquête Enseignants</title>
-  <style>
-    /* ══════════════════════════════════════════════════════════════════════
-       THÈMES & VARIABLES CSS
-       ══════════════════════════════════════════════════════════════════════ */
-    :root, [data-style="cupertino"] {
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --surface-subtle: #f1f5f9;
-      --border: #e2e8f0;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --primary-subtle: #eff6ff;
-      --success: #16a34a;
-      --success-subtle: #dcfce7;
-      --warning: #d97706;
-      --warning-subtle: #fef3c7;
-      --danger: #dc2626;
-      --danger-subtle: #fee2e2;
-      --radius: 10px;
-      --radius-sm: 6px;
-      --radius-lg: 16px;
-      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.04);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05);
-    }
+<html lang="fr"><head><meta charset="utf-8"><title>BCD Express – Prototype Interactif & Enquête</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#f1f4fb;--card:#fff;--p:#2f5be7;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--tx:#1e293b;--mut:#64748b;--bd:#e2e8f0}
+body.night{--bg:#0f172a;--card:#1e293b;--tx:#e2e8f0;--mut:#94a3b8;--bd:#334155}
+body.pastel{--bg:#faf6ee;--card:#fffdfa;--p:#e06c53;--ok:#2d9d68;--warn:#e69138;--bad:#d33838;--tx:#2c241b;--mut:#786c5e;--bd:#e6dbcd}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--tx);transition:background .15s,color .15s}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;flex-wrap:wrap;gap:12px}
+h1{margin:0;font-size:22px}.sub{color:var(--mut);font-size:13px}
+.btn{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 14px;border-radius:10px;cursor:pointer;font-size:14px;font-family:inherit;transition:.15s}
+.btn:hover{border-color:var(--p)}.btn.pri{background:var(--p);color:#fff;border-color:var(--p);font-weight:600}
+.btn.big{padding:11px 22px;font-size:15px}.btn.danger{color:var(--bad)}
+.pills{display:flex;gap:10px;padding:0 24px;flex-wrap:wrap}
+.pill{background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:6px 14px;font-size:13px}.pill b{font-size:15px;color:var(--p)}
+.tools{display:flex;gap:10px;padding:14px 24px;align-items:center;flex-wrap:wrap}
+.tools input,.tools select{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font-size:14px;font-family:inherit}
+.tools input{flex:1;min-width:220px}
+main{display:grid;grid-template-columns:330px 1fr;gap:16px;padding:0 24px 24px;align-items:start}
+.main-single{display:block;padding:0 24px 24px}
+.list{display:flex;flex-direction:column;gap:10px}
+.mal{background:var(--card);border:2px solid transparent;border-left:6px solid var(--c);border-radius:14px;padding:12px 14px;cursor:pointer;box-shadow:0 1px 3px #0001;transition:.15s}
+.mal:hover{transform:translateY(-1px);box-shadow:0 3px 6px #0002}
+.mal.sel{border-color:var(--p);border-left-color:var(--c)}
+.mal .t{font-weight:700}.mal .m{color:var(--mut);font-size:12px;margin:2px 0 8px}
+.mal .r{display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:12px;padding:3px 10px;border-radius:999px;font-weight:600}
+.b-ok{background:#dcfce7;color:#166534}.b-loan{background:#fef3c7;color:#92400e}.b-late{background:#fee2e2;color:#991b1b}
+.detail{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 1px 3px #0001;min-height:520px}
+.dh{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.dh h2{margin:0}.code{font-family:monospace;background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:6px;font-size:12px}
+.tags{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.tag{font-size:12px;padding:3px 10px;border-radius:8px;background:#e0f2fe;color:#075985}
+.acts{display:flex;gap:8px;position:relative}
+.menu{position:absolute;right:0;top:46px;background:var(--card);border:1px solid var(--bd);border-radius:10px;display:none;z-index:5;min-width:170px;box-shadow:0 8px 24px #0002}
+.menu.on{display:block}.menu div{padding:10px 14px;cursor:pointer;font-size:14px}.menu div:hover{background:var(--bg)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin:12px 0 16px}
+.tab{padding:9px 16px;cursor:pointer;color:var(--mut);border-bottom:3px solid transparent;font-size:14px;font-weight:600;transition:.15s}
+.tab:hover{color:var(--tx)}
+.tab.on{color:var(--p);border-color:var(--p);font-weight:700}
+.alert{background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.book{position:relative;border:1px solid var(--bd);border-radius:12px;padding:10px;text-align:center;cursor:pointer;background:var(--card);transition:.15s}
+.book:hover{border-color:var(--p);transform:translateY(-2px);box-shadow:0 4px 10px #0002}
+.cover{height:130px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:42px;color:#fff;margin-bottom:8px;box-shadow:inset 0 0 0 1px #fff3}
+.book .bt{font-size:13px;font-weight:600;line-height:1.2;margin-bottom:3px}.book .ba{font-size:11px;color:var(--mut)}
+.qty{position:absolute;top:6px;right:6px;background:var(--p);color:#fff;border-radius:999px;font-size:12px;font-weight:700;padding:2px 9px}
+.rm{position:absolute;top:6px;left:6px;background:var(--bad);color:#fff;border:0;border-radius:8px;font-size:11px;padding:3px 8px;cursor:pointer;display:none}
+.book:hover .rm{display:block}
+.add{display:flex;gap:8px;margin-bottom:14px}.add input{flex:1;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx)}
+.drawer{position:fixed;right:-390px;top:0;bottom:0;width:370px;background:var(--card);box-shadow:-8px 0 30px #0003;padding:24px;transition:.25s;z-index:30;overflow:auto}
+.drawer.on{right:0}.drawer .cover{height:180px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:10px 12px;border-bottom:1px solid var(--bd);text-align:left}th{color:var(--mut);font-size:12px;text-transform:uppercase}
+.empty{color:var(--mut);text-align:center;padding:30px}
+.modal{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;z-index:40}
+.modal.on{display:flex}.modal .box{background:var(--card);border-radius:16px;padding:24px;width:400px;max-width:90vw}
+.modal select,.modal input,.modal textarea{width:100%;padding:10px;margin:6px 0 14px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font-family:inherit}
+.toast{position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 8px 24px #0004;z-index:99;display:none}
+.toast.on{display:block;animation:fade .2s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style></head><body>
 
-    /* Style 2 : École Chaleureuse & Pastel */
-    [data-style="pastel"] {
-      --font: "Quicksand", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --bg: #fcf9f2;
-      --surface: #ffffff;
-      --surface-subtle: #f7f1e5;
-      --border: #eadfcd;
-      --text: #2d261e;
-      --text-muted: #7c7267;
-      --primary: #e06c53;
-      --primary-hover: #c9573f;
-      --primary-subtle: #fdf0ed;
-      --success: #3f9b6b;
-      --success-subtle: #eaf6f0;
-      --warning: #e69138;
-      --warning-subtle: #fef5ea;
-      --danger: #d33838;
-      --danger-subtle: #fdeeee;
-      --radius: 14px;
-      --radius-sm: 8px;
-      --radius-lg: 20px;
-      --shadow: 0 2px 5px rgba(80,60,40,0.06);
-      --shadow-md: 0 6px 12px rgba(80,60,40,0.08);
-      --shadow-lg: 0 12px 24px rgba(80,60,40,0.1);
-    }
-
-    /* Style 3 : Grand Écran / TBI / Accessibilité */
-    [data-style="tbi"] {
-      --font: system-ui, -apple-system, sans-serif;
-      --bg: #eef2f6;
-      --surface: #ffffff;
-      --surface-subtle: #e2e8f0;
-      --border: #94a3b8;
-      --text: #000000;
-      --text-muted: #334155;
-      --primary: #0250bb;
-      --primary-hover: #013a88;
-      --primary-subtle: #dbeafe;
-      --success: #0b7333;
-      --success-subtle: #bbf7d0;
-      --warning: #b45309;
-      --warning-subtle: #fde68a;
-      --danger: #b91c1c;
-      --danger-subtle: #fecaca;
-      --radius: 8px;
-      --radius-sm: 4px;
-      --radius-lg: 12px;
-      --shadow: 0 2px 4px rgba(0,0,0,0.15);
-      --shadow-md: 0 4px 8px rgba(0,0,0,0.2);
-      --shadow-lg: 0 8px 16px rgba(0,0,0,0.25);
-    }
-
-    /* Mode Sombre */
-    body.dark {
-      --bg: #0b1120;
-      --surface: #1e293b;
-      --surface-subtle: #0f172a;
-      --border: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #3b82f6;
-      --primary-hover: #60a5fa;
-      --primary-subtle: rgba(59,130,246,0.15);
-      --success: #22c55e;
-      --success-subtle: rgba(34,197,94,0.15);
-      --warning: #f59e0b;
-      --warning-subtle: rgba(245,158,11,0.15);
-      --danger: #ef4444;
-      --danger-subtle: rgba(239,68,68,0.15);
-      --shadow: 0 2px 5px rgba(0,0,0,0.4);
-      --shadow-md: 0 6px 12px rgba(0,0,0,0.5);
-      --shadow-lg: 0 12px 24px rgba(0,0,0,0.6);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font);
-      background-color: var(--bg);
-      color: var(--text);
-      line-height: 1.45;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-      transition: background-color .2s, color .2s;
-    }
-
-    /* ══════════════════════════════════════════════════════════════════════
-       BANDEAU SUPÉRIEUR D'ÉVALUATION & COMMUTATEUR DE STYLES
-       ══════════════════════════════════════════════════════════════════════ */
-    .eval-bar {
-      background: linear-gradient(90deg, #1e3a8a, #3b82f6);
-      color: #ffffff;
-      padding: 8px 16px;
-      font-size: 13px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      z-index: 50;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-    .eval-left { display: flex; align-items: center; gap: 8px; font-weight: 600; }
-    .eval-pill {
-      background: rgba(255,255,255,0.2);
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-    .eval-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .style-picker {
-      display: flex;
-      background: rgba(0,0,0,0.25);
-      border-radius: 8px;
-      padding: 2px;
-      gap: 2px;
-    }
-    .style-btn {
-      background: transparent;
-      border: 0;
-      color: #ffffff;
-      padding: 5px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      transition: .15s;
-    }
-    .style-btn.active {
-      background: #ffffff;
-      color: #1e3a8a;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    .eval-action {
-      background: #f59e0b;
-      color: #78350f;
-      font-weight: 700;
-      border: 0;
-      padding: 6px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 12.5px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      transition: .15s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .eval-action:hover { background: #d97706; color: #fff; transform: translateY(-1px); }
-
-    /* ══════════════════════════════════════════════════════════════════════
-       EN-TÊTE OFFICIEL DE L'ÉCOLE
-       ══════════════════════════════════════════════════════════════════════ */
-    header.school-header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-    }
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .brand-icon {
-      width: 40px; height: 40px;
-      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-      color: white;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      box-shadow: 0 2px 5px rgba(37,99,235,0.3);
-    }
-    .brand-text h1 { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; }
-    .brand-text .sub { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-    .header-actions { display: flex; align-items: center; gap: 8px; }
-
-    /* ══════════════════════════════════════════════════════════════════════
-       ONGLETS DE NAVIGATION MAJEURS (7 ÉCRANS)
-       ══════════════════════════════════════════════════════════════════════ */
-    nav.main-tabs {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 24px;
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-    }
-    .nav-tab {
-      background: transparent;
-      border: 0;
-      color: var(--text-muted);
-      font-size: 13.5px;
-      font-weight: 600;
-      padding: 12px 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      border-bottom: 3px solid transparent;
-      white-space: nowrap;
-      transition: .15s;
-    }
-    .nav-tab:hover { color: var(--text); }
-    .nav-tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-      font-weight: 700;
-    }
-
-    /* ══════════════════════════════════════════════════════════════════════
-       COMPOSANTS UI : BOUTONS, BADGES, CARTES, KPI
-       ══════════════════════════════════════════════════════════════════════ */
-    .btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px 14px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: .15s;
-      font-family: inherit;
-    }
-    .btn:hover { border-color: var(--primary); color: var(--primary); }
-    .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .btn.primary:hover { background: var(--primary-hover); color: #fff; }
-    .btn.emerald { background: var(--success); color: #fff; border-color: var(--success); }
-    .btn.danger { color: var(--danger); }
-    .btn.danger:hover { background: var(--danger-subtle); border-color: var(--danger); }
-    .btn.sm { padding: 4px 10px; font-size: 11.5px; }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 999px;
-    }
-    .badge.green { background: var(--success-subtle); color: var(--success); }
-    .badge.amber { background: var(--warning-subtle); color: var(--warning); }
-    .badge.blue { background: var(--primary-subtle); color: var(--primary); }
-    .badge.red { background: var(--danger-subtle); color: var(--danger); }
-    .badge.slate { background: var(--surface-subtle); color: var(--text-muted); }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      box-shadow: var(--shadow);
-    }
-
-    .kpi-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-    .kpi-card {
-      flex: 1;
-      min-width: 140px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px 14px;
-      box-shadow: var(--shadow);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .kpi-icon {
-      width: 38px; height: 38px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-    }
-    .kpi-val { font-size: 20px; font-weight: 800; line-height: 1.1; }
-    .kpi-lbl { font-size: 11.5px; color: var(--text-muted); font-weight: 600; }
-
-    .kpi-pill {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 6px 14px;
-      font-size: 12.5px;
-      font-weight: 600;
-      box-shadow: var(--shadow);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .kpi-pill b { font-size: 14px; color: var(--primary); }
-
-    /* Barre d'outils / filtre */
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
-    .input-text {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px 12px;
-      border-radius: var(--radius-sm);
-      font-size: 13.5px;
-      font-family: inherit;
-      outline: none;
-      transition: .15s;
-    }
-    .input-text:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle); }
-    .search-input { flex: 1; min-width: 240px; }
-
-    /* Tables */
-    .table-container {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-    th {
-      background: var(--surface-subtle);
-      color: var(--text-muted);
-      font-weight: 700;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
-    }
-    td {
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
-    tr:last-child td { border-bottom: 0; }
-    tr:hover td { background-color: var(--surface-subtle); }
-
-    /* Grille de livres */
-    .books-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 14px;
-    }
-    .book-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px;
-      text-align: center;
-      cursor: pointer;
-      position: relative;
-      transition: transform .15s, border-color .15s, box-shadow .15s;
-      box-shadow: var(--shadow);
-    }
-    .book-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--primary);
-      box-shadow: var(--shadow-md);
-    }
-    .book-cover {
-      height: 140px;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 700;
-      padding: 10px;
-      margin-bottom: 8px;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2), 0 3px 6px rgba(0,0,0,0.15);
-      position: relative;
-      overflow: hidden;
-    }
-    .book-cover .icon { font-size: 36px; margin-bottom: 4px; }
-    .book-cover .title-overlay {
-      font-size: 11px;
-      text-align: center;
-      line-height: 1.2;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .book-title {
-      font-size: 12.5px;
-      font-weight: 700;
-      line-height: 1.25;
-      margin-bottom: 3px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .book-author { font-size: 11px; color: var(--text-muted); }
-    .qty-tag {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      background: var(--primary);
-      color: #fff;
-      font-size: 10.5px;
-      font-weight: 800;
-      padding: 2px 7px;
-      border-radius: 999px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-
-    /* Vues d'écran */
-    main { padding: 20px 24px 60px; max-width: 1440px; margin: 0 auto; }
-    .screen { display: none; }
-    .screen.active { display: block; animation: fadeIn .2s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* ══════════════════════════════════════════════════════════════════════
-       MODALES & TIROIRS INSPECTEURS
-       ══════════════════════════════════════════════════════════════════════ */
-    .modal-overlay {
-      position: fixed; inset: 0;
-      background: rgba(15,23,42,0.6);
-      backdrop-filter: blur(2px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 16px;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal-box {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      width: 100%;
-      max-width: 540px;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      animation: modalZoom .2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes modalZoom { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
-    .modal-head {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .modal-head h3 { font-size: 16px; font-weight: 800; }
-    .modal-body { padding: 20px; max-height: 80vh; overflow-y: auto; }
-    .modal-foot {
-      padding: 12px 20px;
-      background: var(--surface-subtle);
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 5px; color: var(--text-muted); }
-    .form-group input, .form-group select, .form-group textarea {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 9px 12px;
-      border-radius: var(--radius-sm);
-      font-size: 13.5px;
-      font-family: inherit;
-    }
-
-    /* Tiroir Latéral (Mallettes & Livres) */
-    .drawer-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.3);
-      display: none;
-      z-index: 90;
-    }
-    .drawer-overlay.open { display: block; }
-    .drawer {
-      position: fixed;
-      right: -420px; top: 0; bottom: 0;
-      width: 390px;
-      max-width: 90vw;
-      background: var(--surface);
-      border-left: 1px solid var(--border);
-      box-shadow: var(--shadow-lg);
-      z-index: 95;
-      padding: 20px;
-      overflow-y: auto;
-      transition: right .25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .drawer.open { right: 0; }
-
-    /* Audio alert toast */
-    .toast {
-      position: fixed;
-      bottom: 24px; right: 24px;
-      background: #0f172a;
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 200;
-      transform: translateY(100px);
-      opacity: 0;
-      transition: .25s;
-    }
-    .toast.show { transform: translateY(0); opacity: 1; }
-
-    /* Planche d'étiquettes A4 */
-    .a4-sheet {
-      background: #ffffff;
-      color: #000000;
-      width: 100%;
-      max-width: 800px;
-      margin: 0 auto;
-      box-shadow: var(--shadow-lg);
-      padding: 24px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-    }
-    .labels-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .label-box {
-      border: 1px dashed #94a3b8;
-      border-radius: 6px;
-      padding: 8px 10px;
-      height: 105px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      text-align: center;
-    }
-    .label-header { font-size: 8.5px; font-weight: 700; color: #475569; text-transform: uppercase; }
-    .label-title { font-size: 11px; font-weight: 800; line-height: 1.15; max-height: 26px; overflow: hidden; }
-    .label-barcode { font-family: monospace; font-size: 15px; letter-spacing: 2px; font-weight: 700; margin: 2px 0; }
-    .label-footer { display: flex; justify-content: space-between; font-size: 9px; font-weight: 600; color: #334155; }
-  </style>
-</head>
-<body data-style="cupertino">
-
-  <!-- ══════════════════════════════════════════════════════════════════════
-       BANDEAU SUPÉRIEUR D'ÉVALUATION PAR LES ENSEIGNANTS
-       ══════════════════════════════════════════════════════════════════════ -->
-  <div class="eval-bar">
-    <div class="eval-left">
-      <span>🏫 Prototype BCD Express</span>
-      <span class="eval-pill">Espace Enquête</span>
-      <span style="font-weight: 400; opacity: 0.9;">| Testez l'application et comparez les styles visuels</span>
-    </div>
-    <div class="eval-controls">
-      <div class="style-picker">
-        <button class="style-btn active" onclick="setStyle('cupertino')">🍏 Apple Cupertino</button>
-        <button class="style-btn" onclick="setStyle('pastel')">🎨 Pastel Chaleureux</button>
-        <button class="style-btn" onclick="setStyle('tbi')">⚡ TBI & Grand Écran</button>
-      </div>
-      <button class="btn sm" onclick="toggleDark()" id="btnTheme">🌙 Nuit</button>
-      <button class="eval-action" onclick="openFeedbackModal()">
-        <span>💬</span> Donner mon avis d'enseignant
-      </button>
-    </div>
+<header>
+  <div>
+    <h1 id="app-title">🧰 BCD Express – Mallettes &amp; Gestion</h1>
+    <div class="sub" id="app-sub">Créez des malles thématiques et prêtez-les en un clic aux classes</div>
   </div>
-
-  <!-- ══════════════════════════════════════════════════════════════════════
-       EN-TÊTE OFFICIEL DE L'APPLICATION
-       ══════════════════════════════════════════════════════════════════════ -->
-  <header class="school-header">
-    <div class="brand">
-      <div class="brand-icon">📖</div>
-      <div class="brand-text">
-        <h1>ÉCOLE ÉLÉMENTAIRE ALBERT CAMUS</h1>
-        <div class="sub">BCD Express — Système de Gestion &amp; Prêts Scolaires</div>
-      </div>
-    </div>
-    <div class="header-actions">
-      <span class="badge green">🟢 Base connectée (2 850 livres)</span>
-      <button class="btn sm" onclick="simulerScanModal()">⚡ Scan Douchette</button>
-    </div>
-  </header>
-
-  <!-- ══════════════════════════════════════════════════════════════════════
-       NAVIGATION MAJEURE PAR ONGLETS (7 MODULES)
-       ══════════════════════════════════════════════════════════════════════ -->
-  <nav class="main-tabs">
-    <button class="nav-tab active" onclick="switchTab('prets')">📖 Prêts &amp; Retours</button>
-    <button class="nav-tab" onclick="switchTab('inventaire')">📚 Inventaire &amp; Livres</button>
-    <button class="nav-tab" onclick="switchTab('mallettes')">🎒 Mallettes Thématiques</button>
-    <button class="nav-tab" onclick="switchTab('etiquettes')">🏷️ Planche d'Étiquettes</button>
-    <button class="nav-tab" onclick="switchTab('recolement')">📋 Récolement &amp; Rayons</button>
-    <button class="nav-tab" onclick="switchTab('utilisateurs')">👥 Classes &amp; Élèves</button>
-    <button class="nav-tab" onclick="switchTab('bilan')">📊 Bilan &amp; Palmarès</button>
-  </nav>
-
-  <!-- ══════════════════════════════════════════════════════════════════════
-       CONTENU PRINCIPAL DES ONGLETS
-       ══════════════════════════════════════════════════════════════════════ -->
-  <main>
-
-    <!-- ────────────────────────────────────────────────────────────────────
-         1. ONGLET : PRÊTS & RETOURS (AVEC SCAN & BOUCLE CONTINUE)
-         ──────────────────────────────────────────────────────────────────── -->
-    <div id="screen-prets" class="screen active">
-      <div class="kpi-row">
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:#eff6ff; color:#2563eb;">📖</div>
-          <div><div class="kpi-val" id="kpi-prets-count">14</div><div class="kpi-lbl">Emprunts en cours</div></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:#fee2e2; color:#dc2626;">⚠️</div>
-          <div><div class="kpi-val">2</div><div class="kpi-lbl">Retards à relancer</div></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:#dcfce7; color:#16a34a;">✅</div>
-          <div><div class="kpi-val">18</div><div class="kpi-lbl">Prêts enregistrés aujourd'hui</div></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:#fef3c7; color:#d97706;">🏫</div>
-          <div><div class="kpi-val">3</div><div class="kpi-lbl">Séries de classe en prêt</div></div>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <input class="input-text search-input" id="search-prets" placeholder="🔍 Rechercher un élève, un livre ou une classe…" oninput="filterPrets()">
-        <select class="input-text" id="filter-classe" onchange="filterPrets()">
-          <option value="">Toutes les classes</option>
-          <option>CP-A</option><option>CE1-A</option><option>CE2-B</option><option>CM1-A</option><option>CM2-A</option>
-        </select>
-        <button class="btn primary" onclick="openPretModal()">➕ Nouveau Prêt (Mode Continu)</button>
-        <button class="btn" onclick="showToast('Export CSV généré pour les maîtresses !')">📤 Export Retards Excel</button>
-      </div>
-
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Élève / Emprunteur</th>
-              <th>Classe</th>
-              <th>Titre de l'ouvrage</th>
-              <th>N° Ex.</th>
-              <th>Date Prêt</th>
-              <th>Date Limite</th>
-              <th>Statut</th>
-              <th style="text-align:right;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-prets">
-            <!-- Rendu dynamique JS -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────────────────────────────────────────────
-         2. ONGLET : INVENTAIRE & LIVRES (GRILLE / TABLEAU)
-         ──────────────────────────────────────────────────────────────────── -->
-    <div id="screen-inventaire" class="screen">
-      <div class="kpi-row">
-        <div class="kpi-pill"><b>1 420</b> titres</div>
-        <div class="kpi-pill"><b>2 850</b> exemplaires physiques</div>
-        <div class="kpi-pill"><b>124</b> en mallettes</div>
-        <div class="kpi-pill"><b>6</b> à réparer / vérifier</div>
-      </div>
-
-      <div class="toolbar">
-        <input class="input-text search-input" id="search-books" placeholder="🔍 Titre, auteur, code-barres ISBN (ex: Petit Prince, 978…)" oninput="filterBooks()">
-        <select class="input-text" id="filter-genre" onchange="filterBooks()">
-          <option value="">Tous les genres</option>
-          <option>Roman</option><option>Album</option><option>Bande dessinée</option><option>Documentaire</option><option>Conte</option>
-        </select>
-        <select class="input-text" id="filter-niveau" onchange="filterBooks()">
-          <option value="">Tous niveaux</option>
-          <option>Cycle 1</option><option>Cycle 2</option><option>Cycle 3</option>
-        </select>
-        <button class="btn" onclick="toggleBookView()" id="btn-toggle-view">☰ Mode Tableau</button>
-        <button class="btn primary" onclick="openDouchetteModal()">⚡ Mode Douchette (+1 Rafale)</button>
-      </div>
-
-      <div id="books-grid-view" class="books-grid">
-        <!-- Rendu dynamique JS -->
-      </div>
-
-      <div id="books-table-view" class="table-container" style="display:none;">
-        <table>
-          <thead>
-            <tr>
-              <th>Couverture</th>
-              <th>Titre de l'ouvrage</th>
-              <th>Auteur</th>
-              <th>Genre</th>
-              <th>Niveau</th>
-              <th>Exemplaires</th>
-              <th>Statut</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-books">
-            <!-- Rendu dynamique JS -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────────────────────────────────────────────
-         3. ONGLET : MALLETTES THÉMATIQUES (REFONTE MAQUETTE)
-         ──────────────────────────────────────────────────────────────────── -->
-    <div id="screen-mallettes" class="screen">
-      <div class="kpi-row" id="mallettes-pills"></div>
-
-      <div class="toolbar">
-        <input class="input-text search-input" id="search-mal" placeholder="🔍 Rechercher une mallette par thème, code, titre…" oninput="renderMallettes()">
-        <button class="btn primary" onclick="showToast('Nouvelle mallette créée !')">➕ Nouvelle Mallette</button>
-      </div>
-
-      <div style="display:grid; grid-template-columns: 330px 1fr; gap:16px; align-items:start;">
-        <!-- Colonne Gauche : Liste des Cartes -->
-        <div id="mallettes-list" style="display:flex; flex-direction:column; gap:10px;"></div>
-
-        <!-- Colonne Droite : Fiche Détaillée & Onglets -->
-        <div class="card" id="mallette-detail" style="min-height:500px;"></div>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────────────────────────────────────────────
-         4. ONGLET : PLANCHE D'ÉTIQUETTES & CODES-BARRES
-         ──────────────────────────────────────────────────────────────────── -->
-    <div id="screen-etiquettes" class="screen">
-      <div class="toolbar" style="justify-content:space-between;">
-        <div style="display:flex; gap:10px; align-items:center;">
-          <label style="font-size:13px; font-weight:700;">Format :</label>
-          <select class="input-text" style="width:260px;">
-            <option>Planche A4 24 étiquettes (70 × 37 mm) - Standard</option>
-            <option>Planche A4 65 étiquettes (38 × 21 mm) - Tranches</option>
-            <option>Planche A4 14 étiquettes (105 × 42 mm) - Grand format</option>
-          </select>
-          <button class="btn">🔄 Recharger la sélection</button>
-        </div>
-        <button class="btn primary" onclick="window.print()">🖨️ Imprimer la Planche A4</button>
-      </div>
-
-      <div class="a4-sheet">
-        <div style="text-align:center; margin-bottom:14px; font-size:12px; color:#64748b; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
-          APERÇU AVANT IMPRESSION — PLANCHE A4 (24 ÉTIQUETTES CODE 39)
-        </div>
-        <div class="labels-grid" id="labels-preview-grid">
-          <!-- Rendu dynamique JS -->
-        </div>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────────────────────────────────────────────
-         5. ONGLET : RÉCOLEMENT & INVENTAIRE DES ÉTAGÈRES
-         ──────────────────────────────────────────────────────────────────── -->
-    <div id="screen-recolement" class="screen">
-      <div class="card" style="margin-bottom:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div>
-            <h2 style="font-size:17px; font-weight:800;">📋 Session d'Inventaire Physique 2026-2027</h2>
-            <div style="font-size:12px; color:var(--text-muted);">Scannez les livres directement sur les étagères à la douchette</div>
-          </div>
-          <span class="badge green">Session Ouverte</span>
-        </div>
-
-        <!-- Jauge visuelle -->
-        <div style="display:flex; height:18px; border-radius:999px; overflow:hidden; margin-bottom:12px; background:var(--surface-subtle);">
-          <div style="width:72%; background:var(--success);" title="72% Présents"></div>
-          <div style="width:20%; background:var(--warning);" title="20% En prêt"></div>
-          <div style="width:8%; background:var(--danger);" title="8% Manquants"></div>
-        </div>
-
-        <div class="kpi-row" style="margin-bottom:0;">
-          <div class="kpi-pill"><b style="color:var(--success);">2 052</b> scannés présents en rayon (72%)</div>
-          <div class="kpi-pill"><b style="color:var(--warning);">570</b> en prêt chez les élèves (20%)</div>
-          <div class="kpi-pill"><b style="color:var(--danger);">228</b> manquants non vus (8%)</div>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <input class="input-text" style="flex:1;" placeholder="⚡ Scannez le code-barres du livre posé sur l'étagère..." onkeypress="if(event.key==='Enter'){showToast('Livre bippé et pointé présent !'); this.value='';}">
-        <button class="btn primary" onclick="showToast('Livre bippé et pointé présent !')">Pointer</button>
-        <button class="btn" onclick="showToast('Rapport de récolement CSV exporté !')">📄 Exporter le Bilan des Manquants</button>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────────────────────────────────────────────
-         6. ONGLET : CLASSES & ÉLÈVES
-         ──────────────────────────────────────────────────────────────────── -->
-    <div id="screen-utilisateurs" class="screen">
-      <div class="kpi-row">
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:#eff6ff; color:#2563eb;">👥</div>
-          <div><div class="kpi-val">284</div><div class="kpi-lbl">Élèves inscrits</div></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:#fef3c7; color:#d97706;">🏫</div>
-          <div><div class="kpi-val">12</div><div class="kpi-lbl">Classes de l'école</div></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:#dcfce7; color:#16a34a;">👩‍🏫</div>
-          <div><div class="kpi-val">14</div><div class="kpi-lbl">Enseignants &amp; Personnel</div></div>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <input class="input-text search-input" placeholder="🔍 Rechercher un élève par nom, prénom ou N° de carte…">
-        <button class="btn primary" onclick="showToast('Nouvel élève créé !')">➕ Inscrire un élève</button>
-        <button class="btn" onclick="showToast('Cartes élèves PDF générées !')">🖨️ Cartes Lecteur avec Code-barres</button>
-      </div>
-
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>N° Carte</th>
-              <th>Nom &amp; Prénom</th>
-              <th>Classe</th>
-              <th>Type</th>
-              <th>Emprunts Actifs</th>
-              <th>Livres Lus cette année</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>ELV-0142</code></td>
-              <td><b>BERNARD Lucas</b></td>
-              <td><span class="badge blue">CM2-A</span></td>
-              <td>Élève</td>
-              <td><span class="badge green">1 livre</span></td>
-              <td>14 livres</td>
-              <td><button class="btn sm">Fiche</button></td>
-            </tr>
-            <tr>
-              <td><code>ELV-0089</code></td>
-              <td><b>DUPONT Léa</b></td>
-              <td><span class="badge blue">CE1-A</span></td>
-              <td>Élève</td>
-              <td><span class="badge slate">0 livre</span></td>
-              <td>9 livres</td>
-              <td><button class="btn sm">Fiche</button></td>
-            </tr>
-            <tr>
-              <td><code>ENS-0004</code></td>
-              <td><b>Mme MARTIN Sophie</b></td>
-              <td><span class="badge amber">CP-A (Enseignante)</span></td>
-              <td>Enseignant</td>
-              <td><span class="badge amber">Mallette Harcèlement</span></td>
-              <td>42 livres</td>
-              <td><button class="btn sm">Fiche</button></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────────────────────────────────────────────
-         7. ONGLET : BILAN & PALMARÈS
-         ──────────────────────────────────────────────────────────────────── -->
-    <div id="screen-bilan" class="screen">
-      <div class="card" style="margin-bottom:16px;">
-        <h2 style="font-size:18px; font-weight:800; margin-bottom:4px;">📊 Bilan d'Activité &amp; Statistiques de Lecture</h2>
-        <div style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Génération des rapports pour le Conseil d'école et la Direction</div>
-
-        <div class="kpi-row">
-          <div class="kpi-card"><div><div class="kpi-val" style="color:var(--primary);">3 410</div><div class="kpi-lbl">Total prêts cette année</div></div></div>
-          <div class="kpi-card"><div><div class="kpi-val" style="color:var(--success);">12.1</div><div class="kpi-lbl">Livres lus en moyenne par élève</div></div></div>
-          <div class="kpi-card"><div><div class="kpi-val" style="color:var(--warning);">99.2%</div><div class="kpi-lbl">Taux de restitution des livres</div></div></div>
-        </div>
-      </div>
-
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-        <div class="card">
-          <h3 style="font-size:15px; font-weight:800; margin-bottom:12px;">🏆 Top 5 des Livres les plus empruntés</h3>
-          <ol style="padding-left:20px; line-height:2; font-size:13.5px;">
-            <li>🥇 <b>Le Petit Prince</b> — Antoine de Saint-Exupéry <i>(42 emprunts)</i></li>
-            <li>🥈 <b>Lili est harcelée à l'école</b> — Dominique de Saint Mars <i>(38 emprunts)</i></li>
-            <li>🥉 <b>Les enfants de la Résistance (T.1)</b> — Vincent Dugomier <i>(35 emprunts)</i></li>
-            <li>4. <b>Max et Lili veulent tout tout de suite</b> <i>(31 emprunts)</i></li>
-            <li>5. <b>Le buveur d'encre</b> — Éric Sanvoisin <i>(29 emprunts)</i></li>
-          </ol>
-        </div>
-
-        <div class="card">
-          <h3 style="font-size:15px; font-weight:800; margin-bottom:12px;">🏫 Palmarès des Classes Lectrices</h3>
-          <ol style="padding-left:20px; line-height:2; font-size:13.5px;">
-            <li>🥇 <b>CM2-A (M. Durand)</b> — 612 livres lus <i>(23.5 livres / élève)</i></li>
-            <li>🥈 <b>CE2-B (Mme Petit)</b> — 540 livres lus <i>(21.2 livres / élève)</i></li>
-            <li>🥉 <b>CM1-A (M. Roux)</b> — 495 livres lus <i>(19.8 livres / élève)</i></li>
-            <li>4. <b>CE1-A (Mme Blanc)</b> — 420 livres lus</li>
-            <li>5. <b>CP-A (Mme Martin)</b> — 380 livres lus</li>
-          </ol>
-        </div>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- ══════════════════════════════════════════════════════════════════════
-       TIROIR INSPECTEUR DE LIVRE (COMMUN INVENTAIRE & MALLETTES)
-       ══════════════════════════════════════════════════════════════════════ -->
-  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
-  <aside class="drawer" id="book-drawer">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-      <span class="badge blue">Fiche Ouvrage</span>
-      <button class="btn sm" onclick="closeDrawer()">✕ Fermer</button>
-    </div>
-    <div id="drawer-content"></div>
-  </aside>
-
-  <!-- ══════════════════════════════════════════════════════════════════════
-       MODALE 1 : PRÊT EN CONTINU POUR LES CLASSES
-       ══════════════════════════════════════════════════════════════════════ -->
-  <div class="modal-overlay" id="modal-pret">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3>📖 Nouveau Prêt — Boucle Continue pour la Classe</h3>
-        <button class="btn sm" onclick="closeModal('modal-pret')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>1. Sélectionner l'Élève ou l'Enseignant :</label>
-          <select id="pret-eleve">
-            <option>Léopold DUPONT (CM2-A) — 0 prêt en cours</option>
-            <option>Camille MARTIN (CM2-A) — 1 prêt en cours</option>
-            <option>Lucas BERNARD (CM2-A) — 0 prêt en cours</option>
-            <option>Mme Sophie MARTIN (CP-A) — Enseignante</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>2. Scanner le Livre (ou taper ISBN / Titre) :</label>
-          <input type="text" id="pret-livre" placeholder="Scannez à la douchette ou tapez 'Lili'..." value="Lili est harcelée à l'école (#2108)">
-        </div>
-        <div class="form-group">
-          <label>3. Date de Retour :</label>
-          <input type="date" id="pret-date" value="2026-12-08">
-        </div>
-        <div style="background:var(--primary-subtle); padding:10px; border-radius:8px; font-size:12px; color:var(--primary);">
-          💡 <b>Boucle continue active :</b> en cliquant sur <i>« Valider et élève suivant »</i>, le prêt est enregistré avec un signal sonore et la fenêtre reste ouverte pour le lecteur suivant.
-        </div>
-      </div>
-      <div class="modal-foot">
-        <button class="btn" onclick="closeModal('modal-pret')">Fermer</button>
-        <button class="btn emerald" onclick="validerPretSuivant()">⚡ Valider &amp; Élève suivant ➔</button>
-      </div>
-    </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button class="btn" style="background:#fef3c7;border-color:#fde68a;color:#92400e;font-weight:700" onclick="openFeedback()">💬 Donner mon avis</button>
+    <button class="btn" onclick="toggleStyle()" id="btn-style">🎨 Style : Apple</button>
+    <button class="btn" onclick="document.body.classList.toggle('night')">🌙 Mode nuit</button>
+    <button class="btn pri" id="btn-primary-action" onclick="newMal()">+ Nouvelle mallette</button>
   </div>
+</header>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       MODALE 2 : FORMULAIRE D'AVIS & ENQUÊTE DU CORPS ENSEIGNANT
-       ══════════════════════════════════════════════════════════════════════ -->
-  <div class="modal-overlay" id="modal-feedback">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3>💬 Enquête Enseignants — Votre Avis sur BCD Express</h3>
-        <button class="btn sm" onclick="closeModal('modal-feedback')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Votre Nom &amp; Classe :</label>
-          <input type="text" id="fb-nom" placeholder="ex: Mme Martin (CP) ou M. Durand (CM2)">
-        </div>
-        <div class="form-group">
-          <label>Quel style visuel préférez-vous pour le quotidien de l'école ?</label>
-          <select id="fb-style">
-            <option>🍏 Apple Cupertino (Sobre, moderne, épuré)</option>
-            <option>🎨 Pastel Chaleureux (Couleurs douces, convivial, chaleureux)</option>
-            <option>⚡ TBI &amp; Grand Écran (Grands boutons tactiles, fort contraste)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Note globale sur la lisibilité et l'ergonomie :</label>
-          <select id="fb-note">
-            <option>⭐⭐⭐⭐⭐ Excellent (5/5)</option>
-            <option>⭐⭐⭐⭐ Très bien (4/5)</option>
-            <option>⭐⭐⭐ Moyen / À améliorer (3/5)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Vos remarques, besoins spécifiques ou pistes d'amélioration :</label>
-          <textarea id="fb-comment" rows="4" placeholder="Ex: Le prêt continu pour toute la classe est très rapide ! Pourrait-on ajouter une alerte par mail pour les retards ?"></textarea>
-        </div>
-      </div>
-      <div class="modal-foot">
-        <button class="btn" onclick="closeModal('modal-feedback')">Annuler</button>
-        <button class="btn primary" onclick="envoyerFeedback()">💾 Enregistrer &amp; Copier mon retour</button>
-      </div>
-    </div>
+<!-- NAVIGATION PRINCIPALE PAR ONGLETS -->
+<div class="tabs" style="padding:0 24px;margin:0 0 14px">
+  <div class="tab on" id="nav-mal" onclick="switchNav('mal')">🧰 Mallettes</div>
+  <div class="tab" id="nav-prets" onclick="switchNav('prets')">📖 Prêts &amp; Retours</div>
+  <div class="tab" id="nav-livres" onclick="switchNav('livres')">📚 Catalogue Livres</div>
+  <div class="tab" id="nav-etiquettes" onclick="switchNav('etiquettes')">🏷️ Étiquettes</div>
+  <div class="tab" id="nav-bilan" onclick="switchNav('bilan')">📊 Bilan &amp; Palmarès</div>
+</div>
+
+<div class="pills" id="pills"></div>
+<div class="tools" id="tools"></div>
+
+<!-- CONTENEUR DU MODULE ACTIF -->
+<div id="content-container"></div>
+
+<!-- TIROIR LATÉRAL INSPECTEUR -->
+<div class="drawer" id="drawer"></div>
+
+<!-- MODALE DE PRÊT / FORMULAIRE -->
+<div class="modal" id="modal">
+  <div class="box">
+    <h3 id="mt">Prêter</h3>
+    <div id="modal-content"></div>
   </div>
+</div>
 
-  <!-- Toast notification -->
-  <div class="toast" id="toast">✅ Notification</div>
+<div class="toast" id="toast">✅ Action validée</div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       SCRIPT INTERACTIF VANILLA JS (DONNÉES & ACTIONS SIMULÉES)
-       ══════════════════════════════════════════════════════════════════════ -->
-  <script>
-    // ── 1. Données de démonstration ────────────────────────────────────
-    const BOOKS = [
-      { id: 1, t: "Le Petit Prince", a: "Antoine de Saint-Exupéry", g: "Conte", n: "Tous niveaux", q: 4, d: 3, c: "#3b82f6", e: "⭐", desc: "Le chef-d'œuvre universel sur l'amitié, le don de soi et le regard d'enfant." },
-      { id: 2, t: "Lili est harcelée à l'école", a: "Dominique de Saint Mars", g: "Roman", n: "Cycle 2/3", q: 4, d: 0, c: "#ef4444", e: "📘", desc: "Pour libérer la parole sur le harcèlement scolaire, l'isolement et la bienveillance." },
-      { id: 3, t: "Les enfants de la Résistance (T.1)", a: "Vincent Dugomier", g: "Bande dessinée", n: "Cycle 3", q: 3, d: 2, c: "#10b981", e: "🎖️", desc: "Dans la France occupée, trois enfants refusent de baisser les bras." },
-      { id: 4, t: "Rouge", a: "Jan De Kinder", g: "Album", n: "Cycle 2", q: 4, d: 1, c: "#f59e0b", e: "📕", desc: "Un livre remarquable sur le rougissement, les moqueries dans la cour et le courage de dire non." },
-      { id: 5, t: "La planète en danger", a: "Collectif", g: "Documentaire", n: "Cycle 3", q: 3, d: 3, c: "#06b6d4", e: "🌍", desc: "Comprendre le changement climatique, la biodiversité et les écogestes." },
-      { id: 6, t: "Max et Lili veulent tout tout de suite", a: "Serge Bloch", g: "Bande dessinée", n: "Cycle 2", q: 2, d: 1, c: "#a855f7", e: "🍭", desc: "Une histoire pour apprendre la patience et distinguer le besoin de l'envie." }
-    ];
+<script>
+const col=['#ef4444','#3b82f6','#10b981','#a855f7','#f59e0b','#06b6d4'];
 
-    let LOANS = [
-      { id: 101, u: "Léopold DUPONT", c: "CM2-A", b: "Lili est harcelée à l'école", ex: 2108, o: "2026-11-10", l: "2026-11-24", r: false },
-      { id: 102, u: "Camille MARTIN", c: "CE1-A", b: "Le Petit Prince", ex: 1042, o: "2026-11-03", l: "2026-11-17", r: false },
-      { id: 103, u: "Lucas BERNARD", c: "CM1-A", b: "Les enfants de la Résistance", ex: 3012, o: "2026-10-20", l: "2026-11-03", r: true } // retard
-    ];
+// ── 1. Données Mallettes (Code exact fourni) ──────────────────────────
+let M=[
+{id:'MAL-004',t:'Harcèlement',th:'Harcèlement & Vivre ensemble',n:'Tous niveaux',loan:null,hist:[],
+ b:[{t:'Le harcèlement',a:'Sandra Laboucarie',g:'Documentaire',q:3,e:'📕'},
+    {t:'Le jour où je suis devenue invisible',a:'Amélie Javaux',g:'Album',q:3,e:'📗'},
+    {t:'Lili est harcelée à l’école',a:'Dominique de Saint Mars',g:'Roman',q:4,e:'📘'},
+    {t:'Max se fait insulter à la récré',a:'Serge Bloch',g:'BD',q:3,e:'💬'},
+    {t:'Rouge',a:'Jan De Kinder',g:'Album',q:4,e:'🔴'}]},
+{id:'MAL-003',t:'EDD',th:'EDD',n:'Tous niveaux',loan:null,hist:[],
+ b:[{t:'La planète en danger',a:'Collectif',g:'Documentaire',q:4,e:'🌍'},
+    {t:'Trier ses déchets',a:'Collectif',g:'Album',q:4,e:'♻️'}]},
+{id:'MAL-002',t:'Laïcité',th:'Laïcité',n:'Tous niveaux',loan:null,hist:[],
+ b:[{t:'La laïcité expliquée',a:'Collectif',g:'Documentaire',q:3,e:'⚖️'}]},
+{id:'MAL-001',t:'Différence',th:'Différence',n:'Tous niveaux',loan:{c:'CE2 – Mme Petit',d:'2026-12-05'},hist:[{c:'CM1 – M. Roux',o:'2026-09-10',r:'2026-09-24'}],
+ b:[{t:'La différence, c’est quoi ?',a:'Collectif',g:'Album',q:5,e:'🌈'},
+    {t:'Les couleurs de l’amitié',a:'Collectif',g:'Album',q:6,e:'🎨'}]}
+];
+M.forEach((m,i)=>m.c=col[i%6]);
 
-    let MALLETTES = [
-      { id: "MAL-004", t: "Harcèlement & Vivre ensemble", th: "Harcèlement", n: "Cycle 3", c: "#ef4444", loan: null,
-        b: [
-          { t: "Lili est harcelée à l'école", a: "Dominique de Saint Mars", g: "Roman", q: 4, e: "📘" },
-          { t: "Rouge", a: "Jan De Kinder", g: "Album", q: 4, e: "📕" },
-          { t: "Max se fait insulter à la récré", a: "Serge Bloch", g: "BD", q: 3, e: "💬" },
-          { t: "Le jour où je suis devenue invisible", a: "Amélie Javaux", g: "Album", q: 3, e: "📗" }
-        ]
-      },
-      { id: "MAL-003", t: "Éducation au Développement Durable", th: "EDD", n: "Tous niveaux", c: "#10b981", loan: { c: "CM1 – M. Roux", d: "2026-12-15" },
-        b: [
-          { t: "La planète en danger", a: "Collectif", g: "Documentaire", q: 4, e: "🌍" },
-          { t: "Trier ses déchets au quotidien", a: "Collectif", g: "Album", q: 3, e: "♻️" }
-        ]
-      },
-      { id: "MAL-002", t: "Laïcité & Valeurs Républicaines", th: "Laïcité", n: "Cycle 3", c: "#a855f7", loan: null,
-        b: [
-          { t: "La laïcité expliquée aux enfants", a: "Collectif", g: "Documentaire", q: 3, e: "⚖️" }
-        ]
-      },
-      { id: "MAL-001", t: "Différence & Fraternité", th: "Différence", n: "Cycle 2/3", c: "#3b82f6", loan: null,
-        b: [
-          { t: "La différence, c'est quoi ?", a: "Collectif", g: "Album", q: 5, e: "🌈" }
-        ]
-      }
-    ];
+// ── 2. Données Prêts & Retours ───────────────────────────────────────
+let L=[
+  {id:101,u:'Léopold DUPONT',c:'CM2 – M. Durand',b:'Lili est harcelée à l’école',ex:2108,o:'2026-11-10',l:'2026-11-24',r:false},
+  {id:102,u:'Camille MARTIN',c:'CE1 – M. Durand',b:'Le Petit Prince',ex:1042,o:'2026-11-03',l:'2026-11-17',r:false},
+  {id:103,u:'Lucas BERNARD',c:'CM1 – M. Roux',b:'Les enfants de la Résistance',ex:3012,o:'2026-10-20',l:'2026-11-03',r:true},
+  {id:104,u:'Inès LEFEBVRE',c:'CP – Mme Martin',b:'Rouge',ex:4102,o:'2026-11-12',l:'2026-11-26',r:false}
+];
 
-    let selMallette = "MAL-004";
-    let malTab = "Contenu";
-    let isGridView = true;
+// ── 3. Données Catalogue Livres ──────────────────────────────────────
+let B=[
+  {t:'Le Petit Prince',a:'Antoine de Saint-Exupéry',g:'Roman',q:4,d:3,e:'⭐',c:col[1],desc:'Le chef-d’œuvre universel sur l’amitié et le regard d’enfant.'},
+  {t:'Lili est harcelée à l’école',a:'Dominique de Saint Mars',g:'Roman',q:4,d:0,e:'📘',c:col[0],desc:'Pour libérer la parole sur le harcèlement scolaire.'},
+  {t:'Les enfants de la Résistance (T.1)',a:'Vincent Dugomier',g:'BD',q:3,d:2,e:'🎖️',c:col[2],desc:'Trois enfants refusent de baisser les bras sous l’Occupation.'},
+  {t:'Rouge',a:'Jan De Kinder',g:'Album',q:4,d:1,e:'🔴',c:col[4],desc:'Un livre sur le courage de dire non aux moqueries.'},
+  {t:'La planète en danger',a:'Collectif',g:'Documentaire',q:4,d:4,e:'🌍',c:col[5],desc:'Comprendre le réchauffement climatique et la biodiversité.'},
+  {t:'Max se fait insulter à la récré',a:'Serge Bloch',g:'BD',q:3,d:3,e:'💬',c:col[3],desc:'Comprendre les mots blessants et trouver des solutions.'}
+];
 
-    // ── 2. Navigation entre onglets ────────────────────────────────────
-    function switchTab(name) {
-      document.querySelectorAll('.main-tabs .nav-tab').forEach((t, i) => {
-        t.classList.toggle('active', t.getAttribute('onclick').includes(name));
-      });
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById('screen-' + name).classList.add('active');
-    }
+let sel='MAL-004',tab='Contenu',pending=null,currentNav='mal';
+const $=id=>document.getElementById(id), cnt=m=>m.b.reduce((s,x)=>s+x.q,0);
 
-    // ── 3. Thèmes & Styles ─────────────────────────────────────────────
-    function setStyle(styleName) {
-      document.body.setAttribute('data-style', styleName);
-      document.querySelectorAll('.style-btn').forEach(b => {
-        b.classList.toggle('active', b.getAttribute('onclick').includes(styleName));
-      });
-      showToast('Style activé : ' + styleName.toUpperCase());
-    }
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2500)}
 
-    function toggleDark() {
-      document.body.classList.toggle('dark');
-      const isDark = document.body.classList.contains('dark');
-      document.getElementById('btnTheme').textContent = isDark ? '☀️ Jour' : '🌙 Nuit';
-    }
+// ── Navigation ────────────────────────────────────────────────────────
+function switchNav(nav){
+  currentNav=nav;
+  ['mal','prets','livres','etiquettes','bilan'].forEach(k=>{
+    $('nav-'+k).classList.toggle('on',k==nav);
+  });
+  if(nav=='mal'){
+    $('app-title').innerHTML='🧰 BCD Express – Mallettes pédagogiques';
+    $('app-sub').innerHTML='Créez des malles thématiques et prêtez-les en un clic aux classes';
+    $('btn-primary-action').style.display='inline-block';
+    $('btn-primary-action').textContent='+ Nouvelle mallette';
+    $('btn-primary-action').onclick=newMal;
+    render();
+  } else if(nav=='prets'){
+    $('app-title').innerHTML='📖 Prêts &amp; Retours en classe';
+    $('app-sub').innerHTML='Enregistrez les sorties, retours et gérez les retards scolaires';
+    $('btn-primary-action').style.display='inline-block';
+    $('btn-primary-action').textContent='+ Nouveau prêt élève';
+    $('btn-primary-action').onclick=openPretModal;
+    renderPrets();
+  } else if(nav=='livres'){
+    $('app-title').innerHTML='📚 Catalogue &amp; Inventaire BCD';
+    $('app-sub').innerHTML='1 420 titres répertoriés · 2 850 exemplaires physiques';
+    $('btn-primary-action').style.display='inline-block';
+    $('btn-primary-action').textContent='+ Nouveau livre';
+    $('btn-primary-action').onclick=()=>alert('Fiche création livre ouverte !');
+    renderLivres();
+  } else if(nav=='etiquettes'){
+    $('app-title').innerHTML='🏷️ Planche d’étiquettes Code 39';
+    $('app-sub').innerHTML='Impression prête à l’emploi sur papier autocollant A4 standard';
+    $('btn-primary-action').style.display='inline-block';
+    $('btn-primary-action').textContent='🖨️ Imprimer la planche';
+    $('btn-primary-action').onclick=()=>window.print();
+    renderEtiquettes();
+  } else if(nav=='bilan'){
+    $('app-title').innerHTML='📊 Bilan d’activité &amp; Palmarès BCD';
+    $('app-sub').innerHTML='Statistiques de lecture pour le Conseil d’école et la Direction';
+    $('btn-primary-action').style.display='none';
+    renderBilan();
+  }
+}
 
-    // ── 4. Rendu de l'onglet Prêts & Retours ────────────────────────────
-    function renderLoans() {
-      const tbody = document.getElementById('tbody-prets');
-      const q = (document.getElementById('search-prets').value || '').toLowerCase();
-      const cl = document.getElementById('filter-classe').value;
+// ── MODULE 1 : MALLETTES (100% Exact Code du user) ────────────────────
+function pills(){const l=M.filter(m=>m.loan).length;$('pills').innerHTML=
+`<span class="pill"><b>${M.length}</b> mallettes</span><span class="pill"><b>${M.length-l}</b> disponibles</span><span class="pill"><b>${l}</b> en prêt</span><span class="pill"><b>${M.reduce((s,m)=>s+cnt(m),0)}</b> livres</span>`}
 
-      const filtered = LOANS.filter(x => {
-        const matchQ = (x.u + x.b + x.c).toLowerCase().includes(q);
-        const matchCl = !cl || x.c.includes(cl);
-        return matchQ && matchCl;
-      });
+function renderList(){const q=($('q')?$('q').value:'').toLowerCase(),f=($('fs')?$('fs').value:'');
+$('list').innerHTML=M.filter(m=>(m.t+m.th+m.id).toLowerCase().includes(q)&&(!f||(f=='En prêt')==!!m.loan)).map(m=>
+`<div class="mal ${m.id==sel?'sel':''}" style="--c:${m.c}" onclick="sel='${m.id}';tab='Contenu';render()">
+<div class="t">${m.t}</div><div class="m">${m.id} · ${m.n} · ${cnt(m)} livres · ${m.b.length} titres</div>
+<div class="r"><span class="badge ${m.loan?'b-loan':'b-ok'}">${m.loan?'En prêt – '+m.loan.c:'Disponible'}</span>
+${m.loan?'':`<button class="btn pri" onclick="event.stopPropagation();openLoan('${m.id}')">Prêter</button>`}</div></div>`).join('')}
 
-      tbody.innerHTML = filtered.map(x => `
-        <tr>
-          <td><b>${x.u}</b></td>
-          <td><span class="badge blue">${x.c}</span></td>
-          <td>📖 ${x.b}</td>
-          <td><code>#${x.ex}</code></td>
-          <td>${x.o}</td>
-          <td>${x.l}</td>
-          <td>${x.r ? '<span class="badge red">⚠️ En retard</span>' : '<span class="badge green">En cours</span>'}</td>
-          <td style="text-align:right;">
-            <button class="btn sm primary" onclick="restituerPret(${x.id})">↩ Restituer</button>
-            <button class="btn sm" onclick="showToast('Prêt renouvelé pour 2 semaines !')">🔄 +14j</button>
-          </td>
-        </tr>
-      `).join('');
+function renderDetail(){
+const m=M.find(x=>x.id==sel);if(!m){$('detail').innerHTML='';return}
+let body='';
+if(tab=='Contenu'){
+body=`${m.loan?`<div class="alert">📦 Cette mallette est chez <b>${m.loan.c}</b> jusqu'au <b>${m.loan.d}</b>.</div>`:''}
+<div class="add"><input id="nb" placeholder="Titre du livre à ajouter..."><button class="btn pri" onclick="addB()">+ Ajouter</button><button class="btn" onclick="fill()">🪄 Remplir par thème</button></div>
+<div class="grid">${m.b.map((b,i)=>`<div class="book" onclick="openB(${i})">
+<span class="qty">×${b.q}</span><button class="rm" onclick="event.stopPropagation();rmB(${i})">Retirer</button>
+<div class="cover" style="background:${col[(i+2)%6]}">${b.e}</div><div class="bt">${b.t}</div><div class="ba">${b.a} · ${b.g}</div></div>`).join('')}</div>`}
+else if(tab=='Ressources'){body='<div class="empty">📎 Aucune ressource pédagogique.<br><br><button class="btn" onclick="toast(\'Ajout ressource PDF / lien\')">+ Ajouter un PDF / lien</button></div>'}
+else if(tab=='Historique'){const h=[...(m.loan?[{c:m.loan.c,o:'2026-11-17',r:'en cours'}]:[]),...m.hist];
+body=h.length?`<table><tr><th>Classe</th><th>Sortie</th><th>Retour</th></tr>${h.map(x=>`<tr><td>${x.c}</td><td>${x.o}</td><td>${x.r}</td></tr>`).join('')}</table>`:'<div class="empty">Aucun prêt pour le moment</div>'}
+else body=`<p><b>Thème :</b> ${m.th}</p><p><b>Niveau :</b> ${m.n}</p><p class="sub">Aucune note pédagogique particulière.</p>`;
+$('detail').innerHTML=`<div class="dh"><div><h2>${m.t} <span class="code">${m.id}</span> <span class="badge ${m.loan?'b-loan':'b-ok'}">${m.loan?'En prêt':'Disponible'}</span></h2>
+<div class="tags"><span class="tag">Thème : ${m.th}</span><span class="tag">${m.n}</span><span class="tag">${cnt(m)} exemplaires (${m.b.length} titres)</span></div></div>
+<div class="acts">${m.loan?`<button class="btn pri big" onclick="ret('${m.id}')">↩ Enregistrer le retour</button>`:`<button class="btn pri big" onclick="openLoan('${m.id}')">📤 Prêter</button>`}
+<button class="btn" onclick="$('mn').classList.toggle('on')">⋯</button>
+<div class="menu" id="mn"><div onclick="alert('Fiche A4 générée')">🖨️ Fiche A4</div><div onclick="alert('Étiquette générée')">🏷️ Étiquette</div><div onclick="delM()" style="color:var(--bad)">🗑️ Supprimer</div></div></div></div>
+<div class="tabs">${['Contenu','Ressources','Historique','Infos'].map(t=>`<div class="tab ${t==tab?'on':''}" onclick="tab='${t}';renderDetail()">${t}</div>`).join('')}</div>${body}`}
 
-      document.getElementById('kpi-prets-count').textContent = LOANS.length;
-    }
+function openB(i){const m=M.find(x=>x.id==sel),b=m.b[i];$('drawer').innerHTML=`<button class="btn" onclick="$('drawer').classList.remove('on')">✕ Fermer</button>
+<div class="cover" style="background:${col[(i+2)%6]};margin-top:14px">${b.e}</div><h3>${b.t}</h3><p class="sub">${b.a}</p>
+<p><span class="tag">${b.g}</span> <span class="tag">${m.th}</span></p><p>📦 ${b.q} exemplaire(s) dans la boîte</p>
+<div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="qty(${i},-1)">−</button><b>${b.q}</b><button class="btn" onclick="qty(${i},1)">+</button></div>
+<br><button class="btn danger" onclick="rmB(${i});$('drawer').classList.remove('on')">Retirer ce titre</button>`;$('drawer').classList.add('on')}
 
-    function filterPrets() { renderLoans(); }
+function qty(i,d){const b=M.find(x=>x.id==sel).b[i];b.q=Math.max(1,b.q+d);render();openB(i)}
+function rmB(i){if(confirm('Retirer ce titre de la mallette ?')){M.find(x=>x.id==sel).b.splice(i,1);render()}}
+function addB(){const v=$('nb').value.trim();if(!v)return;M.find(x=>x.id==sel).b.push({t:v,a:'À compléter',g:'Livre',q:1,e:'📖'});render()}
+function fill(){const m=M.find(x=>x.id==sel);m.b.push({t:'Livre du thème (auto)',a:'Catalogue BCD',g:'Album',q:2,e:'📚'});render()}
 
-    function restituerPret(id) {
-      LOANS = LOANS.filter(x => x.id !== id);
-      renderLoans();
-      showToast('Livre restitué avec succès ! Bip audio émis.');
-    }
+function openLoan(id){
+  pending=id;const d=new Date();d.setDate(d.getDate()+21);
+  $('mt').textContent='Prêter « '+M.find(x=>x.id==id).t+' »';
+  $('modal-content').innerHTML=`<label>Classe</label><select id="cl"><option>CP – Mme Martin</option><option>CE1 – M. Durand</option><option>CE2 – Mme Petit</option><option>CM1 – M. Roux</option><option>CM2 – Mme Blanc</option></select>
+  <label>Date de retour</label><input type="date" id="dr" value="${d.toISOString().slice(0,10)}">
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeM()">Annuler</button><button class="btn pri" onclick="confirmLoan()">Confirmer le prêt</button></div>`;
+  $('modal').classList.add('on');
+}
+function closeM(){$('modal').classList.remove('on')}
+function confirmLoan(){M.find(x=>x.id==pending).loan={c:$('cl').value,d:$('dr').value};closeM();render();toast('Mallette prêtée avec succès !')}
+function ret(id){const m=M.find(x=>x.id==id);if(confirm('Tous les livres sont-ils rendus ?')){m.hist.unshift({c:m.loan.c,o:'—',r:new Date().toISOString().slice(0,10)});m.loan=null;render();toast('Mallette restituée !')}}
+function delM(){if(confirm('Supprimer cette mallette ?')){M=M.filter(x=>x.id!=sel);sel=M[0]?.id;render()}}
+function newMal(){const t=prompt('Titre de la mallette ?');if(!t)return;const id='MAL-00'+(M.length+5);M.unshift({id,t,th:t,n:'Tous niveaux',loan:null,hist:[],b:[],c:col[M.length%6]});sel=id;render()}
 
-    function openPretModal() { document.getElementById('modal-pret').classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function render(){
+  $('tools').innerHTML=`<input id="q" placeholder="🔍 Rechercher par titre, thème, code…" oninput="renderList()">
+  <select id="fs" onchange="renderList()"><option value="">Tous les statuts</option><option>Disponible</option><option>En prêt</option></select>`;
+  $('content-container').innerHTML=`<main><div class="list" id="list"></div><section class="detail" id="detail"></section></main>`;
+  pills();renderList();renderDetail();
+}
 
-    function validerPretSuivant() {
-      const eleve = document.getElementById('pret-eleve').value.split(' (')[0];
-      const livre = document.getElementById('pret-livre').value.split(' (#')[0];
-      LOANS.unshift({
-        id: Date.now(),
-        u: eleve,
-        c: "CM2-A",
-        b: livre,
-        ex: Math.floor(1000 + Math.random() * 9000),
-        o: new Date().toISOString().slice(0,10),
-        l: document.getElementById('pret-date').value,
-        r: false
-      });
-      renderLoans();
-      showToast('Prêt enregistré pour ' + eleve + ' ! Élève suivant prêt.');
-      document.getElementById('pret-livre').value = '';
-      document.getElementById('pret-livre').focus();
-    }
+// ── MODULE 2 : PRÊTS & RETOURS ────────────────────────────────────────
+function renderPrets(){
+  $('pills').innerHTML=`<span class="pill"><b>${L.length}</b> emprunts en cours</span><span class="pill"><b>${L.filter(x=>x.r).length}</b> en retard</span><span class="pill"><b>18</b> prêts aujourd'hui</span><span class="pill"><b>99.1%</b> taux de retour</span>`;
+  $('tools').innerHTML=`<input id="qp" placeholder="🔍 Rechercher un élève, un livre ou une classe..." oninput="renderPretsList()">
+  <select id="fcl" onchange="renderPretsList()"><option value="">Toutes les classes</option><option>CP</option><option>CE1</option><option>CE2</option><option>CM1</option><option>CM2</option></select>
+  <button class="btn pri" onclick="openPretModal()">+ Nouveau prêt (Boucle continue)</button>`;
+  $('content-container').innerHTML=`<div class="main-single"><div class="detail"><table id="table-prets"></table></div></div>`;
+  renderPretsList();
+}
 
-    // ── 5. Rendu de l'onglet Inventaire & Livres ────────────────────────
-    function renderBooks() {
-      const q = (document.getElementById('search-books').value || '').toLowerCase();
-      const g = document.getElementById('filter-genre').value;
-      const n = document.getElementById('filter-niveau').value;
+function renderPretsList(){
+  const q=($('qp')?$('qp').value:'').toLowerCase(),cl=($('fcl')?$('fcl').value:'');
+  const filtered=L.filter(x=>(x.u+x.b+x.c).toLowerCase().includes(q)&&(!cl||x.c.includes(cl)));
+  $('table-prets').innerHTML=`<tr><th>Élève</th><th>Classe</th><th>Livre</th><th>N° Ex.</th><th>Sortie</th><th>Limite</th><th>Statut</th><th>Action</th></tr>`+
+  filtered.map((x,i)=>`<tr><td><b>${x.u}</b></td><td>${x.c}</td><td>📖 ${x.b}</td><td><code>#${x.ex}</code></td><td>${x.o}</td><td>${x.l}</td>
+  <td><span class="badge ${x.r?'b-late':'b-ok'}">${x.r?'En retard':'En cours'}</span></td>
+  <td><button class="btn" onclick="retourPret(${x.id})">↩ Restituer</button></td></tr>`).join('');
+}
 
-      const filtered = BOOKS.filter(x => {
-        return (!q || (x.t + x.a).toLowerCase().includes(q)) &&
-               (!g || x.g === g) &&
-               (!n || x.n.includes(n));
-      });
+function retourPret(id){
+  L=L.filter(x=>x.id!==id);
+  renderPrets();
+  toast('Livre restitué avec succès ! Bip audio émis.');
+}
 
-      // Grille
-      document.getElementById('books-grid-view').innerHTML = filtered.map(b => `
-        <div class="book-card" onclick="openBookDrawer(${b.id})">
-          <span class="qty-tag">${b.q} ex.</span>
-          <div class="book-cover" style="background:${b.c};">
-            <div class="icon">${b.e}</div>
-            <div class="title-overlay">${b.t}</div>
-          </div>
-          <div class="book-title">${b.t}</div>
-          <div class="book-author">${b.a}</div>
-          <div style="margin-top:6px;"><span class="badge slate">${b.g}</span></div>
-        </div>
-      `).join('');
+function openPretModal(){
+  $('mt').textContent='Nouveau prêt élève';
+  $('modal-content').innerHTML=`<label>Élève</label><select id="n-elv"><option>Lucas BERNARD (CM2 – M. Durand)</option><option>Léopold DUPONT (CM2 – M. Durand)</option><option>Camille MARTIN (CE1 – M. Durand)</option><option>Inès LEFEBVRE (CP – Mme Martin)</option></select>
+  <label>Livre (Titre ou scan)</label><input id="n-liv" value="Le Petit Prince (#1042)">
+  <div style="background:#eff6ff;color:#1e40af;padding:10px;border-radius:10px;font-size:12px;margin:8px 0 14px">⚡ <b>Boucle continue active :</b> enregistre le prêt et passe directement au lecteur suivant sans fermer la fenêtre.</div>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeM()">Fermer</button><button class="btn pri" onclick="validerPretSuivant()">⚡ Valider &amp; Élève suivant ➔</button></div>`;
+  $('modal').classList.add('on');
+}
 
-      // Tableau
-      document.getElementById('tbody-books').innerHTML = filtered.map(b => `
-        <tr onclick="openBookDrawer(${b.id})" style="cursor:pointer;">
-          <td style="font-size:24px;">${b.e}</td>
-          <td><b>${b.t}</b></td>
-          <td>${b.a}</td>
-          <td><span class="badge slate">${b.g}</span></td>
-          <td>${b.n}</td>
-          <td><b>${b.q}</b> ex. (${b.d} dispo)</td>
-          <td>${b.d > 0 ? '<span class="badge green">Disponible</span>' : '<span class="badge amber">Tout emprunté</span>'}</td>
-          <td><button class="btn sm" onclick="event.stopPropagation(); openBookDrawer(${b.id})">Inspecter</button></td>
-        </tr>
-      `).join('');
-    }
+function validerPretSuivant(){
+  const elv=$('n-elv').value.split(' (')[0], liv=$('n-liv').value.split(' (#')[0];
+  L.unshift({id:Date.now(),u:elv,c:'CM2 – M. Durand',b:liv,ex:Math.floor(1000+Math.random()*9000),o:'2026-11-17',l:'2026-12-08',r:false});
+  renderPrets();
+  toast('Prêt validé pour '+elv+' ! Élève suivant.');
+  $('n-liv').value='';$('n-liv').focus();
+}
 
-    function filterBooks() { renderBooks(); }
+// ── MODULE 3 : CATALOGUE LIVRES ───────────────────────────────────────
+function renderLivres(){
+  $('pills').innerHTML=`<span class="pill"><b>1 420</b> titres</span><span class="pill"><b>2 850</b> exemplaires</span><span class="pill"><b>124</b> en mallettes</span><span class="pill"><b>6</b> à réparer</span>`;
+  $('tools').innerHTML=`<input id="ql" placeholder="🔍 Rechercher un livre par titre, auteur, genre..." oninput="renderLivresGrid()">
+  <select id="fg" onchange="renderLivresGrid()"><option value="">Tous les genres</option><option>Roman</option><option>Album</option><option>BD</option><option>Documentaire</option></select>`;
+  $('content-container').innerHTML=`<div class="main-single"><div class="grid" id="grid-livres"></div></div>`;
+  renderLivresGrid();
+}
 
-    function toggleBookView() {
-      isGridView = !isGridView;
-      document.getElementById('books-grid-view').style.display = isGridView ? 'grid' : 'none';
-      document.getElementById('books-table-view').style.display = isGridView ? 'none' : 'block';
-      document.getElementById('btn-toggle-view').textContent = isGridView ? '☰ Mode Tableau' : '⊞ Mode Grille';
-    }
+function renderLivresGrid(){
+  const q=($('ql')?$('ql').value:'').toLowerCase(),g=($('fg')?$('fg').value:'');
+  const filtered=B.filter(x=>(x.t+x.a).toLowerCase().includes(q)&&(!g||x.g==g));
+  $('grid-livres').innerHTML=filtered.map((b,i)=>`<div class="book" onclick="openBookDrawer(${i})">
+  <span class="qty">${b.q} ex.</span>
+  <div class="cover" style="background:${b.c}">${b.e}</div>
+  <div class="bt">${b.t}</div>
+  <div class="ba">${b.a} · ${b.g}</div>
+  <div style="margin-top:6px"><span class="badge ${b.d>0?'b-ok':'b-loan'}">${b.d>0?b.d+' dispo':'Prêté'}</span></div>
+  </div>`).join('');
+}
 
-    function openBookDrawer(id) {
-      const b = BOOKS.find(x => x.id === id);
-      if (!b) return;
-      document.getElementById('drawer-content').innerHTML = `
-        <div class="book-cover" style="background:${b.c}; height:180px; margin-bottom:14px;">
-          <div class="icon" style="font-size:52px;">${b.e}</div>
-          <div style="font-size:13px; font-weight:800;">${b.t}</div>
-        </div>
-        <h2 style="font-size:17px; font-weight:800; line-height:1.2; margin-bottom:4px;">${b.t}</h2>
-        <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">de ${b.a}</div>
+function openBookDrawer(i){
+  const b=B[i];
+  $('drawer').innerHTML=`<button class="btn" onclick="$('drawer').classList.remove('on')">✕ Fermer</button>
+  <div class="cover" style="background:${b.c};margin-top:14px">${b.e}</div>
+  <h3>${b.t}</h3><p class="sub">${b.a}</p>
+  <p><span class="tag">${b.g}</span> <span class="tag">${b.d} disponible(s) / ${b.q} total</span></p>
+  <p style="font-size:13px;line-height:1.5">${b.desc}</p>
+  <div style="background:var(--bg);padding:10px;border-radius:10px;margin-bottom:14px;font-size:12px">
+    <div>• Exemplaire #1042 — <b>Rayon A (Disponible)</b></div>
+    <div>• Exemplaire #1043 — <b>Rayon A (Disponible)</b></div>
+  </div>
+  <button class="btn pri" style="width:100%" onclick="toast('Prêt direct lancé pour ce livre !');$('drawer').classList.remove('on')">📖 Prêter cet ouvrage</button>`;
+  $('drawer').classList.add('on');
+}
 
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
-          <span class="badge blue">${b.g}</span>
-          <span class="badge slate">${b.n}</span>
-          <span class="badge green">${b.d} dispo / ${b.q} total</span>
-        </div>
+// ── MODULE 4 : ÉTIQUETTES ─────────────────────────────────────────────
+function renderEtiquettes(){
+  $('pills').innerHTML=`<span class="pill"><b>Planche standard</b> 24 étiquettes A4</span><span class="pill"><b>Code 39</b> haute précision</span>`;
+  $('tools').innerHTML=`<select><option>Planche A4 24 étiquettes (70 × 37 mm) - Standard</option><option>Planche A4 65 étiquettes (38 × 21 mm) - Tranches</option></select>
+  <button class="btn pri" onclick="window.print()">🖨️ Lancer l'impression A4</button>`;
+  const items=[
+    {t:'Le Petit Prince',a:'Saint-Exupéry',c:'R SAI',b:'CAMUS-01042'},
+    {t:'Lili est harcelée',a:'Saint Mars',c:'R SAI',b:'CAMUS-02108'},
+    {t:'Rouge',a:'Jan De Kinder',c:'A KIN',b:'CAMUS-04102'},
+    {t:'Les enfants Résist.',a:'Dugomier',c:'BD DUG',b:'CAMUS-03012'},
+    {t:'Planète danger',a:'Collectif',c:'577 PLA',b:'CAMUS-05118'},
+    {t:'Max et Lili',a:'Serge Bloch',c:'BD BLO',b:'CAMUS-06104'}
+  ];
+  $('content-container').innerHTML=`<div class="main-single"><div class="detail" style="max-width:800px;margin:0 auto">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${items.map(x=>`
+    <div style="border:1px dashed var(--bd);border-radius:8px;padding:10px;text-align:center;background:var(--card)">
+      <div style="font-size:9px;font-weight:700;color:var(--mut)">ÉCOLE ALBERT CAMUS — BCD</div>
+      <div style="font-size:12px;font-weight:700;margin:4px 0">${x.t}</div>
+      <div style="font-family:monospace;font-size:16px;letter-spacing:2px;margin:4px 0">||| | |||| | |||</div>
+      <div style="display:flex;justify-content:space-between;font-size:10px"><span>${x.b}</span><b>${x.c}</b></div>
+    </div>`).join('')}</div></div></div>`;
+}
 
-        <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">
-          ${b.desc}
-        </p>
+// ── MODULE 5 : BILAN & PALMARÈS ───────────────────────────────────────
+function renderBilan(){
+  $('pills').innerHTML=`<span class="pill"><b>3 410</b> prêts annuels</span><span class="pill"><b>12.1</b> livres lus / élève</span><span class="pill"><b>99.2%</b> taux de retour</span>`;
+  $('tools').innerHTML=`<button class="btn pri" onclick="toast('Rapport annuel complet exporté en PDF !')">📄 Exporter le Rapport Conseil d'école</button>`;
+  $('content-container').innerHTML=`<div class="main-single"><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="detail"><h3>🏆 Top 5 des Livres les plus empruntés</h3>
+  <ol style="line-height:2.2;font-size:14px;padding-left:20px">
+    <li>🥇 <b>Le Petit Prince</b> — Saint-Exupéry <i>(42 prêts)</i></li>
+    <li>🥈 <b>Lili est harcelée à l'école</b> — Saint Mars <i>(38 prêts)</i></li>
+    <li>🥉 <b>Les enfants de la Résistance</b> — Dugomier <i>(35 prêts)</i></li>
+    <li>4. <b>Max et Lili veulent tout tout de suite</b> <i>(31 prêts)</i></li>
+    <li>5. <b>Rouge</b> — Jan De Kinder <i>(29 prêts)</i></li>
+  </ol></div>
+  <div class="detail"><h3>🏫 Palmarès des Classes Lectrices</h3>
+  <ol style="line-height:2.2;font-size:14px;padding-left:20px">
+    <li>🥇 <b>CM2 – M. Durand</b> — 612 livres lus <i>(23.5 liv./élève)</i></li>
+    <li>🥈 <b>CE2 – Mme Petit</b> — 540 livres lus <i>(21.2 liv./élève)</i></li>
+    <li>🥉 <b>CM1 – M. Roux</b> — 495 livres lus <i>(19.8 liv./élève)</i></li>
+    <li>4. <b>CE1 – M. Durand</b> — 420 livres lus</li>
+    <li>5. <b>CP – Mme Martin</b> — 380 livres lus</li>
+  </ol></div></div></div>`;
+}
 
-        <h4 style="font-size:12px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">
-          Exemplaires Physiques en BCD :
-        </h4>
-        <div style="background:var(--surface-subtle); border-radius:8px; padding:8px 12px; margin-bottom:16px; font-size:12.5px;">
-          <div>• Exemplaire #2108 — <b>En boîte (Mallette)</b></div>
-          <div>• Exemplaire #2109 — <b>Rayon A (Disponible)</b></div>
-          <div>• Exemplaire #2110 — <b>Rayon A (Disponible)</b></div>
-        </div>
+// ── COMMUTATEUR DE STYLES COMPARATIFS ─────────────────────────────────
+function toggleStyle(){
+  if(document.body.classList.contains('pastel')){
+    document.body.classList.remove('pastel');
+    $('btn-style').textContent='🎨 Style : Apple';
+    toast('Style : Apple Cupertino activé');
+  } else {
+    document.body.classList.add('pastel');
+    $('btn-style').textContent='🎨 Style : Pastel';
+    toast('Style : Pastel Chaleureux activé');
+  }
+}
 
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <button class="btn primary" onclick="showToast('Prêt direct lancé pour cet ouvrage !')">📖 Prêter cet ouvrage</button>
-          <button class="btn" onclick="showToast('Étiquette code-barres ajoutée à la planche !')">🏷️ Générer l'étiquette</button>
-        </div>
-      `;
-      document.getElementById('drawer-overlay').classList.add('open');
-      document.getElementById('book-drawer').classList.add('open');
-    }
+// ── ENQUÊTE ENSEIGNANTS MODAL ─────────────────────────────────────────
+function openFeedback(){
+  $('mt').textContent='💬 Enquête Enseignants BCD Express';
+  $('modal-content').innerHTML=`<label>Votre Nom &amp; Classe :</label><input id="f-nom" placeholder="ex: Mme Martin (CP)">
+  <label>Style visuel préféré :</label><select id="f-st"><option>Apple Cupertino (Sobre, épuré, bleu)</option><option>Pastel Chaleureux (Couleurs douces école)</option></select>
+  <label>Note globale sur l'interface :</label><select id="f-sc"><option>⭐⭐⭐⭐⭐ Excellent (5/5)</option><option>⭐⭐⭐⭐ Très bien (4/5)</option><option>⭐⭐⭐ Moyen (3/5)</option></select>
+  <label>Vos remarques &amp; suggestions :</label><textarea id="f-rm" rows="3" placeholder="Ce qui vous plaît ou ce qu'il faudrait modifier..."></textarea>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeM()">Fermer</button><button class="btn pri" onclick="saveFeedback()">💾 Enregistrer mon avis</button></div>`;
+  $('modal').classList.add('on');
+}
 
-    function closeDrawer() {
-      document.getElementById('drawer-overlay').classList.remove('open');
-      document.getElementById('book-drawer').classList.remove('open');
-    }
+function saveFeedback(){
+  const txt=`AVIS BCD EXPRESS\nEnseignant : ${$('f-nom').value||'Enseignant'}\nStyle : ${$('f-st').value}\nNote : ${$('f-sc').value}\nRemarques : ${$('f-rm').value||'Aucune'}`;
+  if(navigator.clipboard){navigator.clipboard.writeText(txt);}
+  closeM();
+  toast('Merci ! Votre avis a été copié dans le presse-papier.');
+}
 
-    // ── 6. Rendu de l'onglet Mallettes Thématiques ──────────────────────
-    function renderMallettes() {
-      const q = (document.getElementById('search-mal').value || '').toLowerCase();
-      const countLivres = m => m.b.reduce((s, x) => s + x.q, 0);
-
-      const totLivres = MALLETTES.reduce((s, m) => s + countLivres(m), 0);
-      const enPret = MALLETTES.filter(m => m.loan).length;
-
-      document.getElementById('mallettes-pills').innerHTML = `
-        <div class="kpi-pill"><b>${MALLETTES.length}</b> mallettes</div>
-        <div class="kpi-pill"><b>${MALLETTES.length - enPret}</b> disponibles</div>
-        <div class="kpi-pill"><b>${enPret}</b> en prêt</div>
-        <div class="kpi-pill"><b>${totLivres}</b> livres au total</div>
-      `;
-
-      // Liste latérale
-      const listEl = document.getElementById('mallettes-list');
-      listEl.innerHTML = MALLETTES.filter(m => (m.t + m.th + m.id).toLowerCase().includes(q)).map(m => `
-        <div class="card" style="border-left:6px solid ${m.c}; cursor:pointer; padding:12px; ${m.id === selMallette ? 'border-color:var(--primary);' : ''}" onclick="selectMallette('${m.id}')">
-          <div style="font-weight:800; font-size:14px; margin-bottom:2px;">${m.t}</div>
-          <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:8px;">
-            ${m.id} · ${m.n} · <b>${countLivres(m)} livres</b> (${m.b.length} titres)
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="badge ${m.loan ? 'amber' : 'green'}">
-              ${m.loan ? 'En prêt – ' + m.loan.c : 'Disponible'}
-            </span>
-            ${m.loan ? '' : `<button class="btn sm primary" onclick="event.stopPropagation(); preterMallette('${m.id}')">📤 Prêter</button>`}
-          </div>
-        </div>
-      `).join('');
-
-      // Fiche détaillée
-      const m = MALLETTES.find(x => x.id === selMallette) || MALLETTES[0];
-      let tabBody = '';
-
-      if (malTab === 'Contenu') {
-        tabBody = `
-          ${m.loan ? `<div style="background:var(--warning-subtle); color:var(--warning); padding:10px 14px; border-radius:8px; font-size:12.5px; font-weight:700; margin-bottom:12px;">📦 Cette mallette est actuellement prêtée à la classe ${m.loan.c} jusqu'au ${m.loan.d}</div>` : ''}
-          <div class="toolbar" style="margin-bottom:12px;">
-            <input class="input-text" style="flex:1;" id="add-book-mal" placeholder="🔍 Titre, ISBN ou scannez le livre à ajouter...">
-            <button class="btn primary" onclick="addBookToMallette()">➕ Ajouter ce livre</button>
-            <button class="btn" onclick="showToast('Tous les exemplaires du thème rattachés !')">🪄 Remplir par thème</button>
-          </div>
-          <div class="books-grid">
-            ${m.b.map((b, i) => `
-              <div class="book-card" onclick="openMalletteBookInspector(${i})">
-                <span class="qty-tag">×${b.q}</span>
-                <div class="book-cover" style="background:${m.c};">
-                  <div class="icon">${b.e}</div>
-                  <div class="title-overlay">${b.t}</div>
-                </div>
-                <div class="book-title">${b.t}</div>
-                <div class="book-author">${b.a}</div>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      } else if (malTab === 'Ressources') {
-        tabBody = `
-          <div style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">Fiches pédagogiques et documents d'exploitation rattachés :</div>
-          <div class="table-container">
-            <table>
-              <thead><tr><th>Type</th><th>Titre de la ressource</th><th>Cible</th><th>Action</th></tr></thead>
-              <tbody>
-                <tr><td>📄 PDF</td><td><b>Pistes d'exploitation Éduscol — Harcèlement</b></td><td>Mallette complète</td><td><button class="btn sm" onclick="showToast('Document ouvert !')">👁️ Ouvrir</button></td></tr>
-                <tr><td>🌐 Web</td><td><b>Dossier interactif 3018 — Non au harcèlement</b></td><td>Lili est harcelée</td><td><button class="btn sm" onclick="showToast('Lien web ouvert !')">🌐 Voir le site</button></td></tr>
-              </tbody>
-            </table>
-          </div>
-        `;
-      } else if (malTab === 'Historique') {
-        tabBody = `
-          <div class="table-container">
-            <table>
-              <thead><tr><th>Classe &amp; Enseignant</th><th>Date de Sortie</th><th>Date de Retour</th><th>Statut</th></tr></thead>
-              <tbody>
-                <tr><td><b>CM2 — M. Durand</b></td><td>2026-09-12</td><td>2026-10-10</td><td><span class="badge green">Rendu complet</span></td></tr>
-                <tr><td><b>CE2 — Mme Petit</b></td><td>2026-10-15</td><td>2026-11-12</td><td><span class="badge green">Rendu complet</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-        `;
-      } else {
-        tabBody = `
-          <div style="line-height:1.8; font-size:13.5px;">
-            <p><b>Thème :</b> ${m.th}</p>
-            <p><b>Niveau recommandé :</b> ${m.n}</p>
-            <p><b>Objectifs pédagogiques :</b> Sensibiliser les élèves, libérer la parole en classe, travailler sur l'empathie et la coopération.</p>
-          </div>
-        `;
-      }
-
-      document.getElementById('mallette-detail').innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px;">
-          <div>
-            <h2 style="font-size:18px; font-weight:800; display:flex; align-items:center; gap:8px;">
-              ${m.t} <span style="font-family:monospace; font-size:11px; background:var(--primary-subtle); color:var(--primary); padding:2px 8px; border-radius:6px;">${m.id}</span>
-              <span class="badge ${m.loan ? 'amber' : 'green'}">${m.loan ? 'En prêt' : 'Disponible'}</span>
-            </h2>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
-              Niveau : <b>${m.n}</b> · Total : <b>${countLivres(m)} exemplaires</b> (${m.b.length} titres)
-            </div>
-          </div>
-          <div style="display:flex; gap:8px;">
-            ${m.loan ? `<button class="btn emerald" onclick="retournerMallette('${m.id}')">↩ Enregistrer le retour</button>` : `<button class="btn primary" onclick="preterMallette('${m.id}')">📤 Prêter à une classe</button>`}
-            <button class="btn" onclick="showToast('Fiche récapitulative A4 PDF générée !')">🖨️ Fiche A4</button>
-            <button class="btn" onclick="showToast('Étiquette de caisse imprimée !')">🏷️ Étiquette</button>
-          </div>
-        </div>
-
-        <!-- 4 Onglets -->
-        <div style="display:flex; gap:6px; border-bottom:1px solid var(--border); margin-bottom:16px;">
-          ${['Contenu', 'Ressources', 'Historique', 'Infos'].map(t => `
-            <button class="btn sm" style="border:0; border-radius:0; border-bottom:3px solid ${t === malTab ? 'var(--primary)' : 'transparent'}; font-weight:${t === malTab ? '700' : '600'}; color:${t === malTab ? 'var(--primary)' : 'var(--text-muted)'}; padding:8px 14px;" onclick="malTab='${t}'; renderMallettes();">${t}</button>
-          `).join('')}
-        </div>
-
-        ${tabBody}
-      `;
-    }
-
-    function selectMallette(id) {
-      selMallette = id;
-      malTab = 'Contenu';
-      renderMallettes();
-    }
-
-    function preterMallette(id) {
-      const m = MALLETTES.find(x => x.id === id);
-      m.loan = { c: "CE2 – Mme Petit", d: "2026-12-15" };
-      renderMallettes();
-      showToast('Mallette ' + m.id + ' prêtée à la classe CE2 !');
-    }
-
-    function retournerMallette(id) {
-      const m = MALLETTES.find(x => x.id === id);
-      m.loan = null;
-      renderMallettes();
-      showToast('Mallette ' + m.id + ' restituée en BCD !');
-    }
-
-    function addBookToMallette() {
-      const input = document.getElementById('add-book-mal');
-      const val = input.value.trim();
-      if (!val) return;
-      const m = MALLETTES.find(x => x.id === selMallette);
-      m.b.push({ t: val, a: "Auteur BCD", g: "Roman", q: 1, e: "📖" });
-      input.value = '';
-      renderMallettes();
-      showToast('Livre ajouté à la mallette !');
-    }
-
-    function openMalletteBookInspector(idx) {
-      const m = MALLETTES.find(x => x.id === selMallette);
-      const b = m.b[idx];
-      document.getElementById('drawer-content').innerHTML = `
-        <div class="book-cover" style="background:${m.c}; height:180px; margin-bottom:14px;">
-          <div class="icon" style="font-size:52px;">${b.e}</div>
-          <div style="font-size:13px; font-weight:800;">${b.t}</div>
-        </div>
-        <h2 style="font-size:17px; font-weight:800; line-height:1.2; margin-bottom:4px;">${b.t}</h2>
-        <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">${b.a} · ${b.g}</div>
-
-        <!-- Stepper Pas-à-Pas (+) / (-) -->
-        <div style="background:var(--surface-subtle); padding:12px; border-radius:10px; margin-bottom:16px; text-align:center;">
-          <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">Exemplaires dans la boîte :</div>
-          <div style="display:flex; justify-content:center; align-items:center; gap:14px;">
-            <button class="btn" style="font-size:16px; font-weight:900; width:36px; height:36px; padding:0; justify-content:center;" onclick="stepperQty(${idx}, -1)">−</button>
-            <span style="font-size:20px; font-weight:800; min-width:30px;">${b.q}</span>
-            <button class="btn" style="font-size:16px; font-weight:900; width:36px; height:36px; padding:0; justify-content:center;" onclick="stepperQty(${idx}, 1)">+</button>
-          </div>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">Ajustez facilement le nombre d'exemplaires en boîte</div>
-        </div>
-
-        <button class="btn danger" style="width:100%; justify-content:center;" onclick="removeMalletteBook(${idx})">🗑️ Retirer ce titre de la mallette</button>
-      `;
-      document.getElementById('drawer-overlay').classList.add('open');
-      document.getElementById('book-drawer').classList.add('open');
-    }
-
-    function stepperQty(idx, delta) {
-      const m = MALLETTES.find(x => x.id === selMallette);
-      m.b[idx].q = Math.max(1, m.b[idx].q + delta);
-      renderMallettes();
-      openMalletteBookInspector(idx);
-      showToast('Quantité mise à jour : ' + m.b[idx].q + ' ex.');
-    }
-
-    function removeMalletteBook(idx) {
-      const m = MALLETTES.find(x => x.id === selMallette);
-      m.b.splice(idx, 1);
-      closeDrawer();
-      renderMallettes();
-      showToast('Titre retiré de la boîte.');
-    }
-
-    // ── 7. Rendu des Étiquettes Code 39 ────────────────────────────────
-    function renderLabels() {
-      const grid = document.getElementById('labels-preview-grid');
-      const items = [
-        { t: "Le Petit Prince", a: "Saint-Exupéry", c: "R SAI", b: "CAMUS-01042" },
-        { t: "Lili est harcelée", a: "Saint Mars", c: "R SAI", b: "CAMUS-02108" },
-        { t: "Rouge", a: "Jan De Kinder", c: "A KIN", b: "CAMUS-04102" },
-        { t: "Les enfants Résist.", a: "Dugomier", c: "BD DUG", b: "CAMUS-03012" },
-        { t: "Planète danger", a: "Collectif", c: "577 PLA", b: "CAMUS-05118" },
-        { t: "Max et Lili", a: "Serge Bloch", c: "BD BLO", b: "CAMUS-06104" }
-      ];
-
-      grid.innerHTML = items.map(x => `
-        <div class="label-box">
-          <div class="label-header">ÉCOLE ALBERT CAMUS — BCD</div>
-          <div class="label-title">${x.t}</div>
-          <div class="label-barcode">||| | |||| | |||</div>
-          <div class="label-footer">
-            <span>${x.b}</span>
-            <span><b>${x.c}</b></span>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // ── 8. Formulaire d'Avis & Enquête Enseignants ─────────────────────
-    function openFeedbackModal() {
-      document.getElementById('modal-feedback').classList.add('open');
-    }
-
-    function envoyerFeedback() {
-      const nom = document.getElementById('fb-nom').value || "Enseignant";
-      const style = document.getElementById('fb-style').value;
-      const note = document.getElementById('fb-note').value;
-      const comm = document.getElementById('fb-comment').value;
-
-      const summary = `AVIS ENSEIGNANT BCD EXPRESS\nEnseignant : ${nom}\nStyle préféré : ${style}\nNote : ${note}\nCommentaire : ${comm}\nDate : ${new Date().toLocaleDateString('fr-FR')}`;
-
-      // Copier dans le presse-papier
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(summary);
-      }
-
-      closeModal('modal-feedback');
-      showToast('Merci ! Votre avis a été copié dans le presse-papier.');
-    }
-
-    // ── 9. Toast Notification ─────────────────────────────────────────
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 3000);
-    }
-
-    function simulerScanModal() {
-      showToast('⚡ Bip douchette simulé : Ouvrage reconnu et pointé !');
-    }
-
-    function openDouchetteModal() {
-      showToast('Mode Douchette Rafale activé (+1 automatique sur chaque scan)');
-    }
-
-    // Initialisation au chargement
-    renderLoans();
-    renderBooks();
-    renderMallettes();
-    renderLabels();
-  </script>
-</body>
-</html>
+render();
+</script></body></html>
