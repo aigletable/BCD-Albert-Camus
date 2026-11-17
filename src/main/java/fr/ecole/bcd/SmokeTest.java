@@ -1256,9 +1256,23 @@ public class SmokeTest {
         Exemplaire ex1ApresRetour = exDao.findById(ex1.getId());
         check("Exemplaire physique redevenu DISPONIBLE", ex1ApresRetour.getStatut() == Statut.DISPONIBLE);
 
-        // 8. Suppression de la mallette de test
-        malletteDao.delete(mallette.getId());
+        // 7b. Tests de synchronisation et nettoyage des remarques d'inventaire
+        check("nettoyerRemarqueMallette vide 'Mallette MAL-001'", MalletteService.nettoyerRemarqueMallette("Mallette MAL-001").isEmpty());
+        check("nettoyerRemarqueMallette conserve la remarque d'état", MalletteService.nettoyerRemarqueMallette("⚠️ Déchiré • Mallette MAL-001").equals("⚠️ Déchiré"));
+        check("formaterRemarqueMallette ajoute le tag", MalletteService.formaterRemarqueMallette("", "MAL-001").equals("Mallette MAL-001"));
+
+        // Retirer un livre de la mallette et vérifier le nettoyage immédiat de sa remarque
+        Exemplaire ex2AvantRetrait = exDao.findById(ex2.getId());
+        check("Exemplaire 2 a le tag mallette avant retrait", ex2AvantRetrait.getRemarque().contains("Mallette"));
+        malletteService.retirerLivre(mallette.getId(), ex2.getId());
+        Exemplaire ex2ApresRetrait = exDao.findById(ex2.getId());
+        check("Exemplaire 2 n'a plus le tag mallette après retrait", !ex2ApresRetrait.getRemarque().contains("Mallette"));
+
+        // 8. Suppression complète de la mallette de test via supprimerMallette
+        malletteService.supprimerMallette(mallette.getId());
         check("Suppression de la mallette", malletteDao.findById(mallette.getId()) == null);
+        Exemplaire ex1ApresSuppr = exDao.findById(ex1.getId());
+        check("Exemplaire 1 nettoyé lors de la suppression de la mallette", !ex1ApresSuppr.getRemarque().contains("Mallette"));
 
         System.out.println();
     }

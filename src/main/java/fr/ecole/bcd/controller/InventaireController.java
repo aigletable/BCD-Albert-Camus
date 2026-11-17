@@ -752,6 +752,8 @@ public class InventaireController {
                         badge.setStyle("-fx-background-color: #fff8c5; -fx-text-fill: #9a6700; -fx-padding: 2 6; -fx-background-radius: 10; -fx-font-size: 11px; -fx-font-weight: bold;");
                     } else if (rem.contains("vérifier") || rem.contains("Attention")) {
                         badge.setStyle("-fx-background-color: #ddf4ff; -fx-text-fill: #0969da; -fx-padding: 2 6; -fx-background-radius: 10; -fx-font-size: 11px; -fx-font-weight: bold;");
+                    } else if (rem.contains("Mallette")) {
+                        badge.setStyle("-fx-background-color: #f3e8ff; -fx-text-fill: #7c3aed; -fx-padding: 2 6; -fx-background-radius: 10; -fx-font-size: 11px; -fx-font-weight: bold;");
                     } else {
                         badge.setStyle("-fx-background-color: #f6f8fa; -fx-text-fill: #24292f; -fx-padding: 2 6; -fx-background-radius: 10; -fx-font-size: 11px;");
                     }
@@ -809,12 +811,15 @@ public class InventaireController {
 
             // Restaurer la sélection si possible
             if (selectedIsbn != null) {
+                Livre found = null;
                 for (Livre l : masterLivres) {
                     if (selectedIsbn.equals(l.getIsbn())) {
+                        found = l;
                         livreTableView.getSelectionModel().select(l);
                         break;
                     }
                 }
+                showLivreDetail(found);
             }
 
             updateStatusCounters();

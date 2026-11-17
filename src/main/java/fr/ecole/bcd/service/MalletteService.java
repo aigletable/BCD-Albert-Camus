@@ -17,7 +17,9 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Service métier pour la gestion complète des Mallettes Pédagogiques & Thématiques.
@@ -363,6 +365,49 @@ public class MalletteService {
     }
 
     /**
+     * Nettoie la remarque d'un exemplaire pour en retirer toute mention de mallette.
+     * Exemple : "Mallette MAL-004" -> ""
+     *           "⚠️ Déchiré • Mallette MAL-001" -> "⚠️ Déchiré"
+     *
+     * @param currentRemarque la remarque actuelle de l'exemplaire
+     * @return la remarque nettoyée de toute mention de mallette
+     */
+    public static String nettoyerRemarqueMallette(String currentRemarque) {
+        if (currentRemarque == null || currentRemarque.isBlank()) {
+            return "";
+        }
+        String cleaned = currentRemarque
+                .replaceAll("(?i)\\s*[-•]?\\s*Mallette(\\s+[A-Za-z0-9-]+)?\\s*[-•]?\\s*", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        while (cleaned.startsWith("•") || cleaned.startsWith("-")) {
+            cleaned = cleaned.substring(1).trim();
+        }
+        while (cleaned.endsWith("•") || cleaned.endsWith("-")) {
+            cleaned = cleaned.substring(0, cleaned.length() - 1).trim();
+        }
+        return cleaned;
+    }
+
+    /**
+     * Ajoute la mention d'une mallette dans la remarque d'un exemplaire s'il ne la possède pas déjà.
+     *
+     * @param currentRemarque la remarque actuelle
+     * @param malletteCode le code de la mallette (ex: "MAL-001")
+     * @return la remarque mise à jour avec le tag de la mallette
+     */
+    public static String formaterRemarqueMallette(String currentRemarque, String malletteCode) {
+        String tag = "Mallette " + (malletteCode != null ? malletteCode.trim() : "").trim();
+        if (currentRemarque == null || currentRemarque.isBlank()) {
+            return tag;
+        }
+        if (currentRemarque.contains(tag)) {
+            return currentRemarque;
+        }
+        return currentRemarque.trim() + " • " + tag;
+    }
+
+    /**
      * Ajoute un livre dans la mallette par son Titre, son N° d'exemplaire ou son code-barres ISBN.
      * Si le livre n'est pas encore dans la BCD, il est automatiquement catalogué et ajouté.
      */
@@ -376,12 +421,29 @@ public class MalletteService {
                 mallette.getCode(), malletteId);
 
         malletteDao.addItem(malletteId, targetEx.getId());
+
+        // Synchroniser l'indication d'appartenance à la mallette dans la remarque de l'exemplaire
+        String newRem = formaterRemarqueMallette(targetEx.getRemarque(), mallette.getCode());
+        if (!newRem.equals(targetEx.getRemarque())) {
+            exemplaireDao.updateRemarque(targetEx.getId(), newRem);
+            targetEx.setRemarque(newRem);
+        }
+
+        // Si la mallette est actuellement en prêt, emprunter immédiatement ce nouveau livre
+        if (mallette.isEmprunte() && mallette.getEmprunteurNumero() != null) {
+            LocalDate deb = mallette.getDateEmprunt() != null ? mallette.getDateEmprunt() : LocalDate.now();
+            LocalDate fin = mallette.getDateRetourPrevue() != null ? mallette.getDateRetourPrevue() : LocalDate.now().plusWeeks(4);
+            empruntDao.creerEmpruntAvecDateLimite(mallette.getEmprunteurNumero(), targetEx.getId(), deb, fin);
+            exemplaireDao.updateStatut(targetEx.getId(), Exemplaire.Statut.EMPRUNTE);
+            targetEx.setStatut(Exemplaire.Statut.EMPRUNTE);
+        }
+
         return targetEx;
     }
 
     /**
      * Ajoute tous les livres disponibles correspondant au thème spécifié dans la mallette.
-     * Exemple : charger tous les livres sur le "Harcèlement" dans la mallette Harcèlement.
+     * Déduplique automatiquement par ISBN afin d'éviter les doublons d'un même titre dans la boîte.
      */
     public int remplirParTheme(int malletteId, String theme) throws RegleMetierException, SQLException {
         if (theme == null || theme.isBlank()) {
@@ -393,6 +455,13 @@ public class MalletteService {
         }
 
         List<MalletteItem> currentItems = malletteDao.getItems(malletteId);
+        Set<String> presentIsbns = new HashSet<>();
+        for (MalletteItem it : currentItems) {
+            if (it.getIsbn() != null && !it.getIsbn().isBlank()) {
+                presentIsbns.add(it.getIsbn().trim());
+            }
+        }
+
         String sql = "SELECT e.* FROM exemplaires e "
                    + "JOIN livres l ON e.isbn = l.isbn "
                    + "WHERE e.statut = 'DISPONIBLE' "
@@ -410,9 +479,23 @@ public class MalletteService {
             try (java.sql.ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     int exId = rs.getInt("id");
+                    String isbn = rs.getString("isbn");
+
+                    // Déduplication : 1 seul exemplaire par titre dans une mallette thématique
+                    if (isbn != null && presentIsbns.contains(isbn.trim())) {
+                        continue;
+                    }
+
                     boolean alreadyInThis = currentItems.stream().anyMatch(it -> it.getExemplaireId() == exId);
                     if (!alreadyInThis && !malletteDao.isExemplaireInMallette(exId)) {
                         malletteDao.addItem(malletteId, exId);
+                        String curRem = rs.getString("remarque");
+                        String newRem = formaterRemarqueMallette(curRem, mallette.getCode());
+                        exemplaireDao.updateRemarque(exId, newRem);
+
+                        if (isbn != null && !isbn.isBlank()) {
+                            presentIsbns.add(isbn.trim());
+                        }
                         added++;
                     }
                 }
@@ -422,10 +505,64 @@ public class MalletteService {
     }
 
     /**
-     * Retire un livre d'une mallette.
+     * Retire un livre d'une mallette, nettoie sa remarque d'inventaire
+     * et clôture tout emprunt actif si la mallette était prêtée.
      */
     public void retirerLivre(int malletteId, int exemplaireId) throws SQLException {
         malletteDao.removeItem(malletteId, exemplaireId);
+
+        // Nettoyage de la remarque d'exemplaire (retirer "Mallette MAL-XXX")
+        Exemplaire ex = exemplaireDao.findById(exemplaireId);
+        if (ex != null) {
+            String cleanRem = nettoyerRemarqueMallette(ex.getRemarque());
+            exemplaireDao.updateRemarque(exemplaireId, cleanRem);
+            ex.setRemarque(cleanRem);
+        }
+
+        // Si l'exemplaire était en prêt au sein de cette mallette, clôturer l'emprunt
+        Emprunt emp = empruntDao.findEnCoursByExemplaire(exemplaireId);
+        if (emp != null) {
+            empruntDao.retourner(emp.getId());
+        }
+        exemplaireDao.updateStatut(exemplaireId, Exemplaire.Statut.DISPONIBLE);
+    }
+
+    /**
+     * Retire tous les exemplaires d'un livre (même ISBN) présents dans cette mallette.
+     *
+     * @param malletteId l'identifiant de la mallette
+     * @param isbn l'ISBN ou code interne du livre à retirer
+     * @return le nombre d'exemplaires retirés
+     */
+    public int retirerTousExemplairesLivre(int malletteId, String isbn) throws SQLException {
+        if (isbn == null || isbn.isBlank()) return 0;
+        List<MalletteItem> items = malletteDao.getItems(malletteId);
+        int count = 0;
+        for (MalletteItem it : items) {
+            if (isbn.trim().equals(it.getIsbn() != null ? it.getIsbn().trim() : "")) {
+                retirerLivre(malletteId, it.getExemplaireId());
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Vide intégralement une mallette en nettoyant les remarques de tous les exemplaires physiques.
+     */
+    public void viderMallette(int malletteId) throws SQLException {
+        List<MalletteItem> items = malletteDao.getItems(malletteId);
+        for (MalletteItem it : items) {
+            retirerLivre(malletteId, it.getExemplaireId());
+        }
+    }
+
+    /**
+     * Supprime définitivement une mallette et libère tous ses exemplaires dans la BCD.
+     */
+    public void supprimerMallette(int malletteId) throws SQLException {
+        viderMallette(malletteId);
+        malletteDao.delete(malletteId);
     }
 
     // =====================================================================

@@ -301,15 +301,15 @@ public class MallettesController {
             {
                 btnRemove.setStyle("-fx-font-size: 10px; -fx-background-color: transparent; -fx-text-fill: #DC2626; -fx-cursor: hand; -fx-padding: 2 6;");
                 btnRemove.setOnAction(e -> {
-                    MalletteItem item = getTableView().getItems().get(getIndex());
-                    if (item != null && selectedMallette != null) {
-                        try {
-                            malletteService.retirerLivre(selectedMallette.getId(), item.getExemplaireId());
-                            refreshMalletteDetails();
-                            loadDataKeepSelection();
-                        } catch (SQLException ex) {
-                            showError("Erreur", ex.getMessage());
+                    MalletteItem item = (MalletteItem) getTableRow().getItem();
+                    if (item == null) {
+                        int idx = getIndex();
+                        if (idx >= 0 && idx < getTableView().getItems().size()) {
+                            item = getTableView().getItems().get(idx);
                         }
+                    }
+                    if (item != null && selectedMallette != null) {
+                        demanderEtRetirerLivre(item);
                     }
                 });
             }
@@ -692,14 +692,68 @@ public class MallettesController {
     @FXML
     private void handlePreviewRetirer() {
         if (selectedBookItem != null && selectedMallette != null) {
+            demanderEtRetirerLivre(selectedBookItem);
+        }
+    }
+
+    /**
+     * Gère la confirmation et le retrait d'un livre de la mallette.
+     * Si l'ouvrage est présent en plusieurs exemplaires dans la boîte,
+     * l'utilisateur peut choisir de retirer tous les exemplaires ou seulement celui-ci.
+     */
+    private void demanderEtRetirerLivre(MalletteItem item) {
+        if (item == null || selectedMallette == null) return;
+
+        long countSameBook = currentItems.stream()
+                .filter(it -> it.getIsbn() != null && it.getIsbn().equals(item.getIsbn()))
+                .count();
+
+        if (countSameBook > 1) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            MainApp.prepareDialog(alert);
+            alert.setTitle("Retirer l'ouvrage");
+            alert.setHeaderText("Exemplaires multiples détectés (" + countSameBook + " exemplaires)");
+            alert.setContentText("L'ouvrage '" + item.getTitre() + "' est présent en " + countSameBook + " exemplaires dans cette mallette.\n\n"
+                    + "Souhaitez-vous retirer tous les exemplaires de ce livre ou seulement l'exemplaire #" + item.getExemplaireId() + " ?");
+
+            ButtonType btnTous = new ButtonType("Tous les exemplaires (" + countSameBook + ")");
+            ButtonType btnSeul = new ButtonType("Cet exemplaire seul (#" + item.getExemplaireId() + ")");
+            ButtonType btnAnnuler = new ButtonType("Annuler", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            alert.getButtonTypes().setAll(btnTous, btnSeul, btnAnnuler);
+            var result = alert.showAndWait();
+
+            if (result.isPresent() && result.get() == btnTous) {
+                try {
+                    malletteService.retirerTousExemplairesLivre(selectedMallette.getId(), item.getIsbn());
+                    selectedBookItem = null;
+                    showBookPreview(null);
+                    refreshMalletteDetails();
+                    loadDataKeepSelection();
+                } catch (SQLException ex) {
+                    showError("Erreur", ex.getMessage());
+                }
+            } else if (result.isPresent() && result.get() == btnSeul) {
+                try {
+                    malletteService.retirerLivre(selectedMallette.getId(), item.getExemplaireId());
+                    selectedBookItem = null;
+                    showBookPreview(null);
+                    refreshMalletteDetails();
+                    loadDataKeepSelection();
+                } catch (SQLException ex) {
+                    showError("Erreur", ex.getMessage());
+                }
+            }
+        } else {
             boolean confirm = DialogHelper.showConfirmation(
                     "Retirer l'ouvrage",
                     "Retirer de la mallette",
-                    "Voulez-vous retirer '" + selectedBookItem.getTitre() + "' (ex. #" + selectedBookItem.getExemplaireId() + ") de cette mallette ?"
+                    "Voulez-vous retirer '" + item.getTitre() + "' (ex. #" + item.getExemplaireId() + ") de cette mallette ?"
             );
             if (confirm) {
                 try {
-                    malletteService.retirerLivre(selectedMallette.getId(), selectedBookItem.getExemplaireId());
+                    malletteService.retirerLivre(selectedMallette.getId(), item.getExemplaireId());
+                    selectedBookItem = null;
                     showBookPreview(null);
                     refreshMalletteDetails();
                     loadDataKeepSelection();
@@ -1018,8 +1072,10 @@ public class MallettesController {
         alert.showAndWait().ifPresent(res -> {
             if (res == ButtonType.OK) {
                 try {
-                    malletteDao.delete(selectedMallette.getId());
+                    malletteService.supprimerMallette(selectedMallette.getId());
                     selectedMallette = null;
+                    selectedBookItem = null;
+                    showBookPreview(null);
                     loadData();
                 } catch (SQLException e) {
                     showError("Erreur de suppression", e.getMessage());

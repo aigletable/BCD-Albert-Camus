@@ -221,6 +221,13 @@ public final class DatabaseManager {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_ressources_mallette ON ressources_pedagogiques(mallette_id);");
             } catch (SQLException ignored) {}
 
+            // Nettoyage automatique de cohérence : réconcilier les remarques orphelines de mallettes
+            try {
+                stmt.execute("UPDATE exemplaires SET remarque = '' "
+                        + "WHERE (remarque LIKE 'Mallette%' OR remarque LIKE '%Mallette%') "
+                        + "  AND id NOT IN (SELECT exemplaire_id FROM mallette_items);");
+            } catch (SQLException ignored) {}
+
             System.out.println("✅ Base de données initialisée (" + count + " instructions exécutées).");
 
         } catch (SQLException e) {
