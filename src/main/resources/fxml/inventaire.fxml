@@ -222,6 +222,12 @@
                                 <Region HBox.hgrow="ALWAYS"/>
                                 <Label fx:id="lblEditeur" style="-fx-font-weight: 600; -fx-font-size: 11.5px;"/>
                             </HBox>
+                            <HBox fx:id="rowMalletteInfo" alignment="CENTER_LEFT" visible="false" managed="false">
+                                <Label text="Mallette" style="-fx-text-fill: #8B949E; -fx-font-size: 11.5px; -fx-font-weight: 500;"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="lblBadgeMallette" text="Mallette"
+                                       style="-fx-background-color: #f3e8ff; -fx-text-fill: #7c3aed; -fx-padding: 2 6; -fx-background-radius: 6; -fx-font-size: 11px; -fx-font-weight: bold;"/>
+                            </HBox>
                         </VBox>
 
                         <!-- Accès direct aux Ressources Pédagogiques du livre -->

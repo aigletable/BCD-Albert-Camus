@@ -421,6 +421,134 @@ public class MalletteDao {
     }
 
     /**
+     * Dénombre le nombre de titres d'ouvrages distincts contenus dans une mallette.
+     */
+    public int countDistinctTitles(int malletteId) throws SQLException {
+        String sql = "SELECT COUNT(DISTINCT e.isbn) FROM mallette_items mi "
+                   + "JOIN exemplaires e ON mi.exemplaire_id = e.id "
+                   + "WHERE mi.mallette_id = ?";
+        try (PreparedStatement ps = DatabaseManager.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, malletteId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    /**
+     * Dénombre le nombre d'exemplaires d'un titre précis (ISBN) présents dans une mallette.
+     */
+    public int countCopiesInMallette(int malletteId, String isbn) throws SQLException {
+        if (isbn == null || isbn.isBlank()) return 0;
+        String sql = "SELECT COUNT(*) FROM mallette_items mi "
+                   + "JOIN exemplaires e ON mi.exemplaire_id = e.id "
+                   + "WHERE mi.mallette_id = ? AND e.isbn = ?";
+        try (PreparedStatement ps = DatabaseManager.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, malletteId);
+            ps.setString(2, isbn.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    /**
+     * Recherche tous les exemplaires physiques disponibles en BCD dont le livre est déjà
+     * présent dans la mallette, mais dont cet exemplaire spécifique n'a pas encore été intégré.
+     */
+    public List<Exemplaire> findAvailableCopiesNotInMallette(int malletteId) throws SQLException {
+        String sql = "SELECT e.* FROM exemplaires e "
+                   + "WHERE e.isbn IN (SELECT DISTINCT e2.isbn FROM mallette_items mi2 JOIN exemplaires e2 ON mi2.exemplaire_id = e2.id WHERE mi2.mallette_id = ?) "
+                   + "  AND e.id NOT IN (SELECT exemplaire_id FROM mallette_items) "
+                   + "  AND e.statut = 'DISPONIBLE' "
+                   + "ORDER BY e.isbn, e.id ASC";
+        List<Exemplaire> list = new ArrayList<>();
+        try (PreparedStatement ps = DatabaseManager.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, malletteId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Exemplaire ex = new Exemplaire();
+                    ex.setId(rs.getInt("id"));
+                    ex.setIsbn(rs.getString("isbn"));
+                    ex.setStatut(Exemplaire.Statut.valueOf(rs.getString("statut")));
+                    String da = rs.getString("date_ajout");
+                    if (da != null && !da.isBlank()) ex.setDateAjout(LocalDate.parse(da));
+                    ex.setRemarque(rs.getString("remarque"));
+                    list.add(ex);
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Recherche les exemplaires physiques disponibles pour un ISBN donné qui ne sont pas dans une mallette.
+     */
+    public List<Exemplaire> findAvailableCopiesForIsbnNotInMallette(int malletteId, String isbn) throws SQLException {
+        if (isbn == null || isbn.isBlank()) return new ArrayList<>();
+        String sql = "SELECT e.* FROM exemplaires e "
+                   + "WHERE e.isbn = ? "
+                   + "  AND e.id NOT IN (SELECT exemplaire_id FROM mallette_items) "
+                   + "  AND e.statut = 'DISPONIBLE' "
+                   + "ORDER BY e.id ASC";
+        List<Exemplaire> list = new ArrayList<>();
+        try (PreparedStatement ps = DatabaseManager.getConnection().prepareStatement(sql)) {
+            ps.setString(1, isbn.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Exemplaire ex = new Exemplaire();
+                    ex.setId(rs.getInt("id"));
+                    ex.setIsbn(rs.getString("isbn"));
+                    ex.setStatut(Exemplaire.Statut.valueOf(rs.getString("statut")));
+                    String da = rs.getString("date_ajout");
+                    if (da != null && !da.isBlank()) ex.setDateAjout(LocalDate.parse(da));
+                    ex.setRemarque(rs.getString("remarque"));
+                    list.add(ex);
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Retourne tous les exemplaires d'un titre précis (ISBN) contenus dans une mallette.
+     */
+    public List<MalletteItem> getItemsForIsbn(int malletteId, String isbn) throws SQLException {
+        if (isbn == null || isbn.isBlank()) return new ArrayList<>();
+        String sql = "SELECT mi.id, mi.mallette_id, mi.exemplaire_id, mi.date_ajout, "
+                   + "e.isbn, e.statut as ex_statut, l.titre, l.auteur, l.genre, l.theme "
+                   + "FROM mallette_items mi "
+                   + "JOIN exemplaires e ON mi.exemplaire_id = e.id "
+                   + "JOIN livres l ON e.isbn = l.isbn "
+                   + "WHERE mi.mallette_id = ? AND e.isbn = ? "
+                   + "ORDER BY mi.exemplaire_id ASC";
+        List<MalletteItem> list = new ArrayList<>();
+        try (PreparedStatement ps = DatabaseManager.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, malletteId);
+            ps.setString(2, isbn.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    MalletteItem item = new MalletteItem();
+                    item.setId(rs.getInt("id"));
+                    item.setMalletteId(rs.getInt("mallette_id"));
+                    item.setExemplaireId(rs.getInt("exemplaire_id"));
+                    String da = rs.getString("date_ajout");
+                    if (da != null && !da.isBlank()) item.setDateAjout(LocalDate.parse(da));
+                    item.setIsbn(rs.getString("isbn"));
+                    item.setTitre(rs.getString("titre"));
+                    item.setAuteur(rs.getString("auteur"));
+                    item.setGenre(rs.getString("genre"));
+                    item.setTheme(rs.getString("theme"));
+                    String st = rs.getString("ex_statut");
+                    item.setStatutExemplaire(st != null ? Exemplaire.Statut.valueOf(st) : Exemplaire.Statut.DISPONIBLE);
+                    list.add(item);
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
      * Détermine si un exemplaire physique donné est actuellement réservé ou contenu dans une mallette.
      *
      * @param exemplaireId l'identifiant technique de l'exemplaire

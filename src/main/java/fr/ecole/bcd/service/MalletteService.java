@@ -154,13 +154,17 @@ public class MalletteService {
 
         // 2. Code-barres ISBN
         String cleanIsbn = LivreMetadataService.cleanIsbn(clean);
-        boolean isIsbn = cleanIsbn.matches("^\\d{9}[0-9Xx]$")
+        boolean isCodeInBcd = livreDao.findByIsbn(clean) != null || livreDao.findByIsbn(cleanIsbn) != null;
+        boolean isIsbn = isCodeInBcd
+                || cleanIsbn.matches("^\\d{9}[0-9Xx]$")
                 || cleanIsbn.matches("^\\d{13}$")
                 || clean.toUpperCase().startsWith("ISBN")
-                || clean.toUpperCase().startsWith("TEST-ISBN")
+                || clean.toUpperCase().startsWith("TEST-")
+                || clean.toUpperCase().startsWith("CAMUS-")
                 || LivreMetadataService.isCodePresse(cleanIsbn);
         if (isIsbn) {
-            String isbnKey = (clean.toUpperCase().startsWith("TEST-ISBN") || clean.toUpperCase().startsWith("ISBN")) ? clean : cleanIsbn;
+            String isbnKey = (isCodeInBcd && livreDao.findByIsbn(clean) != null) ? clean
+                    : ((clean.toUpperCase().startsWith("TEST-") || clean.toUpperCase().startsWith("ISBN") || clean.toUpperCase().startsWith("CAMUS-")) ? clean : cleanIsbn);
             Livre l = livreDao.findByIsbn(isbnKey);
             if (l != null) {
                 return new LivreScanPreview(rawInput, l.getTitre(), l.getAuteur(), isbnKey, true, "Catalogue BCD (ISBN)");
@@ -213,16 +217,20 @@ public class MalletteService {
             targetEx = exemplaireDao.findById(exId);
         }
 
-        // 2. Recherche par ISBN si le scan ressemble à un ISBN ou périodique
+        // 2. Recherche par ISBN si le scan ressemble à un ISBN ou code interne
         String cleanIsbn = LivreMetadataService.cleanIsbn(clean);
-        boolean isIsbn = cleanIsbn.matches("^\\d{9}[0-9Xx]$")
+        boolean isCodeInBcd = livreDao.findByIsbn(clean) != null || livreDao.findByIsbn(cleanIsbn) != null;
+        boolean isIsbn = isCodeInBcd
+                || cleanIsbn.matches("^\\d{9}[0-9Xx]$")
                 || cleanIsbn.matches("^\\d{13}$")
                 || clean.toUpperCase().startsWith("ISBN")
-                || clean.toUpperCase().startsWith("TEST-ISBN")
+                || clean.toUpperCase().startsWith("TEST-")
+                || clean.toUpperCase().startsWith("CAMUS-")
                 || LivreMetadataService.isCodePresse(cleanIsbn);
 
         if (targetEx == null && isIsbn) {
-            String effectiveIsbn = (clean.toUpperCase().startsWith("TEST-ISBN") || clean.toUpperCase().startsWith("ISBN")) ? clean : cleanIsbn;
+            String effectiveIsbn = (isCodeInBcd && livreDao.findByIsbn(clean) != null) ? clean
+                    : ((clean.toUpperCase().startsWith("TEST-") || clean.toUpperCase().startsWith("ISBN") || clean.toUpperCase().startsWith("CAMUS-")) ? clean : cleanIsbn);
             List<Exemplaire> disposIsbn = exemplaireDao.findDisponiblesByIsbn(effectiveIsbn);
             List<MalletteItem> currentItems = (malletteId != null && malletteId > 0)
                     ? malletteDao.getItems(malletteId)
@@ -443,9 +451,22 @@ public class MalletteService {
 
     /**
      * Ajoute tous les livres disponibles correspondant au thème spécifié dans la mallette.
-     * Déduplique automatiquement par ISBN afin d'éviter les doublons d'un même titre dans la boîte.
+     * Par défaut, inclut tous les exemplaires physiques disponibles (séries complètes).
      */
     public int remplirParTheme(int malletteId, String theme) throws RegleMetierException, SQLException {
+        return remplirParTheme(malletteId, theme, true);
+    }
+
+    /**
+     * Ajoute les livres disponibles correspondant au thème spécifié dans la mallette.
+     *
+     * @param malletteId identifiant de la mallette
+     * @param theme nom ou mot-clé du thème
+     * @param tousExemplaires si {@code true}, intègre tous les exemplaires disponibles (séries de classe) ;
+     *                        si {@code false}, limite à un seul exemplaire par titre
+     * @return le nombre total d'exemplaires ajoutés
+     */
+    public int remplirParTheme(int malletteId, String theme, boolean tousExemplaires) throws RegleMetierException, SQLException {
         if (theme == null || theme.isBlank()) {
             throw new RegleMetierException("Veuillez sélectionner un thème.");
         }
@@ -481,8 +502,8 @@ public class MalletteService {
                     int exId = rs.getInt("id");
                     String isbn = rs.getString("isbn");
 
-                    // Déduplication : 1 seul exemplaire par titre dans une mallette thématique
-                    if (isbn != null && presentIsbns.contains(isbn.trim())) {
+                    // Si on ne souhaite qu'un seul exemplaire par titre :
+                    if (!tousExemplaires && isbn != null && presentIsbns.contains(isbn.trim())) {
                         continue;
                     }
 
@@ -502,6 +523,96 @@ public class MalletteService {
             }
         }
         return added;
+    }
+
+    /**
+     * Ajoute tous les exemplaires physiques disponibles d'un livre (par titre, ISBN ou code)
+     * dans la mallette en une seule opération.
+     */
+    public List<Exemplaire> ajouterTousExemplairesLivre(int malletteId, String rawInput) throws RegleMetierException, SQLException {
+        Mallette mallette = malletteDao.findById(malletteId);
+        if (mallette == null) {
+            throw new RegleMetierException("La mallette #" + malletteId + " n'existe pas.");
+        }
+
+        String clean = rawInput != null ? rawInput.trim() : "";
+        if (clean.startsWith("#")) clean = clean.substring(1).trim();
+
+        String isbn = null;
+        String cleanIsbn = LivreMetadataService.cleanIsbn(clean);
+        if (cleanIsbn.matches("^\\d{9}[0-9Xx]$") || cleanIsbn.matches("^\\d{13}$") || clean.toUpperCase().startsWith("CAMUS-") || clean.toUpperCase().startsWith("TEST-")) {
+            isbn = cleanIsbn;
+        } else {
+            Livre l = livreDao.findByTitreExact(clean);
+            if (l == null) {
+                List<Livre> matches = livreDao.findByTitre(clean);
+                if (!matches.isEmpty()) l = matches.get(0);
+            }
+            if (l != null) isbn = l.getIsbn();
+        }
+
+        if (isbn == null) {
+            Exemplaire single = ajouterLivre(malletteId, rawInput);
+            return List.of(single);
+        }
+
+        List<Exemplaire> availableCopies = malletteDao.findAvailableCopiesForIsbnNotInMallette(malletteId, isbn);
+        if (availableCopies.isEmpty()) {
+            Exemplaire single = ajouterLivre(malletteId, rawInput);
+            return List.of(single);
+        }
+
+        List<Exemplaire> added = new ArrayList<>();
+        LocalDate deb = mallette.getDateEmprunt() != null ? mallette.getDateEmprunt() : LocalDate.now();
+        LocalDate fin = mallette.getDateRetourPrevue() != null ? mallette.getDateRetourPrevue() : LocalDate.now().plusWeeks(4);
+
+        for (Exemplaire ex : availableCopies) {
+            malletteDao.addItem(malletteId, ex.getId());
+            String newRem = formaterRemarqueMallette(ex.getRemarque(), mallette.getCode());
+            exemplaireDao.updateRemarque(ex.getId(), newRem);
+            ex.setRemarque(newRem);
+
+            if (mallette.isEmprunte() && mallette.getEmprunteurNumero() != null) {
+                empruntDao.creerEmpruntAvecDateLimite(mallette.getEmprunteurNumero(), ex.getId(), deb, fin);
+                exemplaireDao.updateStatut(ex.getId(), Exemplaire.Statut.EMPRUNTE);
+                ex.setStatut(Exemplaire.Statut.EMPRUNTE);
+            }
+            added.add(ex);
+        }
+        return added;
+    }
+
+    /**
+     * Intègre tous les exemplaires physiques disponibles en BCD dont les titres
+     * sont déjà présents dans la mallette mais qui n'ont pas encore été rattachés.
+     */
+    public int ajouterTousExemplairesDisponibles(int malletteId) throws SQLException, RegleMetierException {
+        Mallette mallette = malletteDao.findById(malletteId);
+        if (mallette == null) {
+            throw new RegleMetierException("La mallette #" + malletteId + " n'existe pas.");
+        }
+
+        List<Exemplaire> copies = malletteDao.findAvailableCopiesNotInMallette(malletteId);
+        if (copies.isEmpty()) return 0;
+
+        LocalDate deb = mallette.getDateEmprunt() != null ? mallette.getDateEmprunt() : LocalDate.now();
+        LocalDate fin = mallette.getDateRetourPrevue() != null ? mallette.getDateRetourPrevue() : LocalDate.now().plusWeeks(4);
+        int count = 0;
+
+        for (Exemplaire ex : copies) {
+            malletteDao.addItem(malletteId, ex.getId());
+            String newRem = formaterRemarqueMallette(ex.getRemarque(), mallette.getCode());
+            exemplaireDao.updateRemarque(ex.getId(), newRem);
+            ex.setRemarque(newRem);
+
+            if (mallette.isEmprunte() && mallette.getEmprunteurNumero() != null) {
+                empruntDao.creerEmpruntAvecDateLimite(mallette.getEmprunteurNumero(), ex.getId(), deb, fin);
+                exemplaireDao.updateStatut(ex.getId(), Exemplaire.Statut.EMPRUNTE);
+                ex.setStatut(Exemplaire.Statut.EMPRUNTE);
+            }
+            count++;
+        }
+        return count;
     }
 
     /**

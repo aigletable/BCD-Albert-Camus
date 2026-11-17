@@ -164,6 +164,8 @@ public class InventaireController {
     @FXML private Label lblDescription;
     @FXML private Label lblIsbn;
     @FXML private Label lblEditeur;
+    @FXML private HBox rowMalletteInfo;
+    @FXML private Label lblBadgeMallette;
     @FXML private Label lblExemplairesRatio;
     @FXML private Button btnAddExemplaire;
     @FXML private Button btnReassignExemplaire;
@@ -1092,6 +1094,10 @@ public class InventaireController {
                 lblDescription.setVisible(false);
                 lblDescription.setManaged(false);
             }
+            if (rowMalletteInfo != null) {
+                rowMalletteInfo.setVisible(false);
+                rowMalletteInfo.setManaged(false);
+            }
             masterExemplaires.clear();
             return;
         }
@@ -1120,6 +1126,34 @@ public class InventaireController {
         lblIsbn.setText(livre.getIsbn() != null ? livre.getIsbn() : "–");
         lblEditeur.setText(livre.getEditeur() != null && !livre.getEditeur().isBlank()
                 ? livre.getEditeur() : "Non précisé");
+
+        // Indication de présence en mallette pédagogique
+        if (rowMalletteInfo != null && lblBadgeMallette != null) {
+            try {
+                List<Exemplaire> exList = exemplaireDao.findByIsbn(livre.getIsbn());
+                long malletteCount = exList.stream().filter(e -> e.getRemarque() != null && e.getRemarque().contains("Mallette")).count();
+                if (malletteCount > 0) {
+                    String malletteCode = exList.stream()
+                            .filter(e -> e.getRemarque() != null && e.getRemarque().contains("Mallette"))
+                            .map(e -> {
+                                int idx = e.getRemarque().indexOf("Mallette");
+                                return e.getRemarque().substring(idx).trim();
+                            })
+                            .findFirst().orElse("Mallette");
+
+                    lblBadgeMallette.setText("📦 " + malletteCode + " (" + malletteCount + "/" + exList.size() + " ex.)");
+                    rowMalletteInfo.setVisible(true);
+                    rowMalletteInfo.setManaged(true);
+                } else {
+                    rowMalletteInfo.setVisible(false);
+                    rowMalletteInfo.setManaged(false);
+                }
+            } catch (Exception ex) {
+                rowMalletteInfo.setVisible(false);
+                rowMalletteInfo.setManaged(false);
+            }
+        }
+
         lblExemplairesRatio.setText(livre.getNbDisponibles() + "/" + livre.getNbExemplaires() + " dispo");
         lblExemplairesRatio.getStyleClass().setAll(livre.getNbDisponibles() > 0 ? "pill-green" : "pill-orange");
 

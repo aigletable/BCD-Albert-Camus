@@ -1287,6 +1287,37 @@ public class SmokeTest {
         Exemplaire ex1ApresSuppr = exDao.findById(ex1.getId());
         check("Exemplaire 1 nettoyé lors de la suppression de la mallette", !ex1ApresSuppr.getRemarque().contains("Mallette"));
 
+        // 9. Test : Exemplaires multiples d'un même titre dans une mallette (séries de classe)
+        String isbnMulti = "TEST-MAL-MULTI";
+        Livre livreMulti = new Livre(isbnMulti, "TEST Lili se fait harceler", "Auteur Test", "Ed", "", "Roman", "Harcèlement & Vivre ensemble", "Cycle 3", "Livre multi-exemplaires");
+        lDao.insert(livreMulti);
+        int mEx1 = exDao.insert(new Exemplaire(isbnMulti, Statut.DISPONIBLE, LocalDate.now()));
+        int mEx2 = exDao.insert(new Exemplaire(isbnMulti, Statut.DISPONIBLE, LocalDate.now()));
+        int mEx3 = exDao.insert(new Exemplaire(isbnMulti, Statut.DISPONIBLE, LocalDate.now()));
+
+        Mallette malletteMulti = malletteService.creerMalletteAvecLivres("TEST Mallette Série Lili", "Harcèlement", "Cycle 3", "Desc", List.of(isbnMulti));
+        check("Mallette multi créée avec 1er exemplaire", malletteMulti != null && malletteDao.countItems(malletteMulti.getId()) == 1);
+        check("countDistinctTitles = 1", malletteDao.countDistinctTitles(malletteMulti.getId()) == 1);
+        check("countCopiesInMallette = 1", malletteDao.countCopiesInMallette(malletteMulti.getId(), isbnMulti) == 1);
+
+        // Détection des exemplaires restants en BCD
+        List<Exemplaire> restants = malletteDao.findAvailableCopiesNotInMallette(malletteMulti.getId());
+        check("findAvailableCopiesNotInMallette détecte les 2 exemplaires restants", restants.size() == 2);
+
+        // Intégration de tous les exemplaires disponibles
+        int ajoutes = malletteService.ajouterTousExemplairesDisponibles(malletteMulti.getId());
+        check("ajouterTousExemplairesDisponibles ajoute les 2 exemplaires", ajoutes == 2);
+        check("La mallette contient désormais 3 exemplaires", malletteDao.countItems(malletteMulti.getId()) == 3);
+        check("countCopiesInMallette = 3", malletteDao.countCopiesInMallette(malletteMulti.getId(), isbnMulti) == 3);
+        check("countDistinctTitles reste 1", malletteDao.countDistinctTitles(malletteMulti.getId()) == 1);
+
+        // Retrait groupé de tous les exemplaires du livre
+        int retires = malletteService.retirerTousExemplairesLivre(malletteMulti.getId(), isbnMulti);
+        check("retirerTousExemplairesLivre retire les 3 exemplaires", retires == 3);
+        check("La mallette est désormais vide", malletteDao.countItems(malletteMulti.getId()) == 0);
+
+        malletteService.supprimerMallette(malletteMulti.getId());
+
         System.out.println();
     }
 
