@@ -919,4 +919,127 @@
     -fx-background-insets: 0;
 }
 
+/* ── 30. Refonte Visuelle & Ergonomique de l'Onglet Mallettes Pédagogiques ── */
+.kpi-pill {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 999px;
+    -fx-background-radius: 999px;
+    -fx-padding: 6px 14px;
+    -fx-font-size: 13px;
+    -fx-text-fill: #1E293B;
+    -fx-alignment: CENTER;
+}
+
+.kpi-pill-accent {
+    -fx-font-weight: 800;
+    -fx-font-size: 14px;
+}
+
+.mallette-card {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 12px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+    -fx-padding: 10px 12px;
+    -fx-cursor: hand;
+}
+
+.mallette-card:hover {
+    -fx-border-color: #93C5FD;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 6, 0, 0, 2);
+}
+
+.mallette-card-selected {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #2563EB;
+    -fx-border-width: 1.5px;
+}
+
+.mallette-list-view {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 2px;
+}
+
+.mallette-list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 4px 2px;
+}
+
+.mallette-list-view .list-cell:selected {
+    -fx-background-color: transparent;
+}
+
+.book-grid-card {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 12px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+    -fx-padding: 10px;
+    -fx-cursor: hand;
+    -fx-alignment: top-center;
+}
+
+.book-grid-card:hover {
+    -fx-border-color: #2563EB;
+    -fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.15), 8, 0, 0, 3);
+}
+
+.book-qty-badge {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: 800;
+    -fx-font-size: 11px;
+    -fx-padding: 2px 8px;
+    -fx-background-radius: 999px;
+}
+
+.book-rm-btn {
+    -fx-background-color: #FEE2E2;
+    -fx-text-fill: #DC2626;
+    -fx-font-weight: 700;
+    -fx-font-size: 10px;
+    -fx-padding: 2px 7px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.book-rm-btn:hover {
+    -fx-background-color: #DC2626;
+    -fx-text-fill: #FFFFFF;
+}
+
+.tab-nav-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748B;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 600;
+    -fx-padding: 8px 16px;
+    -fx-border-color: transparent transparent transparent transparent;
+    -fx-border-width: 0 0 3 0;
+    -fx-cursor: hand;
+}
+
+.tab-nav-btn:hover {
+    -fx-text-fill: #1E293B;
+}
+
+.tab-nav-btn-active {
+    -fx-text-fill: #2563EB;
+    -fx-font-weight: 700;
+    -fx-border-color: transparent transparent #2563EB transparent;
+    -fx-border-width: 0 0 3 0;
+}
+
+.tab-nav-bar {
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 0 2 0;
+}
+
+
 

@@ -1,6 +1,7 @@
 package fr.ecole.bcd.controller;
 
 import fr.ecole.bcd.MainApp;
+import fr.ecole.bcd.database.DatabaseManager;
 import fr.ecole.bcd.database.LivreDao;
 import fr.ecole.bcd.database.MalletteDao;
 import fr.ecole.bcd.database.UtilisateurDao;
@@ -8,8 +9,9 @@ import fr.ecole.bcd.model.Exemplaire;
 import fr.ecole.bcd.model.Livre;
 import fr.ecole.bcd.model.Mallette;
 import fr.ecole.bcd.model.MalletteItem;
-import fr.ecole.bcd.service.EmpruntService.RegleMetierException;
+import fr.ecole.bcd.model.RessourcePedagogique;
 import fr.ecole.bcd.model.Utilisateur;
+import fr.ecole.bcd.service.EmpruntService.RegleMetierException;
 import fr.ecole.bcd.service.LivreClassificationService;
 import fr.ecole.bcd.service.LivreMetadataService;
 import fr.ecole.bcd.service.MalletteService;
@@ -19,7 +21,14 @@ import fr.ecole.bcd.view.AnimationHelper;
 import fr.ecole.bcd.view.CoverHelper;
 import fr.ecole.bcd.view.DialogHelper;
 import fr.ecole.bcd.view.RessourcesPedagogiquesDialog;
-import java.util.Optional;
+
+import java.io.File;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,88 +36,104 @@ import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 
-import java.io.File;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Contrôleur de l'onglet Mallettes Pédagogiques & Thématiques.
+ * Contrôleur de l'onglet Mallettes Pédagogiques & Thématiques (BCD Express).
+ * Refonte graphique moderne alignée sur la maquette :
+ * - Pilules de synthèse KPI compactes (disponibles, en prêt, livres)
+ * - Liste latérale de cartes avec bordure d'accent colorée et bouton de prêt rapide
+ * - Barre de navigation par onglets (Contenu, Ressources, Historique, Infos)
+ * - Grille visuelle de couvertures de livres avec badges de quantité
+ * - Tiroir inspecteur d'ouvrage avec contrôles pas-à-pas (+) / (-)
  */
 public class MallettesController {
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    // ── DAO & Services ──────────────────────────────────────────────────
+    private final MalletteDao malletteDao = new MalletteDao();
+    private final MalletteService malletteService = new MalletteService();
+    private final UtilisateurDao utilisateurDao = new UtilisateurDao();
+    private final LivreDao livreDao = new LivreDao();
+    private final RessourcePedagogiqueService ressourceService = new RessourcePedagogiqueService();
 
-    // ── KPIs ─────────────────────────────────────────────────────────────
+    // ── Cache des images de couvertures réelles ─────────────────────────
+    private static final Map<String, Image> COVER_IMAGE_CACHE = new ConcurrentHashMap<>();
+
+    // ── Modèles de données observables ─────────────────────────────────
+    private final ObservableList<Mallette> masterMallettes = FXCollections.observableArrayList();
+    private FilteredList<Mallette> filteredMallettes;
+    private final ObservableList<MalletteItem> currentItems = FXCollections.observableArrayList();
+
+    private Mallette selectedMallette = null;
+    private MalletteItem selectedBookItem = null;
+    private boolean isGridView = true;
+
+    // ── 1. En-tête & KPIs ──────────────────────────────────────────────
+    @FXML private Button btnCreateMallette;
+    @FXML private HBox boxKpiPills;
     @FXML private Label lblKpiTotal;
     @FXML private Label lblKpiDispo;
     @FXML private Label lblKpiPret;
     @FXML private Label lblKpiLivres;
 
-    // ── Filtres & Recherche ──────────────────────────────────────────────
+    // ── 2. Recherche & Filtres ─────────────────────────────────────────
     @FXML private TextField searchField;
-    @FXML private ComboBox<String> cbThemeFilter;
     @FXML private ComboBox<String> cbStatutFilter;
+    @FXML private ComboBox<String> cbThemeFilter;
     @FXML private Button btnResetFilters;
 
-    // ── Table des Mallettes (Gauche) ─────────────────────────────────────
+    // ── 3. Colonne Gauche : Liste des Mallettes ────────────────────────
     @FXML private Label lblCountMallettes;
-    @FXML private TableView<Mallette> mallettesTable;
-    @FXML private TableColumn<Mallette, String> colCode;
-    @FXML private TableColumn<Mallette, String> colTitre;
-    @FXML private TableColumn<Mallette, String> colTheme;
-    @FXML private TableColumn<Mallette, String> colNiveau;
-    @FXML private TableColumn<Mallette, Integer> colNbLivres;
-    @FXML private TableColumn<Mallette, Mallette.Statut> colStatut;
-    @FXML private TableColumn<Mallette, String> colEmprunteur;
+    @FXML private ListView<Mallette> mallettesListView;
 
-    // ── Volet Détail (Droite) ────────────────────────────────────────────
+    // ── 4. Colonne Droite : Fiche Détaillée & Onglets ──────────────────
     @FXML private VBox vboxEmptySelection;
     @FXML private VBox vboxDetailContent;
 
-    @FXML private Label lblDetailCode;
+    // En-tête de la mallette
     @FXML private Label lblDetailTitre;
+    @FXML private Label lblDetailCode;
     @FXML private Label lblDetailStatutBadge;
     @FXML private Label lblDetailThemeTag;
     @FXML private Label lblDetailNiveauTag;
     @FXML private Label lblDetailNbLivresTag;
-    @FXML private Label lblDetailDescription;
-    @FXML private HBox boxPretInfo;
-    @FXML private Label lblDetailPretInfo;
-
     @FXML private Button btnPreterMallette;
     @FXML private Button btnRetournerMallette;
-    @FXML private Button btnImprimerFiche;
-    @FXML private Button btnImprimerEtiquette;
-    @FXML private Button btnRessourcesMallette;
-    @FXML private Button btnEditMallette;
-    @FXML private Button btnDeleteMallette;
+    @FXML private MenuButton btnMoreActions;
 
-    // ── Livres dans la mallette ──────────────────────────────────────────
-    @FXML private Label lblSectionItemsTitle;
+    // Boutons des onglets
+    @FXML private Button btnTabContenu;
+    @FXML private Button btnTabRessources;
+    @FXML private Button btnTabHistorique;
+    @FXML private Button btnTabInfos;
+
+    // Panneaux des onglets
+    @FXML private VBox paneContenu;
+    @FXML private VBox paneRessources;
+    @FXML private VBox paneHistorique;
+    @FXML private VBox paneInfos;
+
+    // ── Onglet 1 : Contenu (Livres & Inspecteur) ────────────────────────
+    @FXML private HBox boxPretInfo;
+    @FXML private Label lblDetailPretInfo;
     @FXML private TextField tfAddLivre;
     @FXML private Button btnAddLivre;
-    @FXML private Label lblAddLivreFeedback;
     @FXML private Button btnFillTheme;
+    @FXML private Button btnToggleBooksView;
+    @FXML private Label lblAddLivreFeedback;
     @FXML private HBox boxMissingCopiesBanner;
     @FXML private Label lblMissingCopiesInfo;
     @FXML private Button btnIntegrateAllCopies;
 
+    // Vue Grille vs Tableau
+    @FXML private ScrollPane scrollBooksGrid;
+    @FXML private FlowPane flowBooksGrid;
     @FXML private TableView<MalletteItem> itemsTable;
     @FXML private TableColumn<MalletteItem, Integer> colItemExId;
     @FXML private TableColumn<MalletteItem, String> colItemTitre;
@@ -119,7 +144,7 @@ public class MallettesController {
     @FXML private TableColumn<MalletteItem, Void> colItemRessources;
     @FXML private TableColumn<MalletteItem, Void> colItemAction;
 
-    // ── Fiche Aperçu rapide du livre sélectionné ─────────────────────────
+    // Tiroir Inspecteur d'ouvrage sélectionné
     @FXML private VBox cardBookPreview;
     @FXML private Label lblPreviewExemplaireId;
     @FXML private Label lblPreviewDispoBadge;
@@ -131,27 +156,39 @@ public class MallettesController {
     @FXML private Label lblPreviewTheme;
     @FXML private Label lblPreviewNiveau;
     @FXML private Label lblPreviewIsbn;
-    @FXML private Label lblPreviewDescription;
     @FXML private Label lblPreviewCopiesBadge;
+    @FXML private Button btnPreviewQtyMinus;
+    @FXML private Label lblPreviewQtyCount;
+    @FXML private Button btnPreviewQtyPlus;
     @FXML private Button btnPreviewAddOtherCopies;
+    @FXML private ScrollPane scrollPreviewDesc;
+    @FXML private Label lblPreviewDescription;
     @FXML private Button btnPreviewRessources;
-    @FXML private Button btnPreviewRetirer;
     @FXML private Button btnPreviewRetirerTous;
+    @FXML private Button btnPreviewRetirer;
 
-    // ── Services & DAOs ──────────────────────────────────────────────────
-    private final MalletteService malletteService = new MalletteService();
-    private final MalletteDao malletteDao = new MalletteDao();
-    private final LivreDao livreDao = new LivreDao();
-    private final UtilisateurDao utilisateurDao = new UtilisateurDao();
-    private final RessourcePedagogiqueService ressourceService = new RessourcePedagogiqueService();
-    private static final Map<String, Image> COVER_IMAGE_CACHE = new ConcurrentHashMap<>();
+    // ── Onglet 2 : Ressources Pédagogiques ──────────────────────────────
+    @FXML private Button btnAddRessourceMallette;
+    @FXML private TableView<RessourcePedagogique> tableRessourcesMallette;
+    @FXML private TableColumn<RessourcePedagogique, String> colResType;
+    @FXML private TableColumn<RessourcePedagogique, String> colResTitre;
+    @FXML private TableColumn<RessourcePedagogique, String> colResCible;
+    @FXML private TableColumn<RessourcePedagogique, Void> colResAction;
 
-    private final ObservableList<Mallette> masterMallettes = FXCollections.observableArrayList();
-    private FilteredList<Mallette> filteredMallettes;
-    private final ObservableList<MalletteItem> currentItems = FXCollections.observableArrayList();
+    // ── Onglet 3 : Historique des Prêts ────────────────────────────────
+    @FXML private TableView<MalletteHistoriqueItem> tableHistoriqueMallette;
+    @FXML private TableColumn<MalletteHistoriqueItem, String> colHistClasse;
+    @FXML private TableColumn<MalletteHistoriqueItem, String> colHistSortie;
+    @FXML private TableColumn<MalletteHistoriqueItem, String> colHistRetour;
+    @FXML private TableColumn<MalletteHistoriqueItem, String> colHistStatut;
 
-    private Mallette selectedMallette = null;
-    private MalletteItem selectedBookItem = null;
+    // ── Onglet 4 : Informations & Pédagogie ─────────────────────────────
+    @FXML private Button btnEditMalletteInfos;
+    @FXML private Label lblInfoTheme;
+    @FXML private Label lblInfoNiveau;
+    @FXML private Label lblInfoDateCreation;
+    @FXML private Label lblInfoStats;
+    @FXML private Label lblInfoDescription;
 
     // =====================================================================
     //  Initialisation
@@ -159,65 +196,109 @@ public class MallettesController {
 
     @FXML
     public void initialize() {
-        configureTables();
+        configureListView();
+        configureItemsTable();
+        configureRessourcesTable();
+        configureHistoriqueTable();
         configureFilters();
 
-        tfAddLivre.setOnAction(e -> handleAddLivre());
+        if (tfAddLivre != null) {
+            tfAddLivre.setOnAction(e -> handleAddLivre());
+        }
 
         loadData();
     }
 
-    private void configureTables() {
-        // Table des mallettes
-        colCode.setCellValueFactory(new PropertyValueFactory<>("code"));
-        colTitre.setCellValueFactory(new PropertyValueFactory<>("titre"));
-        colTheme.setCellValueFactory(new PropertyValueFactory<>("theme"));
-        colNiveau.setCellValueFactory(new PropertyValueFactory<>("niveau"));
-        colNbLivres.setCellValueFactory(new PropertyValueFactory<>("nombreLivres"));
-        colStatut.setCellValueFactory(new PropertyValueFactory<>("statut"));
-        colEmprunteur.setCellValueFactory(cd -> new javafx.beans.property.SimpleStringProperty(cd.getValue().getEmprunteurComplet()));
+    // =====================================================================
+    //  Configuration des Composants et Tableaux
+    // =====================================================================
 
-        colNbLivres.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Integer val, boolean empty) {
-                super.updateItem(val, empty);
-                if (empty || val == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    setText(val + " liv.");
-                    setStyle("-fx-font-weight: 700; -fx-alignment: CENTER; -fx-text-fill: #475569;");
-                }
-            }
-        });
-
-        colStatut.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Mallette.Statut statut, boolean empty) {
-                super.updateItem(statut, empty);
-                if (empty || statut == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    Label badge = new Label(statut.getLibelle());
-                    badge.getStyleClass().add(statut.getCssClass());
-                    badge.setStyle("-fx-padding: 3 8; -fx-background-radius: 12; -fx-font-size: 11px; -fx-font-weight: 700;");
-                    setGraphic(badge);
-                    setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-                    setAlignment(Pos.CENTER);
-                }
-            }
-        });
-
+    private void configureListView() {
         filteredMallettes = new FilteredList<>(masterMallettes, p -> true);
-        mallettesTable.setItems(filteredMallettes);
+        mallettesListView.setItems(filteredMallettes);
 
-        mallettesTable.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
+        mallettesListView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             selectedMallette = newV;
             updateDetailView();
         });
 
-        // Table des livres dans la mallette
+        // Palette de couleurs pour les bordures d'accent gauche
+        final String[] ACCENT_COLORS = {"#ef4444", "#3b82f6", "#10b981", "#a855f7", "#f59e0b", "#06b6d4"};
+
+        mallettesListView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Mallette m, boolean empty) {
+                super.updateItem(m, empty);
+                if (empty || m == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    HBox card = new HBox(8);
+                    card.getStyleClass().add("mallette-card");
+                    if (isSelected()) {
+                        card.getStyleClass().add("mallette-card-selected");
+                    }
+                    card.setAlignment(Pos.CENTER_LEFT);
+
+                    String color = ACCENT_COLORS[Math.abs(m.getId()) % ACCENT_COLORS.length];
+                    Region accentBar = new Region();
+                    accentBar.setMinWidth(5);
+                    accentBar.setMaxWidth(5);
+                    accentBar.setPrefWidth(5);
+                    accentBar.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 4;");
+                    VBox.setVgrow(accentBar, Priority.ALWAYS);
+
+                    VBox vboxText = new VBox(3);
+                    HBox.setHgrow(vboxText, Priority.ALWAYS);
+
+                    Label lblT = new Label(m.getTitre());
+                    lblT.setStyle("-fx-font-weight: 800; -fx-font-size: 13.5px; -fx-text-fill: #0F172A;");
+
+                    int distinct = 0;
+                    try { distinct = malletteDao.countDistinctTitles(m.getId()); } catch (Exception ignored) {}
+                    String meta = m.getCode() + " · " + (m.getNiveau().isBlank() ? "Tous niveaux" : m.getNiveau())
+                            + " · " + m.getNombreLivres() + " livre" + (m.getNombreLivres() > 1 ? "s" : "")
+                            + " · " + distinct + " titre" + (distinct > 1 ? "s" : "");
+                    Label lblM = new Label(meta);
+                    lblM.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748B;");
+
+                    HBox rowB = new HBox(6);
+                    rowB.setAlignment(Pos.CENTER_LEFT);
+
+                    Label badge = new Label(m.isEmprunte() ? "En prêt – " + m.getEmprunteurClasse() : "Disponible");
+                    badge.setStyle(m.isEmprunte()
+                            ? "-fx-background-color: #FEF3C7; -fx-text-fill: #92400E; -fx-font-size: 10.5px; -fx-font-weight: 700; -fx-padding: 2 7; -fx-background-radius: 999;"
+                            : "-fx-background-color: #DCFCE7; -fx-text-fill: #166534; -fx-font-size: 10.5px; -fx-font-weight: 700; -fx-padding: 2 7; -fx-background-radius: 999;");
+
+                    Region sp = new Region();
+                    HBox.setHgrow(sp, Priority.ALWAYS);
+
+                    if (m.isDisponible()) {
+                        Button btnLoan = new Button("📤 Prêter");
+                        btnLoan.setStyle("-fx-background-color: #2563EB; -fx-text-fill: white; -fx-font-weight: 700; -fx-font-size: 10.5px; -fx-padding: 2 8; -fx-background-radius: 6; -fx-cursor: hand;");
+                        btnLoan.setOnAction(ev -> {
+                            ev.consume();
+                            mallettesListView.getSelectionModel().select(m);
+                            handlePreterMallette();
+                        });
+                        rowB.getChildren().addAll(badge, sp, btnLoan);
+                    } else {
+                        rowB.getChildren().addAll(badge);
+                    }
+
+                    vboxText.getChildren().addAll(lblT, lblM, rowB);
+                    card.getChildren().addAll(accentBar, vboxText);
+
+                    setGraphic(card);
+                    setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+                }
+            }
+        });
+    }
+
+    private void configureItemsTable() {
+        if (itemsTable == null) return;
+
         colItemExId.setCellValueFactory(new PropertyValueFactory<>("exemplaireId"));
         colItemTitre.setCellValueFactory(new PropertyValueFactory<>("titre"));
         colItemAuteur.setCellValueFactory(new PropertyValueFactory<>("auteur"));
@@ -231,29 +312,7 @@ public class MallettesController {
                 if (empty || id == null) {
                     setText(null);
                 } else {
-                    MalletteItem item = (getIndex() >= 0 && getIndex() < getTableView().getItems().size())
-                            ? getTableView().getItems().get(getIndex()) : null;
-                    if (item != null && item.getIsbn() != null) {
-                        try {
-                            List<MalletteItem> allCopies = malletteDao.getItemsForIsbn(item.getMalletteId(), item.getIsbn());
-                            if (allCopies.size() > 1) {
-                                int rank = 1;
-                                for (int i = 0; i < allCopies.size(); i++) {
-                                    if (allCopies.get(i).getExemplaireId() == id) {
-                                        rank = i + 1;
-                                        break;
-                                    }
-                                }
-                                setText("#" + id + " (" + rank + "/" + allCopies.size() + ")");
-                            } else {
-                                setText("#" + id);
-                            }
-                        } catch (Exception ex) {
-                            setText("#" + id);
-                        }
-                    } else {
-                        setText("#" + id);
-                    }
+                    setText("#" + id);
                     setStyle("-fx-font-family: monospace; -fx-font-weight: 700; -fx-text-fill: #2563EB; -fx-alignment: CENTER;");
                 }
             }
@@ -278,7 +337,6 @@ public class MallettesController {
             }
         });
 
-        // Colonne Nombre d'exemplaires dans la boîte
         if (colItemCopies != null) {
             colItemCopies.setCellValueFactory(cd -> {
                 MalletteItem item = cd.getValue();
@@ -301,11 +359,9 @@ public class MallettesController {
                         int inM = 1;
                         try { inM = Integer.parseInt(val); } catch (Exception ignored) {}
                         Label badge = new Label(inM > 1 ? "📦 " + inM + " ex." : "1 ex.");
-                        if (inM > 1) {
-                            badge.setStyle("-fx-background-color: #EDE9FE; -fx-text-fill: #6D28D9; -fx-font-weight: 700; -fx-font-size: 10px; -fx-padding: 2 6; -fx-background-radius: 4;");
-                        } else {
-                            badge.setStyle("-fx-background-color: #F1F5F9; -fx-text-fill: #475569; -fx-font-size: 10px; -fx-padding: 2 6; -fx-background-radius: 4;");
-                        }
+                        badge.setStyle(inM > 1
+                                ? "-fx-background-color: #EDE9FE; -fx-text-fill: #6D28D9; -fx-font-weight: 700; -fx-font-size: 10px; -fx-padding: 2 6; -fx-background-radius: 4;"
+                                : "-fx-background-color: #F1F5F9; -fx-text-fill: #475569; -fx-font-size: 10px; -fx-padding: 2 6; -fx-background-radius: 4;");
                         setGraphic(badge);
                         setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
                         setAlignment(Pos.CENTER);
@@ -314,12 +370,11 @@ public class MallettesController {
             });
         }
 
-        // Colonne Ressources Pédagogiques
         if (colItemRessources != null) {
             colItemRessources.setCellFactory(col -> new TableCell<>() {
-                private final Button btnRessource = new Button();
+                private final Button btnRes = new Button();
                 {
-                    btnRessource.setOnAction(e -> {
+                    btnRes.setOnAction(e -> {
                         MalletteItem item = getTableView().getItems().get(getIndex());
                         if (item != null) {
                             RessourcesPedagogiquesDialog.openForLivre(
@@ -332,7 +387,6 @@ public class MallettesController {
                         }
                     });
                 }
-
                 @Override
                 protected void updateItem(Void val, boolean empty) {
                     super.updateItem(val, empty);
@@ -344,16 +398,16 @@ public class MallettesController {
                             try {
                                 int count = ressourceService.compterRessourcesParIsbn(item.getIsbn());
                                 if (count > 0) {
-                                    btnRessource.setText("📎 " + count + " doc" + (count > 1 ? "s" : ""));
-                                    btnRessource.setStyle("-fx-background-color: #E0F2FE; -fx-text-fill: #0369A1; -fx-font-weight: 700; -fx-font-size: 11px; -fx-padding: 2 6; -fx-background-radius: 6; -fx-cursor: hand;");
+                                    btnRes.setText("📎 " + count + " doc" + (count > 1 ? "s" : ""));
+                                    btnRes.setStyle("-fx-background-color: #E0F2FE; -fx-text-fill: #0369A1; -fx-font-weight: 700; -fx-font-size: 11px; -fx-padding: 2 6; -fx-background-radius: 6; -fx-cursor: hand;");
                                 } else {
-                                    btnRessource.setText("➕ Ajouter");
-                                    btnRessource.setStyle("-fx-background-color: transparent; -fx-text-fill: #64748B; -fx-font-size: 11px; -fx-padding: 2 4; -fx-cursor: hand;");
+                                    btnRes.setText("➕ Ajouter");
+                                    btnRes.setStyle("-fx-background-color: transparent; -fx-text-fill: #64748B; -fx-font-size: 11px; -fx-padding: 2 4; -fx-cursor: hand;");
                                 }
                             } catch (Exception ex) {
-                                btnRessource.setText("📎 0");
+                                btnRes.setText("📎 0");
                             }
-                            setGraphic(btnRessource);
+                            setGraphic(btnRes);
                             setAlignment(Pos.CENTER);
                         } else {
                             setGraphic(null);
@@ -363,21 +417,99 @@ public class MallettesController {
             });
         }
 
-        // Colonne Action (Retirer)
-        colItemAction.setCellFactory(col -> new TableCell<>() {
-            private final Button btnRemove = new Button("❌ Retirer");
+        if (colItemAction != null) {
+            colItemAction.setCellFactory(col -> new TableCell<>() {
+                private final Button btnRemove = new Button("❌ Retirer");
+                {
+                    btnRemove.setStyle("-fx-font-size: 10px; -fx-background-color: transparent; -fx-text-fill: #DC2626; -fx-cursor: hand; -fx-padding: 2 6;");
+                    btnRemove.setOnAction(e -> {
+                        MalletteItem item = getTableView().getItems().get(getIndex());
+                        if (item != null && selectedMallette != null) {
+                            demanderEtRetirerLivre(item);
+                        }
+                    });
+                }
+                @Override
+                protected void updateItem(Void val, boolean empty) {
+                    super.updateItem(val, empty);
+                    setGraphic(empty ? null : btnRemove);
+                    setAlignment(Pos.CENTER);
+                }
+            });
+        }
+
+        itemsTable.setItems(currentItems);
+        itemsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> showBookPreview(newV));
+    }
+
+    private void configureRessourcesTable() {
+        if (tableRessourcesMallette == null) return;
+
+        colResType.setCellValueFactory(cd -> {
+            RessourcePedagogique r = cd.getValue();
+            String t = (r != null && r.getType() != null) ? r.getType().name() : "";
+            String icon = switch (t) {
+                case "WEB_URL" -> "🌐 Web";
+                case "DOCUMENT_PDF" -> "📄 PDF";
+                default -> "📁 Doc";
+            };
+            return new javafx.beans.property.SimpleStringProperty(icon);
+        });
+
+        colResTitre.setCellValueFactory(new PropertyValueFactory<>("titre"));
+
+        colResCible.setCellValueFactory(cd -> {
+            RessourcePedagogique r = cd.getValue();
+            if (r == null) return new javafx.beans.property.SimpleStringProperty("");
+            if (r.getIsbn() != null && !r.getIsbn().isBlank()) {
+                try {
+                    Livre l = livreDao.findByIsbn(r.getIsbn());
+                    if (l != null) return new javafx.beans.property.SimpleStringProperty("📖 " + l.getTitre());
+                } catch (Exception ignored) {}
+                return new javafx.beans.property.SimpleStringProperty("Livre (" + r.getIsbn() + ")");
+            }
+            return new javafx.beans.property.SimpleStringProperty("🧰 Mallette complète");
+        });
+
+        colResAction.setCellFactory(col -> new TableCell<>() {
+            private final Button btnOuvrir = new Button("👁️ Ouvrir");
+            private final Button btnSuppr = new Button("🗑️");
+            private final HBox box = new HBox(6, btnOuvrir, btnSuppr);
             {
-                btnRemove.setStyle("-fx-font-size: 10px; -fx-background-color: transparent; -fx-text-fill: #DC2626; -fx-cursor: hand; -fx-padding: 2 6;");
-                btnRemove.setOnAction(e -> {
-                    MalletteItem item = (MalletteItem) getTableRow().getItem();
-                    if (item == null) {
-                        int idx = getIndex();
-                        if (idx >= 0 && idx < getTableView().getItems().size()) {
-                            item = getTableView().getItems().get(idx);
+                box.setAlignment(Pos.CENTER);
+                btnOuvrir.setStyle("-fx-background-color: #E0F2FE; -fx-text-fill: #0369A1; -fx-font-weight: 700; -fx-font-size: 11px; -fx-padding: 3 8; -fx-background-radius: 4; -fx-cursor: hand;");
+                btnSuppr.setStyle("-fx-background-color: #FEE2E2; -fx-text-fill: #DC2626; -fx-font-size: 11px; -fx-padding: 3 6; -fx-background-radius: 4; -fx-cursor: hand;");
+
+                btnOuvrir.setOnAction(e -> {
+                    RessourcePedagogique r = getTableView().getItems().get(getIndex());
+                    if (r != null) {
+                        try {
+                            ressourceService.ouvrirRessource(r);
+                        } catch (Exception ex) {
+                            showError("Impossible d'ouvrir", ex.getMessage());
                         }
                     }
-                    if (item != null && selectedMallette != null) {
-                        demanderEtRetirerLivre(item);
+                });
+
+                btnSuppr.setOnAction(e -> {
+                    RessourcePedagogique r = getTableView().getItems().get(getIndex());
+                    if (r != null) {
+                        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                        MainApp.prepareDialog(confirm);
+                        confirm.setTitle("Supprimer la ressource");
+                        confirm.setHeaderText("Supprimer « " + r.getTitre() + " » ?");
+                        confirm.setContentText("Cette ressource ne sera plus associée à cette mallette.");
+                        confirm.showAndWait().ifPresent(btn -> {
+                            if (btn == ButtonType.OK) {
+                                try {
+                                    ressourceService.supprimerRessource(r.getId());
+                                    refreshRessourcesTab();
+                                    refreshMalletteDetails();
+                                } catch (SQLException ex) {
+                                    showError("Erreur de suppression", ex.getMessage());
+                                }
+                            }
+                        });
                     }
                 });
             }
@@ -385,152 +517,211 @@ public class MallettesController {
             @Override
             protected void updateItem(Void val, boolean empty) {
                 super.updateItem(val, empty);
-                if (empty) {
+                setGraphic(empty ? null : box);
+            }
+        });
+    }
+
+    private void configureHistoriqueTable() {
+        if (tableHistoriqueMallette == null) return;
+
+        colHistClasse.setCellValueFactory(new PropertyValueFactory<>("classeEtEnseignant"));
+        colHistSortie.setCellValueFactory(new PropertyValueFactory<>("dateSortie"));
+        colHistRetour.setCellValueFactory(new PropertyValueFactory<>("dateRetour"));
+        colHistStatut.setCellValueFactory(new PropertyValueFactory<>("statut"));
+
+        colHistStatut.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String statut, boolean empty) {
+                super.updateItem(statut, empty);
+                if (empty || statut == null) {
+                    setText(null);
                     setGraphic(null);
                 } else {
-                    setGraphic(btnRemove);
+                    Label badge = new Label(statut);
+                    if ("En cours".equalsIgnoreCase(statut)) {
+                        badge.setStyle("-fx-background-color: #FEF3C7; -fx-text-fill: #92400E; -fx-font-weight: 700; -fx-font-size: 10.5px; -fx-padding: 2 8; -fx-background-radius: 999;");
+                    } else {
+                        badge.setStyle("-fx-background-color: #DCFCE7; -fx-text-fill: #166534; -fx-font-weight: 700; -fx-font-size: 10.5px; -fx-padding: 2 8; -fx-background-radius: 999;");
+                    }
+                    setGraphic(badge);
                     setAlignment(Pos.CENTER);
                 }
             }
         });
-
-        itemsTable.setItems(currentItems);
-
-        // Clip d'arrondi sur la boîte de couverture
-        if (previewCoverBox != null) {
-            Rectangle clip = new Rectangle(88, 120);
-            clip.setArcWidth(8);
-            clip.setArcHeight(8);
-            previewCoverBox.setClip(clip);
-        }
-
-        // Clic / Sélection d'un livre dans la mallette -> affichage de l'aperçu complet
-        itemsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
-            showBookPreview(newV);
-        });
-
-        // Clic simple = mise à jour immédiate de l'aperçu, Double-clic = ouverture des ressources pédagogiques
-        itemsTable.setRowFactory(tv -> {
-            TableRow<MalletteItem> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (!row.isEmpty()) {
-                    MalletteItem item = row.getItem();
-                    if (event.getClickCount() == 1) {
-                        showBookPreview(item);
-                    } else if (event.getClickCount() == 2) {
-                        if (item != null) {
-                            RessourcesPedagogiquesDialog.openForLivre(item.getIsbn(), item.getTitre(), item.getAuteur(), () -> {
-                                refreshMalletteDetails();
-                                itemsTable.refresh();
-                                showBookPreview(item);
-                            });
-                        }
-                    }
-                }
-            });
-            return row;
-        });
     }
 
     private void configureFilters() {
-        searchField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
-        cbThemeFilter.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
-        cbStatutFilter.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        cbStatutFilter.getItems().setAll("Tous les statuts", "Disponible", "En prêt");
+        cbStatutFilter.setValue("Tous les statuts");
+        cbStatutFilter.setOnAction(e -> applyFilters());
 
-        cbStatutFilter.getItems().setAll("Tous", "DISPONIBLE", "EMPRUNTE");
-        cbStatutFilter.setValue("Tous");
+        try {
+            List<String> themes = malletteDao.getAllThemes();
+            cbThemeFilter.getItems().add("Tous les thèmes");
+            cbThemeFilter.getItems().addAll(themes);
+            cbThemeFilter.setValue("Tous les thèmes");
+        } catch (SQLException ignored) {
+            cbThemeFilter.getItems().setAll("Tous les thèmes");
+        }
+        cbThemeFilter.setOnAction(e -> applyFilters());
+
+        searchField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
     }
 
     private void applyFilters() {
-        String q = searchField.getText() != null ? searchField.getText().trim().toLowerCase() : "";
-        String theme = cbThemeFilter.getValue();
-        String statut = cbStatutFilter.getValue();
+        String q = (searchField != null && searchField.getText() != null)
+                ? searchField.getText().trim().toLowerCase() : "";
+        String st = (cbStatutFilter != null) ? cbStatutFilter.getValue() : null;
+        String th = (cbThemeFilter != null) ? cbThemeFilter.getValue() : null;
 
         filteredMallettes.setPredicate(m -> {
-            if (theme != null && !theme.equalsIgnoreCase("Tous") && !theme.equalsIgnoreCase(m.getTheme())) {
-                return false;
-            }
-            if (statut != null && !statut.equalsIgnoreCase("Tous") && !m.getStatut().name().equalsIgnoreCase(statut)) {
-                return false;
-            }
             if (!q.isEmpty()) {
-                return m.getCode().toLowerCase().contains(q)
-                        || m.getTitre().toLowerCase().contains(q)
-                        || m.getTheme().toLowerCase().contains(q)
-                        || (m.getDescription() != null && m.getDescription().toLowerCase().contains(q))
-                        || m.getEmprunteurComplet().toLowerCase().contains(q);
+                String full = (m.getCode() + " " + m.getTitre() + " " + m.getTheme() + " " + m.getNiveau() + " " + m.getEmprunteurComplet()).toLowerCase();
+                if (!full.contains(q)) return false;
+            }
+            if (st != null && !st.equals("Tous les statuts")) {
+                if (st.equals("Disponible") && !m.isDisponible()) return false;
+                if (st.equals("En prêt") && !m.isEmprunte()) return false;
+            }
+            if (th != null && !th.equals("Tous les thèmes")) {
+                if (!m.getTheme().equalsIgnoreCase(th)) return false;
             }
             return true;
         });
 
-        lblCountMallettes.setText(filteredMallettes.size() + " mallette(s)");
+        if (lblCountMallettes != null) {
+            int count = filteredMallettes.size();
+            lblCountMallettes.setText(count + " mallette" + (count > 1 ? "s" : ""));
+        }
     }
 
     // =====================================================================
-    //  Chargement des données
+    //  Chargement des données & Navigation
     // =====================================================================
 
     public void loadData() {
         try {
             List<Mallette> list = malletteDao.findAll();
             masterMallettes.setAll(list);
-
-            // Charger les thèmes disponibles dans le filtre
-            List<String> themes = malletteDao.getAllThemes();
-            themes.add(0, "Tous");
-            cbThemeFilter.getItems().setAll(themes);
-            if (cbThemeFilter.getValue() == null) cbThemeFilter.setValue("Tous");
-
             updateKpis(list);
             applyFilters();
 
-            // Si aucune sélection et liste non vide, sélectionner la première
-            if (!masterMallettes.isEmpty() && selectedMallette == null) {
-                mallettesTable.getSelectionModel().select(0);
+            if (selectedMallette == null && !filteredMallettes.isEmpty()) {
+                mallettesListView.getSelectionModel().select(0);
             } else if (selectedMallette != null) {
                 loadDataKeepSelection();
-            } else {
-                updateDetailView();
             }
-
         } catch (SQLException e) {
             showError("Erreur de chargement", e.getMessage());
         }
     }
 
     private void loadDataKeepSelection() {
-        int currentId = selectedMallette != null ? selectedMallette.getId() : -1;
+        int keepId = (selectedMallette != null) ? selectedMallette.getId() : -1;
         try {
             List<Mallette> list = malletteDao.findAll();
             masterMallettes.setAll(list);
             updateKpis(list);
+            applyFilters();
 
-            if (currentId > 0) {
-                for (Mallette m : masterMallettes) {
-                    if (m.getId() == currentId) {
-                        mallettesTable.getSelectionModel().select(m);
+            if (keepId != -1) {
+                for (Mallette m : filteredMallettes) {
+                    if (m.getId() == keepId) {
+                        mallettesListView.getSelectionModel().select(m);
                         selectedMallette = m;
-                        break;
+                        updateDetailView();
+                        return;
                     }
                 }
             }
-            updateDetailView();
+            if (!filteredMallettes.isEmpty()) {
+                mallettesListView.getSelectionModel().select(0);
+            } else {
+                selectedMallette = null;
+                updateDetailView();
+            }
         } catch (SQLException e) {
-            showError("Erreur", e.getMessage());
+            showError("Erreur de chargement", e.getMessage());
         }
     }
 
     private void updateKpis(List<Mallette> list) {
         int total = list.size();
-        long dispo = list.stream().filter(Mallette::isDisponible).count();
-        long pret = list.stream().filter(Mallette::isEmprunte).count();
+        long enPret = list.stream().filter(Mallette::isEmprunte).count();
+        long dispo = total - enPret;
         int totalLivres = list.stream().mapToInt(Mallette::getNombreLivres).sum();
 
-        lblKpiTotal.setText(String.valueOf(total));
-        lblKpiDispo.setText(String.valueOf(dispo));
-        lblKpiPret.setText(String.valueOf(pret));
-        lblKpiLivres.setText(String.valueOf(totalLivres));
+        if (lblKpiTotal != null) lblKpiTotal.setText(total + " mallette" + (total > 1 ? "s" : ""));
+        if (lblKpiDispo != null) lblKpiDispo.setText(dispo + " disponible" + (dispo > 1 ? "s" : ""));
+        if (lblKpiPret != null) lblKpiPret.setText(enPret + " en prêt");
+        if (lblKpiLivres != null) lblKpiLivres.setText(totalLivres + " livre" + (totalLivres > 1 ? "s" : ""));
     }
+
+    // =====================================================================
+    //  Gestion des Onglets (Contenu | Ressources | Historique | Infos)
+    // =====================================================================
+
+    @FXML private void handleSelectTabContenu() { switchTab("Contenu"); }
+    @FXML private void handleSelectTabRessources() { switchTab("Ressources"); }
+    @FXML private void handleSelectTabHistorique() { switchTab("Historique"); }
+    @FXML private void handleSelectTabInfos() { switchTab("Infos"); }
+
+    private void switchTab(String tabName) {
+        btnTabContenu.getStyleClass().remove("tab-nav-btn-active");
+        btnTabRessources.getStyleClass().remove("tab-nav-btn-active");
+        btnTabHistorique.getStyleClass().remove("tab-nav-btn-active");
+        btnTabInfos.getStyleClass().remove("tab-nav-btn-active");
+
+        paneContenu.setVisible(false); paneContenu.setManaged(false);
+        paneRessources.setVisible(false); paneRessources.setManaged(false);
+        paneHistorique.setVisible(false); paneHistorique.setManaged(false);
+        paneInfos.setVisible(false); paneInfos.setManaged(false);
+
+        switch (tabName) {
+            case "Contenu" -> {
+                btnTabContenu.getStyleClass().add("tab-nav-btn-active");
+                paneContenu.setVisible(true); paneContenu.setManaged(true);
+            }
+            case "Ressources" -> {
+                btnTabRessources.getStyleClass().add("tab-nav-btn-active");
+                paneRessources.setVisible(true); paneRessources.setManaged(true);
+                refreshRessourcesTab();
+            }
+            case "Historique" -> {
+                btnTabHistorique.getStyleClass().add("tab-nav-btn-active");
+                paneHistorique.setVisible(true); paneHistorique.setManaged(true);
+                refreshHistoriqueTab();
+            }
+            case "Infos" -> {
+                btnTabInfos.getStyleClass().add("tab-nav-btn-active");
+                paneInfos.setVisible(true); paneInfos.setManaged(true);
+                refreshInfosTab();
+            }
+        }
+    }
+
+    @FXML
+    private void handleToggleBooksView() {
+        isGridView = !isGridView;
+        if (isGridView) {
+            scrollBooksGrid.setVisible(true);
+            scrollBooksGrid.setManaged(true);
+            itemsTable.setVisible(false);
+            itemsTable.setManaged(false);
+            btnToggleBooksView.setText("☰ Tableau");
+        } else {
+            scrollBooksGrid.setVisible(false);
+            scrollBooksGrid.setManaged(false);
+            itemsTable.setVisible(true);
+            itemsTable.setManaged(true);
+            btnToggleBooksView.setText("⊞ Grille");
+        }
+    }
+
+    // =====================================================================
+    //  Mise à jour de la Fiche Détaillée
+    // =====================================================================
 
     private void updateDetailView() {
         if (selectedMallette == null) {
@@ -553,7 +744,6 @@ public class MallettesController {
         lblDetailTitre.setText(selectedMallette.getTitre());
         lblDetailThemeTag.setText("Thème : " + selectedMallette.getTheme());
         lblDetailNiveauTag.setText("Niveau : " + (selectedMallette.getNiveau().isEmpty() ? "Tous niveaux" : selectedMallette.getNiveau()));
-        lblDetailDescription.setText(selectedMallette.getDescription().isEmpty() ? "Aucune note pédagogique particulière." : selectedMallette.getDescription());
 
         // Statut & Badge
         lblDetailStatutBadge.setText(selectedMallette.getStatut().getLibelle());
@@ -580,7 +770,7 @@ public class MallettesController {
             btnRetournerMallette.setManaged(false);
         }
 
-        btnFillTheme.setText("🪄 Remplir avec les livres du thème \"" + selectedMallette.getTheme() + "\"");
+        btnFillTheme.setText("🪄 Remplir par thème");
 
         refreshMalletteDetails();
     }
@@ -593,30 +783,22 @@ public class MallettesController {
             int distinctTitles = malletteDao.countDistinctTitles(selectedMallette.getId());
             if (distinctTitles != items.size() && items.size() > 0) {
                 lblDetailNbLivresTag.setText(items.size() + " exemplaires (" + distinctTitles + " titres)");
-                if (lblSectionItemsTitle != null) {
-                    lblSectionItemsTitle.setText("Livres contenus dans la mallette (" + items.size() + " exemplaires — " + distinctTitles + " titres)");
-                }
             } else {
                 lblDetailNbLivresTag.setText(items.size() + " livre" + (items.size() > 1 ? "s" : ""));
-                if (lblSectionItemsTitle != null) {
-                    lblSectionItemsTitle.setText("Livres contenus dans la mallette (" + items.size() + " livre" + (items.size() > 1 ? "s" : "") + ")");
-                }
             }
             btnPreterMallette.setDisable(items.isEmpty());
 
-            if (btnRessourcesMallette != null) {
-                int totalRessources = ressourceService.compterRessourcesPourMallette(selectedMallette.getId());
-                btnRessourcesMallette.setText("📚 Ressources" + (totalRessources > 0 ? " (" + totalRessources + ")" : ""));
-            }
+            // Rendu de la grille visuelle de couvertures
+            renderBooksGrid();
 
-            // Détecter si des exemplaires supplémentaires de ces livres existent en BCD
+            // Détection des exemplaires supplémentaires disponibles en BCD
             List<Exemplaire> missingCopies = malletteDao.findAvailableCopiesNotInMallette(selectedMallette.getId());
             if (boxMissingCopiesBanner != null) {
                 if (!missingCopies.isEmpty()) {
                     boxMissingCopiesBanner.setVisible(true);
                     boxMissingCopiesBanner.setManaged(true);
                     if (lblMissingCopiesInfo != null) {
-                        lblMissingCopiesInfo.setText("💡 " + missingCopies.size() + " exemplaire(s) supplémentaire(s) de ces ouvrages sont disponibles en BCD.");
+                        lblMissingCopiesInfo.setText("💡 " + missingCopies.size() + " exemplaire(s) supplémentaire(s) sont disponibles en BCD.");
                     }
                     if (btnIntegrateAllCopies != null) {
                         btnIntegrateAllCopies.setText("➕ Tout intégrer dans la boîte (+" + missingCopies.size() + " ex.)");
@@ -629,7 +811,6 @@ public class MallettesController {
 
             if (!items.isEmpty()) {
                 if (selectedBookItem == null) {
-                    itemsTable.getSelectionModel().select(0);
                     showBookPreview(items.get(0));
                 } else {
                     Optional<MalletteItem> stillThere = items.stream()
@@ -640,22 +821,166 @@ public class MallettesController {
             } else {
                 showBookPreview(null);
             }
+
+            // Rafraîchir l'onglet actif si différent de Contenu
+            if (paneRessources != null && paneRessources.isVisible()) refreshRessourcesTab();
+            if (paneHistorique != null && paneHistorique.isVisible()) refreshHistoriqueTab();
+            if (paneInfos != null && paneInfos.isVisible()) refreshInfosTab();
+
         } catch (SQLException e) {
             showError("Erreur de chargement des livres", e.getMessage());
         }
     }
 
-    @FXML
-    private void handleRessourcesMallette() {
-        if (selectedMallette == null) return;
-        RessourcesPedagogiquesDialog.openForMallette(selectedMallette, () -> {
-            refreshMalletteDetails();
-            itemsTable.refresh();
+    // =====================================================================
+    //  Rendu de la Grille Visuelle des Livres
+    // =====================================================================
+
+    private void renderBooksGrid() {
+        if (flowBooksGrid == null) return;
+        flowBooksGrid.getChildren().clear();
+
+        if (currentItems.isEmpty()) {
+            VBox emptyBox = new VBox(8);
+            emptyBox.setAlignment(Pos.CENTER);
+            emptyBox.setPadding(new Insets(30));
+            emptyBox.setPrefWidth(380);
+
+            Label icon = new Label("📭");
+            icon.setStyle("-fx-font-size: 32px;");
+            Label title = new Label("Cette mallette est encore vide.");
+            title.setStyle("-fx-font-weight: 700; -fx-font-size: 13.5px; -fx-text-fill: #64748B;");
+            Label sub = new Label("Scannez un livre ou tapez son titre ci-dessus pour l'ajouter.");
+            sub.setStyle("-fx-font-size: 11.5px; -fx-text-fill: #94A3B8;");
+
+            emptyBox.getChildren().addAll(icon, title, sub);
+            flowBooksGrid.getChildren().add(emptyBox);
+            return;
+        }
+
+        // Grouper par ISBN pour afficher les séries et exemplaires multiples avec badge ×Q
+        Map<String, List<MalletteItem>> grouped = new LinkedHashMap<>();
+        for (MalletteItem item : currentItems) {
+            String key = (item.getIsbn() != null && !item.getIsbn().isBlank())
+                    ? item.getIsbn() : ("TITRE-" + item.getTitre());
+            grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(item);
+        }
+
+        for (Map.Entry<String, List<MalletteItem>> entry : grouped.entrySet()) {
+            List<MalletteItem> copies = entry.getValue();
+            MalletteItem first = copies.get(0);
+            int qty = copies.size();
+
+            Livre livre = null;
+            if (first.getIsbn() != null) {
+                try {
+                    livre = livreDao.findByIsbn(first.getIsbn());
+                } catch (SQLException ignored) {}
+            }
+            if (livre == null) {
+                livre = new Livre(first.getIsbn(), first.getTitre(), first.getAuteur(), "", "", first.getGenre(), first.getTheme(), "", "");
+            }
+
+            VBox card = createBookGridCard(first, livre, qty);
+            flowBooksGrid.getChildren().add(card);
+        }
+    }
+
+    private VBox createBookGridCard(MalletteItem item, Livre livre, int qty) {
+        VBox card = new VBox(6);
+        card.setAlignment(Pos.TOP_CENTER);
+        card.setPrefWidth(155);
+        card.setMinWidth(145);
+        card.setMaxWidth(165);
+        card.setPadding(new Insets(10));
+        card.getStyleClass().add("book-grid-card");
+
+        // Ligne supérieure : Bouton Retirer (gauche) + Badge Quantité (droite)
+        HBox topRow = new HBox();
+        topRow.setAlignment(Pos.CENTER_LEFT);
+
+        Button btnRm = new Button("Retirer");
+        btnRm.getStyleClass().add("book-rm-btn");
+        btnRm.setOnAction(e -> {
+            e.consume();
+            demanderEtRetirerLivre(item);
         });
+
+        Region sp = new Region();
+        HBox.setHgrow(sp, Priority.ALWAYS);
+
+        Label lblQty = new Label("×" + qty);
+        lblQty.getStyleClass().add("book-qty-badge");
+
+        topRow.getChildren().addAll(btnRm, sp, lblQty);
+
+        // Boîte Couverture (Largeur 100, Hauteur 135) avec clip arrondi
+        StackPane coverBox = new StackPane();
+        coverBox.setPrefSize(100, 135);
+        coverBox.setMinSize(100, 135);
+        coverBox.setMaxSize(100, 135);
+        Rectangle clip = new Rectangle(100, 135);
+        clip.setArcWidth(8);
+        clip.setArcHeight(8);
+        coverBox.setClip(clip);
+
+        StackPane styledCover = CoverHelper.createStyledCover(livre, 100, 135);
+        coverBox.getChildren().setAll(styledCover);
+
+        String url = livre.getCouvertureUrl();
+        if (url != null && !url.isBlank()) {
+            Image cached = COVER_IMAGE_CACHE.get(url);
+            if (cached != null && !cached.isError()) {
+                ImageView iv = new ImageView(cached);
+                iv.setFitWidth(100);
+                iv.setFitHeight(135);
+                iv.setPreserveRatio(true);
+                iv.setSmooth(true);
+                coverBox.getChildren().setAll(iv);
+            } else {
+                try {
+                    Image img = new Image(url, true);
+                    img.progressProperty().addListener((obs, oldV, p) -> {
+                        if (p.doubleValue() >= 1.0 && !img.isError()) {
+                            COVER_IMAGE_CACHE.put(url, img);
+                            Platform.runLater(() -> {
+                                ImageView iv = new ImageView(img);
+                                iv.setFitWidth(100);
+                                iv.setFitHeight(135);
+                                iv.setPreserveRatio(true);
+                                iv.setSmooth(true);
+                                coverBox.getChildren().setAll(iv);
+                            });
+                        }
+                    });
+                } catch (Exception ignored) {}
+            }
+        }
+
+        // Titre de l'ouvrage
+        Label lblT = new Label(item.getTitre());
+        lblT.setWrapText(true);
+        lblT.setMaxHeight(36);
+        lblT.setStyle("-fx-font-weight: 700; -fx-font-size: 12px; -fx-text-alignment: center;");
+        lblT.setTooltip(new Tooltip(item.getTitre()));
+
+        // Auteur & Genre
+        String authorText = (item.getAuteur() != null && !item.getAuteur().isBlank()) ? item.getAuteur() : "Collectif";
+        String genreText = (item.getGenre() != null && !item.getGenre().isBlank()) ? item.getGenre() : "Livre";
+        Label lblA = new Label(authorText + " · " + genreText);
+        lblA.setStyle("-fx-font-size: 10.5px; -fx-text-fill: #64748B; -fx-text-alignment: center;");
+        lblA.setWrapText(false);
+
+        card.getChildren().addAll(topRow, coverBox, lblT, lblA);
+
+        // Clic sur la carte = ouverture de l'inspecteur
+        card.setOnMouseClicked(e -> showBookPreview(item));
+
+        return card;
     }
 
     // =====================================================================
-    //  Fiche Aperçu rapide du livre sélectionné dans la mallette
+    //  Tiroir Inspecteur de l'Ouvrage Sélectionné
     // =====================================================================
 
     private void showBookPreview(MalletteItem item) {
@@ -716,7 +1041,7 @@ public class MallettesController {
             btnPreviewRessources.setText("📚 Ressources pédagogiques (0)");
         }
 
-        // Statut d'exemplaires dans la mallette vs restants en BCD
+        // Stepper de quantité dans la boîte
         int inMallette = 1;
         List<Exemplaire> otherAvailable = List.of();
         try {
@@ -724,22 +1049,23 @@ public class MallettesController {
             otherAvailable = malletteDao.findAvailableCopiesForIsbnNotInMallette(item.getMalletteId(), item.getIsbn());
         } catch (Exception ignored) {}
 
+        if (lblPreviewQtyCount != null) {
+            lblPreviewQtyCount.setText(String.valueOf(inMallette));
+        }
+
         if (lblPreviewCopiesBadge != null) {
             if (inMallette > 1 && otherAvailable.isEmpty()) {
                 lblPreviewCopiesBadge.setText("📦 " + inMallette + " exemplaires dans la boîte (série complète)");
-                lblPreviewCopiesBadge.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-background-color: #EDE9FE; -fx-text-fill: #6D28D9; -fx-padding: 3 8; -fx-background-radius: 6;");
             } else if (!otherAvailable.isEmpty()) {
                 lblPreviewCopiesBadge.setText("📦 " + inMallette + " ex. dans la boîte (" + otherAvailable.size() + " autre(s) dispo en BCD)");
-                lblPreviewCopiesBadge.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-background-color: #FEF3C7; -fx-text-fill: #92400E; -fx-padding: 3 8; -fx-background-radius: 6;");
             } else {
                 lblPreviewCopiesBadge.setText("📦 1 exemplaire (exemplaire unique)");
-                lblPreviewCopiesBadge.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-background-color: #F1F5F9; -fx-text-fill: #334155; -fx-padding: 3 8; -fx-background-radius: 6;");
             }
         }
 
         if (btnPreviewAddOtherCopies != null) {
             if (!otherAvailable.isEmpty()) {
-                btnPreviewAddOtherCopies.setText("➕ Ajouter les " + otherAvailable.size() + " autre(s) exemplaire(s)");
+                btnPreviewAddOtherCopies.setText("➕ Ajouter tous les autres (" + otherAvailable.size() + " ex.)");
                 btnPreviewAddOtherCopies.setVisible(true);
                 btnPreviewAddOtherCopies.setManaged(true);
             } else {
@@ -748,19 +1074,8 @@ public class MallettesController {
             }
         }
 
-        if (btnPreviewRetirer != null) {
-            btnPreviewRetirer.setText("❌ Retirer cet exemplaire (#" + item.getExemplaireId() + ")");
-        }
-
         if (btnPreviewRetirerTous != null) {
-            if (inMallette > 1) {
-                btnPreviewRetirerTous.setText("🗑️ Retirer tous les " + inMallette + " exemplaires");
-                btnPreviewRetirerTous.setVisible(true);
-                btnPreviewRetirerTous.setManaged(true);
-            } else {
-                btnPreviewRetirerTous.setVisible(false);
-                btnPreviewRetirerTous.setManaged(false);
-            }
+            btnPreviewRetirerTous.setText("🗑️ Retirer ce titre de la boîte (" + inMallette + " ex.)");
         }
     }
 
@@ -768,17 +1083,14 @@ public class MallettesController {
         if (previewCoverBox == null) return;
         previewCoverBox.getChildren().clear();
 
-        // 1. Appliquer le clip arrondi sur la boîte conteneur
         Rectangle clip = new Rectangle(88, 120);
         clip.setArcWidth(8);
         clip.setArcHeight(8);
         previewCoverBox.setClip(clip);
 
-        // 2. Afficher immédiatement la couverture vectorielle de qualité Apple Books (JAMAIS de vide !)
         StackPane placeholderCover = CoverHelper.createStyledCover(livre, 88, 120);
         previewCoverBox.getChildren().setAll(placeholderCover);
 
-        // 3. Charger l'image réelle si une URL valide existe
         String url = (livre != null) ? livre.getCouvertureUrl() : null;
         if (url != null && !url.isBlank()) {
             Image cached = COVER_IMAGE_CACHE.get(url);
@@ -809,11 +1121,6 @@ public class MallettesController {
                             });
                         }
                     });
-                    img.errorProperty().addListener((obs, oldV, hasErr) -> {
-                        if (hasErr) {
-                            COVER_IMAGE_CACHE.put(url, img);
-                        }
-                    });
                 } catch (Exception ignored) {}
             }
         }
@@ -821,8 +1128,92 @@ public class MallettesController {
 
     @FXML
     private void handleCloseBookPreview() {
-        itemsTable.getSelectionModel().clearSelection();
         showBookPreview(null);
+    }
+
+    @FXML
+    private void handlePreviewQtyPlus() {
+        if (selectedMallette == null || selectedBookItem == null) return;
+        try {
+            List<Exemplaire> available = malletteDao.findAvailableCopiesForIsbnNotInMallette(
+                    selectedMallette.getId(), selectedBookItem.getIsbn());
+            if (!available.isEmpty()) {
+                Exemplaire toAdd = available.get(0);
+                malletteService.ajouterLivre(selectedMallette.getId(), String.valueOf(toAdd.getId()));
+                refreshMalletteDetails();
+                showBookPreview(selectedBookItem);
+                SoundService.playSuccess();
+            } else {
+                showInfo("Stock BCD épuisé", "Tous les exemplaires de cet ouvrage disponibles en BCD sont déjà dans la mallette.");
+            }
+        } catch (Exception e) {
+            showError("Erreur d'ajout", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handlePreviewQtyMinus() {
+        if (selectedMallette == null || selectedBookItem == null) return;
+        try {
+            List<MalletteItem> copies = malletteDao.getItemsForIsbn(
+                    selectedMallette.getId(), selectedBookItem.getIsbn());
+            if (copies.size() > 1) {
+                MalletteItem toRemove = copies.get(copies.size() - 1);
+                malletteService.retirerLivre(selectedMallette.getId(), toRemove.getExemplaireId());
+                refreshMalletteDetails();
+                showBookPreview(selectedBookItem);
+                SoundService.playSuccess();
+            } else {
+                demanderEtRetirerLivre(selectedBookItem);
+            }
+        } catch (Exception e) {
+            showError("Erreur de retrait", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handlePreviewAddOtherCopies() {
+        if (selectedMallette == null || selectedBookItem == null) return;
+        try {
+            List<Exemplaire> added = malletteService.ajouterTousExemplairesLivre(selectedMallette.getId(), selectedBookItem.getIsbn());
+            refreshMalletteDetails();
+            showBookPreview(selectedBookItem);
+            SoundService.playSuccess();
+            showInfo("Exemplaires ajoutés", added.size() + " exemplaire(s) supplémentaire(s) intégré(s) à la mallette !");
+        } catch (Exception e) {
+            showError("Erreur", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handlePreviewRetirerTous() {
+        if (selectedMallette == null || selectedBookItem == null) return;
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        MainApp.prepareDialog(alert);
+        alert.setTitle("Retirer tous les exemplaires");
+        alert.setHeaderText("Retirer « " + selectedBookItem.getTitre() + " » ?");
+        alert.setContentText("Tous les exemplaires de ce titre seront retirés de la mallette et redeviendront disponibles en BCD.");
+
+        alert.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                try {
+                    int removed = malletteService.retirerTousExemplairesLivre(selectedMallette.getId(), selectedBookItem.getIsbn());
+                    refreshMalletteDetails();
+                    showBookPreview(null);
+                    SoundService.playSuccess();
+                    showInfo("Ouvrage retiré", removed + " exemplaire(s) retiré(s) de la mallette.");
+                } catch (SQLException e) {
+                    showError("Erreur de retrait", e.getMessage());
+                }
+            }
+        });
+    }
+
+    @FXML
+    private void handlePreviewRetirer() {
+        if (selectedBookItem != null) {
+            demanderEtRetirerLivre(selectedBookItem);
+        }
     }
 
     @FXML
@@ -832,97 +1223,354 @@ public class MallettesController {
                 selectedBookItem.getIsbn(), selectedBookItem.getTitre(), selectedBookItem.getAuteur(),
                 () -> {
                     refreshMalletteDetails();
-                    itemsTable.refresh();
                     showBookPreview(selectedBookItem);
                 }
         );
     }
 
-    @FXML
-    private void handlePreviewRetirer() {
-        if (selectedBookItem != null && selectedMallette != null) {
-            demanderEtRetirerLivre(selectedBookItem);
-        }
-    }
-
-    /**
-     * Gère la confirmation et le retrait d'un livre de la mallette.
-     * Si l'ouvrage est présent en plusieurs exemplaires dans la boîte,
-     * l'utilisateur peut choisir de retirer tous les exemplaires ou seulement celui-ci.
-     */
     private void demanderEtRetirerLivre(MalletteItem item) {
         if (item == null || selectedMallette == null) return;
 
-        long countSameBook = currentItems.stream()
-                .filter(it -> it.getIsbn() != null && it.getIsbn().equals(item.getIsbn()))
-                .count();
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        MainApp.prepareDialog(alert);
+        alert.setTitle("Retirer de la mallette");
+        alert.setHeaderText("Retirer « " + item.getTitre() + " » ?");
+        alert.setContentText("Ce livre sera remis en rayon et redeviendra disponible pour les emprunts classiques.");
 
-        if (countSameBook > 1) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            MainApp.prepareDialog(alert);
-            alert.setTitle("Retirer l'ouvrage");
-            alert.setHeaderText("Exemplaires multiples détectés (" + countSameBook + " exemplaires)");
-            alert.setContentText("L'ouvrage '" + item.getTitre() + "' est présent en " + countSameBook + " exemplaires dans cette mallette.\n\n"
-                    + "Souhaitez-vous retirer tous les exemplaires de ce livre ou seulement l'exemplaire #" + item.getExemplaireId() + " ?");
-
-            ButtonType btnTous = new ButtonType("Tous les exemplaires (" + countSameBook + ")");
-            ButtonType btnSeul = new ButtonType("Cet exemplaire seul (#" + item.getExemplaireId() + ")");
-            ButtonType btnAnnuler = new ButtonType("Annuler", ButtonBar.ButtonData.CANCEL_CLOSE);
-
-            alert.getButtonTypes().setAll(btnTous, btnSeul, btnAnnuler);
-            var result = alert.showAndWait();
-
-            if (result.isPresent() && result.get() == btnTous) {
-                try {
-                    malletteService.retirerTousExemplairesLivre(selectedMallette.getId(), item.getIsbn());
-                    selectedBookItem = null;
-                    showBookPreview(null);
-                    refreshMalletteDetails();
-                    loadDataKeepSelection();
-                } catch (SQLException ex) {
-                    showError("Erreur", ex.getMessage());
-                }
-            } else if (result.isPresent() && result.get() == btnSeul) {
+        alert.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
                 try {
                     malletteService.retirerLivre(selectedMallette.getId(), item.getExemplaireId());
-                    selectedBookItem = null;
-                    showBookPreview(null);
                     refreshMalletteDetails();
-                    loadDataKeepSelection();
-                } catch (SQLException ex) {
-                    showError("Erreur", ex.getMessage());
+                    SoundService.playSuccess();
+                } catch (SQLException e) {
+                    showError("Erreur de retrait", e.getMessage());
                 }
             }
-        } else {
-            boolean confirm = DialogHelper.showConfirmation(
-                    "Retirer l'ouvrage",
-                    "Retirer de la mallette",
-                    "Voulez-vous retirer '" + item.getTitre() + "' (ex. #" + item.getExemplaireId() + ") de cette mallette ?"
-            );
-            if (confirm) {
-                try {
-                    malletteService.retirerLivre(selectedMallette.getId(), item.getExemplaireId());
-                    selectedBookItem = null;
-                    showBookPreview(null);
-                    refreshMalletteDetails();
-                    loadDataKeepSelection();
-                } catch (SQLException ex) {
-                    showError("Erreur", ex.getMessage());
-                }
-            }
-        }
+        });
     }
 
     // =====================================================================
-    //  ACTIONS UTILISATEUR
+    //  Onglet 2 : Ressources Pédagogiques
+    // =====================================================================
+
+    private void refreshRessourcesTab() {
+        if (selectedMallette == null || tableRessourcesMallette == null) return;
+        try {
+            List<RessourcePedagogique> list = ressourceService.getToutesRessourcesPourMallette(selectedMallette.getId());
+            tableRessourcesMallette.setItems(FXCollections.observableArrayList(list));
+        } catch (SQLException e) {
+            tableRessourcesMallette.setItems(FXCollections.observableArrayList());
+        }
+    }
+
+    @FXML
+    private void handleRessourcesMallette() {
+        if (selectedMallette == null) return;
+        RessourcesPedagogiquesDialog.openForMallette(selectedMallette, () -> {
+            refreshMalletteDetails();
+            refreshRessourcesTab();
+        });
+    }
+
+    // =====================================================================
+    //  Onglet 3 : Historique des Prêts
+    // =====================================================================
+
+    public static class MalletteHistoriqueItem {
+        private final String classeEtEnseignant;
+        private final String dateSortie;
+        private final String dateRetour;
+        private final String statut;
+        private final boolean enCours;
+
+        public MalletteHistoriqueItem(String classeEtEnseignant, String dateSortie, String dateRetour, String statut, boolean enCours) {
+            this.classeEtEnseignant = classeEtEnseignant;
+            this.dateSortie = dateSortie;
+            this.dateRetour = dateRetour;
+            this.statut = statut;
+            this.enCours = enCours;
+        }
+
+        public String getClasseEtEnseignant() { return classeEtEnseignant; }
+        public String getDateSortie() { return dateSortie; }
+        public String getDateRetour() { return dateRetour; }
+        public String getStatut() { return statut; }
+        public boolean isEnCours() { return enCours; }
+    }
+
+    private void refreshHistoriqueTab() {
+        if (selectedMallette == null || tableHistoriqueMallette == null) return;
+
+        ObservableList<MalletteHistoriqueItem> historyList = FXCollections.observableArrayList();
+
+        // 1. Emprunt actif en cours
+        if (selectedMallette.isEmprunte()) {
+            historyList.add(new MalletteHistoriqueItem(
+                    selectedMallette.getEmprunteurComplet(),
+                    selectedMallette.getDateEmpruntFormatted(),
+                    selectedMallette.getDateRetourPrevueFormatted() + " (prévu)",
+                    "En cours",
+                    true
+            ));
+        }
+
+        // 2. Historique passé depuis la base
+        try (var conn = DatabaseManager.getConnection();
+             var stmt = conn.prepareStatement(
+                     "SELECT DISTINCT u.classe, u.nom, u.prenom, e.date_emprunt, e.date_rendu " +
+                     "FROM emprunts e " +
+                     "JOIN utilisateurs u ON e.utilisateur_numero = u.numero " +
+                     "JOIN mallette_items mi ON e.exemplaire_id = mi.exemplaire_id " +
+                     "WHERE mi.mallette_id = ? AND e.date_rendu IS NOT NULL " +
+                     "ORDER BY e.date_emprunt DESC")) {
+
+            stmt.setInt(1, selectedMallette.getId());
+            try (var rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String classe = rs.getString("classe");
+                    String nom = rs.getString("nom");
+                    String prenom = rs.getString("prenom");
+                    String dateSortie = rs.getString("date_emprunt");
+                    String dateRendu = rs.getString("date_rendu");
+
+                    String enseignantStr = (classe != null && !classe.isBlank() ? classe + " – " : "") + nom + " " + prenom;
+                    historyList.add(new MalletteHistoriqueItem(enseignantStr, dateSortie, dateRendu, "Rendu", false));
+                }
+            }
+        } catch (Exception ignored) {}
+
+        tableHistoriqueMallette.setItems(historyList);
+    }
+
+    // =====================================================================
+    //  Onglet 4 : Informations & Pédagogie
+    // =====================================================================
+
+    private void refreshInfosTab() {
+        if (selectedMallette == null) return;
+        lblInfoTheme.setText(selectedMallette.getTheme());
+        lblInfoNiveau.setText(selectedMallette.getNiveau().isBlank() ? "Tous niveaux" : selectedMallette.getNiveau());
+        lblInfoDateCreation.setText(selectedMallette.getDateCreationFormatted());
+        lblInfoDescription.setText(selectedMallette.getDescription().isBlank() ? "Aucune note pédagogique particulière." : selectedMallette.getDescription());
+
+        int distinct = 0;
+        try {
+            distinct = malletteDao.countDistinctTitles(selectedMallette.getId());
+        } catch (Exception ignored) {}
+        lblInfoStats.setText(currentItems.size() + " exemplaires (" + distinct + " titres distincts)");
+    }
+
+    // =====================================================================
+    //  Actions : Ajout de Livres & Prêt / Retour
     // =====================================================================
 
     @FXML
     public void handleResetFilters() {
         searchField.clear();
-        cbThemeFilter.setValue("Tous");
-        cbStatutFilter.setValue("Tous");
+        cbStatutFilter.setValue("Tous les statuts");
+        cbThemeFilter.setValue("Tous les thèmes");
+        applyFilters();
     }
+
+    @FXML
+    public void handleAddLivre() {
+        if (selectedMallette == null) return;
+        String raw = tfAddLivre.getText().trim();
+        if (raw.isEmpty()) return;
+
+        try {
+            Exemplaire ex = malletteService.ajouterLivre(selectedMallette.getId(), raw);
+            tfAddLivre.clear();
+            lblAddLivreFeedback.setText("✅ Livre ajouté avec succès (Exemplaire #" + ex.getId() + ")");
+            lblAddLivreFeedback.setStyle("-fx-text-fill: #15803D; -fx-font-weight: 700;");
+            SoundService.playSuccess();
+            refreshMalletteDetails();
+        } catch (RegleMetierException | SQLException e) {
+            lblAddLivreFeedback.setText("❌ " + e.getMessage());
+            lblAddLivreFeedback.setStyle("-fx-text-fill: #DC2626; -fx-font-weight: 700;");
+            SoundService.playError();
+        }
+    }
+
+    @FXML
+    public void handleFillByTheme() {
+        if (selectedMallette == null) return;
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        MainApp.prepareDialog(alert);
+        alert.setTitle("Remplir la mallette par thème");
+        alert.setHeaderText("Remplissage automatique pour le thème « " + selectedMallette.getTheme() + " »");
+        alert.setContentText("Tous les livres de la BCD correspondant à ce thème (et tous leurs exemplaires disponibles) seront intégrés à la boîte.\n\nContinuer ?");
+
+        alert.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                try {
+                    int count = malletteService.remplirParTheme(selectedMallette.getId(), selectedMallette.getTheme());
+                    refreshMalletteDetails();
+                    SoundService.playSuccess();
+                    showInfo("Remplissage terminé", count + " livre(s) ajouté(s) à la mallette !");
+                } catch (RegleMetierException | SQLException e) {
+                    showError("Erreur", e.getMessage());
+                }
+            }
+        });
+    }
+
+    @FXML
+    private void handleIntegrateAllAvailableCopies() {
+        if (selectedMallette == null) return;
+        try {
+            int added = malletteService.ajouterTousExemplairesDisponibles(selectedMallette.getId());
+            refreshMalletteDetails();
+            SoundService.playSuccess();
+            showInfo("Exemplaires intégrés", added + " exemplaire(s) supplémentaire(s) intégré(s) à la mallette !");
+        } catch (Exception e) {
+            showError("Erreur", e.getMessage());
+        }
+    }
+
+    @FXML
+    public void handlePreterMallette() {
+        if (selectedMallette == null) return;
+
+        Dialog<Boolean> dialog = new Dialog<>();
+        MainApp.prepareDialog(dialog);
+        dialog.setTitle("Prêter la mallette " + selectedMallette.getCode());
+        dialog.setHeaderText("Prêt groupé pour : " + selectedMallette.getTitre() + " (" + currentItems.size() + " livres)");
+
+        ButtonType btnValider = new ButtonType("Valider le prêt", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(btnValider, ButtonType.CANCEL);
+
+        VBox box = new VBox(12);
+        box.setPadding(new Insets(16));
+
+        Label lblEnseignant = new Label("1. Sélectionner l'enseignant emprunteur :");
+        lblEnseignant.setStyle("-fx-font-weight: 700;");
+
+        ComboBox<Utilisateur> cbEnseignant = new ComboBox<>();
+        cbEnseignant.setPrefWidth(360);
+        try {
+            List<Utilisateur> profs = utilisateurDao.findByType(Utilisateur.TypeCompte.ENSEIGNANT);
+            cbEnseignant.getItems().setAll(profs);
+            if (!profs.isEmpty()) cbEnseignant.setValue(profs.get(0));
+        } catch (SQLException ignored) {}
+
+        cbEnseignant.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Utilisateur u, boolean empty) {
+                super.updateItem(u, empty);
+                if (empty || u == null) {
+                    setText(null);
+                } else {
+                    setText("👩‍🏫 " + u.getNom() + " " + u.getPrenom() + " (" + u.getClasse() + ")");
+                }
+            }
+        });
+        cbEnseignant.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(Utilisateur u, boolean empty) {
+                super.updateItem(u, empty);
+                if (empty || u == null) {
+                    setText(null);
+                } else {
+                    setText("👩‍🏫 " + u.getNom() + " " + u.getPrenom() + " (" + u.getClasse() + ")");
+                }
+            }
+        });
+
+        Label lblDuree = new Label("2. Date de retour convenue :");
+        lblDuree.setStyle("-fx-font-weight: 700;");
+
+        DatePicker dpRetour = new DatePicker(LocalDate.now().plusWeeks(4));
+        dpRetour.setPrefWidth(360);
+
+        Label lblInfo = new Label("ℹ️ Tous les exemplaires de la mallette seront notés en prêt au nom de l'enseignant.");
+        lblInfo.setStyle("-fx-font-size: 11px; -fx-text-fill: #2563EB;");
+
+        box.getChildren().addAll(lblEnseignant, cbEnseignant, lblDuree, dpRetour, lblInfo);
+        dialog.getDialogPane().setContent(box);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == btnValider) {
+                Utilisateur prof = cbEnseignant.getValue();
+                LocalDate retour = dpRetour.getValue();
+                if (prof == null) {
+                    showError("Validation", "Veuillez choisir un enseignant.");
+                    return false;
+                }
+                try {
+                    malletteService.emprunterMallette(selectedMallette.getId(), prof, retour);
+                    return true;
+                } catch (RegleMetierException | SQLException e) {
+                    showError("Erreur lors du prêt", e.getMessage());
+                    return false;
+                }
+            }
+            return false;
+        });
+
+        dialog.showAndWait().ifPresent(success -> {
+            if (success) {
+                loadDataKeepSelection();
+                SoundService.playSuccess();
+                showInfo("Prêt enregistré", "La mallette " + selectedMallette.getCode() + " est maintenant prêtée à " + selectedMallette.getEmprunteurComplet() + ".");
+            }
+        });
+    }
+
+    @FXML
+    public void handleRetournerMallette() {
+        if (selectedMallette == null) return;
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        MainApp.prepareDialog(alert);
+        alert.setTitle("Restituer la mallette");
+        alert.setHeaderText("Restitution de : " + selectedMallette.getTitre() + " (" + selectedMallette.getCode() + ")");
+        alert.setContentText("Vérifiez le contenu de la boîte :\n"
+                + "• Total attendu : " + currentItems.size() + " livre(s)\n\n"
+                + "Souhaitez-vous clôturer le prêt et remettre tous les livres disponibles en rayon ?");
+
+        alert.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                try {
+                    malletteService.retournerMallette(selectedMallette.getId());
+                    loadDataKeepSelection();
+                    SoundService.playSuccess();
+                    showInfo("Mallette restituée", "Tous les livres de la mallette sont de nouveau disponibles en BCD !");
+                } catch (RegleMetierException | SQLException e) {
+                    showError("Erreur lors de la restitution", e.getMessage());
+                }
+            }
+        });
+    }
+
+    @FXML
+    private void handleViderMallette() {
+        if (selectedMallette == null) return;
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        MainApp.prepareDialog(alert);
+        alert.setTitle("Vider la mallette");
+        alert.setHeaderText("Retirer tous les livres de la mallette " + selectedMallette.getCode() + " ?");
+        alert.setContentText("Tous les " + currentItems.size() + " livre(s) redeviendront disponibles en rayon BCD.");
+
+        alert.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                try {
+                    malletteService.viderMallette(selectedMallette.getId());
+                    refreshMalletteDetails();
+                    SoundService.playSuccess();
+                    showInfo("Mallette vidée", "Tous les livres ont été retirés de la mallette.");
+                } catch (SQLException e) {
+                    showError("Erreur", e.getMessage());
+                }
+            }
+        });
+    }
+
+    // =====================================================================
+    //  Création, Édition, Suppression & Impressions
+    // =====================================================================
 
     @FXML
     public void handleCreateMallette() {
@@ -1128,7 +1776,7 @@ public class MallettesController {
             loadData();
             for (Mallette m : masterMallettes) {
                 if (m.getId() == newMallette.getId()) {
-                    mallettesTable.getSelectionModel().select(m);
+                    mallettesListView.getSelectionModel().select(m);
                     break;
                 }
             }
@@ -1140,71 +1788,66 @@ public class MallettesController {
     public void handleEditMallette() {
         if (selectedMallette == null) return;
 
-        Dialog<Boolean> dialog = new Dialog<>();
+        Dialog<Mallette> dialog = new Dialog<>();
         MainApp.prepareDialog(dialog);
         dialog.setTitle("Modifier la mallette " + selectedMallette.getCode());
-        dialog.setHeaderText("Modifiez les informations de la mallette pédagogique.");
+        dialog.setHeaderText("Modifiez les informations de la mallette « " + selectedMallette.getTitre() + " »");
 
         ButtonType btnSave = new ButtonType("Enregistrer", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnSave, ButtonType.CANCEL);
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
-        grid.setVgap(12);
-        grid.setPadding(new Insets(16, 20, 10, 10));
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20));
 
-        TextField tfCode = new TextField(selectedMallette.getCode());
         TextField tfTitre = new TextField(selectedMallette.getTitre());
+        tfTitre.setPrefWidth(320);
+
         ComboBox<String> cbTheme = new ComboBox<>();
         cbTheme.setEditable(true);
         try {
             cbTheme.getItems().setAll(malletteDao.getAllThemes());
         } catch (SQLException ignored) {}
         cbTheme.setValue(selectedMallette.getTheme());
+        cbTheme.setPrefWidth(320);
 
         ComboBox<String> cbNiveau = new ComboBox<>();
-        cbNiveau.getItems().setAll(LivreClassificationService.NIVEAUX_STANDARDS);
-        cbNiveau.setValue(selectedMallette.getNiveau());
+        cbNiveau.getItems().addAll("Tous niveaux", "Cycle 1 (Maternelle)", "Cycle 2 (CP - CE2)", "Cycle 3 (CM1 - CM2)");
+        cbNiveau.setValue(selectedMallette.getNiveau().isEmpty() ? "Tous niveaux" : selectedMallette.getNiveau());
+        cbNiveau.setPrefWidth(320);
 
         TextArea taDesc = new TextArea(selectedMallette.getDescription());
         taDesc.setPrefRowCount(3);
         taDesc.setWrapText(true);
 
-        grid.add(new Label("Code mallette :"), 0, 0);
-        grid.add(tfCode, 1, 0);
-        grid.add(new Label("Titre :"), 0, 1);
-        grid.add(tfTitre, 1, 1);
-        grid.add(new Label("Thème :"), 0, 2);
-        grid.add(cbTheme, 1, 2);
-        grid.add(new Label("Niveau :"), 0, 3);
-        grid.add(cbNiveau, 1, 3);
-        grid.add(new Label("Description :"), 0, 4);
-        grid.add(taDesc, 1, 4);
+        grid.addRow(0, new Label("Titre * :"), tfTitre);
+        grid.addRow(1, new Label("Thème * :"), cbTheme);
+        grid.addRow(2, new Label("Niveau :"), cbNiveau);
+        grid.addRow(3, new Label("Description :"), taDesc);
 
         dialog.getDialogPane().setContent(grid);
 
-        dialog.setResultConverter(btn -> {
-            if (btn == btnSave) {
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == btnSave) {
+                selectedMallette.setTitre(tfTitre.getText().trim());
+                selectedMallette.setTheme(cbTheme.getValue());
+                selectedMallette.setNiveau(cbNiveau.getValue());
+                selectedMallette.setDescription(taDesc.getText().trim());
                 try {
-                    selectedMallette.setCode(tfCode.getText().trim().toUpperCase());
-                    selectedMallette.setTitre(tfTitre.getText().trim());
-                    selectedMallette.setTheme(cbTheme.getValue());
-                    selectedMallette.setNiveau(cbNiveau.getValue());
-                    selectedMallette.setDescription(taDesc.getText().trim());
                     malletteDao.update(selectedMallette);
-                    return true;
+                    return selectedMallette;
                 } catch (SQLException e) {
-                    showError("Erreur mise à jour", e.getMessage());
-                    return false;
+                    showError("Erreur de modification", e.getMessage());
+                    return null;
                 }
             }
-            return false;
+            return null;
         });
 
-        dialog.showAndWait().ifPresent(saved -> {
-            if (saved) {
-                loadDataKeepSelection();
-            }
+        dialog.showAndWait().ifPresent(m -> {
+            loadDataKeepSelection();
+            SoundService.playSuccess();
         });
     }
 
@@ -1215,298 +1858,19 @@ public class MallettesController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         MainApp.prepareDialog(alert);
         alert.setTitle("Supprimer la mallette");
-        alert.setHeaderText("Supprimer la mallette '" + selectedMallette.getTitre() + "' (" + selectedMallette.getCode() + ") ?");
-        alert.setContentText("Les livres physiques contenus ne seront pas supprimés de la BCD, mais simplement détachés de cette mallette.");
+        alert.setHeaderText("Supprimer la mallette " + selectedMallette.getCode() + " : « " + selectedMallette.getTitre() + " » ?");
+        alert.setContentText("Attention : les livres qu'elle contient redeviendront disponibles en BCD.\nCette action est irréversible.");
 
-        alert.showAndWait().ifPresent(res -> {
-            if (res == ButtonType.OK) {
+        alert.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
                 try {
                     malletteService.supprimerMallette(selectedMallette.getId());
                     selectedMallette = null;
-                    selectedBookItem = null;
-                    showBookPreview(null);
                     loadData();
+                    SoundService.playSuccess();
+                    showInfo("Mallette supprimée", "La mallette a été supprimée et ses livres ont été remis en rayon.");
                 } catch (SQLException e) {
                     showError("Erreur de suppression", e.getMessage());
-                }
-            }
-        });
-    }
-
-    @FXML
-    public void handleAddLivre() {
-        if (selectedMallette == null) return;
-        String raw = tfAddLivre.getText().trim();
-        if (raw.isEmpty()) return;
-
-        try {
-            String clean = raw.startsWith("#") ? raw.substring(1).trim() : raw;
-            // Si code exemplaire direct, ajouter directement
-            if (clean.matches("^\\d{1,7}$")) {
-                Exemplaire ex = malletteService.ajouterLivre(selectedMallette.getId(), raw);
-                lblAddLivreFeedback.setText("✅ Exemplaire #" + ex.getId() + " ajouté à la mallette.");
-                lblAddLivreFeedback.setStyle("-fx-text-fill: #15803D; -fx-font-weight: bold;");
-                tfAddLivre.clear();
-                refreshMalletteDetails();
-                loadDataKeepSelection();
-                return;
-            }
-
-            // Vérifier si le titre a plusieurs exemplaires disponibles en BCD
-            String isbn = null;
-            String cleanIsbn = LivreMetadataService.cleanIsbn(clean);
-            if (cleanIsbn.matches("^\\d{9}[0-9Xx]$") || cleanIsbn.matches("^\\d{13}$") || clean.toUpperCase().startsWith("CAMUS-")) {
-                isbn = cleanIsbn;
-            } else {
-                Livre l = livreDao.findByTitreExact(clean);
-                if (l == null) {
-                    List<Livre> matches = livreDao.findByTitre(clean);
-                    if (!matches.isEmpty()) l = matches.get(0);
-                }
-                if (l != null) isbn = l.getIsbn();
-            }
-
-            List<Exemplaire> availableCopies = (isbn != null)
-                    ? malletteDao.findAvailableCopiesForIsbnNotInMallette(selectedMallette.getId(), isbn)
-                    : List.of();
-
-            if (availableCopies.size() > 1) {
-                Alert choiceDialog = new Alert(Alert.AlertType.CONFIRMATION);
-                MainApp.prepareDialog(choiceDialog);
-                choiceDialog.setTitle("Exemplaires multiples détectés");
-                choiceDialog.setHeaderText("Cet ouvrage possède " + availableCopies.size() + " exemplaires disponibles en BCD.");
-                choiceDialog.setContentText("Combien d'exemplaires souhaitez-vous ajouter à la mallette '" + selectedMallette.getTitre() + "' ?");
-
-                ButtonType btnAll = new ButtonType("Ajouter les " + availableCopies.size() + " exemplaires (Série)", ButtonBar.ButtonData.OK_DONE);
-                ButtonType btnOne = new ButtonType("Ajouter 1 seul exemplaire", ButtonBar.ButtonData.OTHER);
-                choiceDialog.getButtonTypes().setAll(btnAll, btnOne, ButtonType.CANCEL);
-
-                Optional<ButtonType> res = choiceDialog.showAndWait();
-                if (res.isEmpty() || res.get() == ButtonType.CANCEL) {
-                    return;
-                }
-
-                if (res.get() == btnAll) {
-                    List<Exemplaire> added = malletteService.ajouterTousExemplairesLivre(selectedMallette.getId(), raw);
-                    lblAddLivreFeedback.setText("✅ " + added.size() + " exemplaires ajoutés à la mallette !");
-                    lblAddLivreFeedback.setStyle("-fx-text-fill: #15803D; -fx-font-weight: bold;");
-                    tfAddLivre.clear();
-                    refreshMalletteDetails();
-                    loadDataKeepSelection();
-                    return;
-                }
-            }
-
-            Exemplaire ex = malletteService.ajouterLivre(selectedMallette.getId(), raw);
-            lblAddLivreFeedback.setText("✅ Livre ajouté : ex. #" + ex.getId());
-            lblAddLivreFeedback.setStyle("-fx-text-fill: #15803D; -fx-font-weight: bold;");
-            tfAddLivre.clear();
-            refreshMalletteDetails();
-            loadDataKeepSelection();
-        } catch (RegleMetierException | SQLException e) {
-            lblAddLivreFeedback.setText("⚠️ " + e.getMessage());
-            lblAddLivreFeedback.setStyle("-fx-text-fill: #DC2626; -fx-font-weight: bold;");
-            tfAddLivre.selectAll();
-        }
-    }
-
-    @FXML
-    public void handleFillByTheme() {
-        if (selectedMallette == null) return;
-
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        MainApp.prepareDialog(alert);
-        alert.setTitle("Remplir la mallette automatiquement");
-        alert.setHeaderText("Recherche automatique des livres du thème : " + selectedMallette.getTheme());
-
-        CheckBox chkAll = new CheckBox("⚡ Inclure tous les exemplaires physiques (recommandé pour séries et mallettes)");
-        chkAll.setSelected(true);
-        chkAll.setStyle("-fx-font-weight: bold; -fx-font-size: 11.5px; -fx-text-fill: #0369A1;");
-
-        VBox box = new VBox(10,
-                new Label("BCD Express va scanner le catalogue et ajouter les exemplaires disponibles associés au thème '"
-                        + selectedMallette.getTheme() + "' à cette mallette."),
-                chkAll
-        );
-        alert.getDialogPane().setContent(box);
-
-        alert.showAndWait().ifPresent(btn -> {
-            if (btn == ButtonType.OK) {
-                try {
-                    int added = malletteService.remplirParTheme(selectedMallette.getId(), selectedMallette.getTheme(), chkAll.isSelected());
-                    if (added > 0) {
-                        showInfo("Remplissage terminé", added + " exemplaire(s) correspondant au thème '" + selectedMallette.getTheme() + "' ont été ajoutés à la mallette !");
-                    } else {
-                        showInfo("Aucun exemplaire ajouté", "Aucun exemplaire supplémentaire disponible correspondant au thème '" + selectedMallette.getTheme() + "' n'a été trouvé.");
-                    }
-                    refreshMalletteDetails();
-                    loadDataKeepSelection();
-                } catch (RegleMetierException | SQLException e) {
-                    showError("Erreur de remplissage", e.getMessage());
-                }
-            }
-        });
-    }
-
-    @FXML
-    private void handleIntegrateAllAvailableCopies() {
-        if (selectedMallette == null) return;
-        try {
-            int added = malletteService.ajouterTousExemplairesDisponibles(selectedMallette.getId());
-            if (added > 0) {
-                showInfo("Intégration réussie", added + " exemplaire(s) physique(s) supplémentaire(s) ont été intégrés à la boîte !");
-                refreshMalletteDetails();
-                loadDataKeepSelection();
-            }
-        } catch (Exception e) {
-            showError("Erreur d'intégration", e.getMessage());
-        }
-    }
-
-    @FXML
-    private void handlePreviewAddOtherCopies() {
-        if (selectedMallette == null || selectedBookItem == null) return;
-        try {
-            List<Exemplaire> added = malletteService.ajouterTousExemplairesLivre(selectedMallette.getId(), selectedBookItem.getIsbn());
-            showInfo("Exemplaires ajoutés", added.size() + " exemplaire(s) supplémentaire(s) ajouté(s) à la mallette !");
-            refreshMalletteDetails();
-            loadDataKeepSelection();
-            showBookPreview(selectedBookItem);
-        } catch (Exception ex) {
-            showError("Erreur d'ajout", ex.getMessage());
-        }
-    }
-
-    @FXML
-    private void handlePreviewRetirerTous() {
-        if (selectedBookItem == null || selectedMallette == null) return;
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        MainApp.prepareDialog(confirm);
-        confirm.setTitle("Retirer tous les exemplaires");
-        confirm.setHeaderText("Retirer tous les exemplaires de '" + selectedBookItem.getTitre() + "' ?");
-        confirm.setContentText("Cette action retirera tous les exemplaires physiques de cet ouvrage de la mallette.");
-        if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
-            try {
-                int count = malletteService.retirerTousExemplairesLivre(selectedMallette.getId(), selectedBookItem.getIsbn());
-                showInfo("Livre retiré", count + " exemplaire(s) retiré(s) de la mallette.");
-                selectedBookItem = null;
-                showBookPreview(null);
-                refreshMalletteDetails();
-                loadDataKeepSelection();
-            } catch (SQLException ex) {
-                showError("Erreur", ex.getMessage());
-            }
-        }
-    }
-
-    @FXML
-    public void handlePreterMallette() {
-        if (selectedMallette == null) return;
-
-        Dialog<Boolean> dialog = new Dialog<>();
-        MainApp.prepareDialog(dialog);
-        dialog.setTitle("Prêter la mallette " + selectedMallette.getCode());
-        dialog.setHeaderText("Prêt groupé pour : " + selectedMallette.getTitre() + " (" + currentItems.size() + " livres)");
-
-        ButtonType btnValider = new ButtonType("Valider le prêt", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(btnValider, ButtonType.CANCEL);
-
-        VBox box = new VBox(12);
-        box.setPadding(new Insets(16));
-
-        Label lblEnseignant = new Label("1. Sélectionner l'enseignant emprunteur :");
-        lblEnseignant.setStyle("-fx-font-weight: 700;");
-
-        ComboBox<Utilisateur> cbEnseignant = new ComboBox<>();
-        cbEnseignant.setPrefWidth(360);
-        try {
-            List<Utilisateur> profs = utilisateurDao.findByType(Utilisateur.TypeCompte.ENSEIGNANT);
-            cbEnseignant.getItems().setAll(profs);
-            if (!profs.isEmpty()) cbEnseignant.setValue(profs.get(0));
-        } catch (SQLException ignored) {}
-
-        cbEnseignant.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(Utilisateur u, boolean empty) {
-                super.updateItem(u, empty);
-                if (empty || u == null) {
-                    setText(null);
-                } else {
-                    setText("👩‍🏫 " + u.getNom() + " " + u.getPrenom() + " (" + u.getClasse() + ")");
-                }
-            }
-        });
-        cbEnseignant.setButtonCell(new ListCell<>() {
-            @Override
-            protected void updateItem(Utilisateur u, boolean empty) {
-                super.updateItem(u, empty);
-                if (empty || u == null) {
-                    setText(null);
-                } else {
-                    setText("👩‍🏫 " + u.getNom() + " " + u.getPrenom() + " (" + u.getClasse() + ")");
-                }
-            }
-        });
-
-        Label lblDuree = new Label("2. Date de retour convenue :");
-        lblDuree.setStyle("-fx-font-weight: 700;");
-
-        DatePicker dpRetour = new DatePicker(LocalDate.now().plusWeeks(4));
-        dpRetour.setPrefWidth(360);
-
-        Label lblInfo = new Label("ℹ️ Tous les exemplaires de la mallette seront notés en prêt au nom de l'enseignant.");
-        lblInfo.setStyle("-fx-font-size: 11px; -fx-text-fill: #2563EB;");
-
-        box.getChildren().addAll(lblEnseignant, cbEnseignant, lblDuree, dpRetour, lblInfo);
-        dialog.getDialogPane().setContent(box);
-
-        dialog.setResultConverter(b -> {
-            if (b == btnValider) {
-                Utilisateur prof = cbEnseignant.getValue();
-                LocalDate dateR = dpRetour.getValue();
-                if (prof == null) {
-                    showError("Erreur", "Veuillez sélectionner un enseignant.");
-                    return false;
-                }
-                try {
-                    malletteService.emprunterMallette(selectedMallette.getId(), prof, dateR);
-                    return true;
-                } catch (RegleMetierException | SQLException e) {
-                    showError("Prêt impossible", e.getMessage());
-                    return false;
-                }
-            }
-            return false;
-        });
-
-        dialog.showAndWait().ifPresent(success -> {
-            if (success) {
-                loadDataKeepSelection();
-                showInfo("Prêt validé", "La mallette a été prêtée avec succès. Vous pouvez maintenant imprimer sa fiche de contenu A4.");
-            }
-        });
-    }
-
-    @FXML
-    public void handleRetournerMallette() {
-        if (selectedMallette == null) return;
-
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        MainApp.prepareDialog(alert);
-        alert.setTitle("Restituer la mallette");
-        alert.setHeaderText("Restitution de : " + selectedMallette.getTitre() + " (" + selectedMallette.getCode() + ")");
-        alert.setContentText("Vérifiez le contenu de la boîte :\n"
-                + "• Total attendu : " + currentItems.size() + " livre(s)\n\n"
-                + "Souhaitez-vous clôturer le prêt et remettre tous les livres disponibles en rayon ?");
-
-        alert.showAndWait().ifPresent(btn -> {
-            if (btn == ButtonType.OK) {
-                try {
-                    malletteService.retournerMallette(selectedMallette.getId());
-                    loadDataKeepSelection();
-                    showInfo("Mallette restituée", "Tous les livres de la mallette sont de nouveau disponibles en BCD !");
-                } catch (RegleMetierException | SQLException e) {
-                    showError("Erreur de retour", e.getMessage());
                 }
             }
         });
@@ -1516,10 +1880,10 @@ public class MallettesController {
     public void handleImprimerFiche() {
         if (selectedMallette == null) return;
         try {
-            File fiche = malletteService.genererFicheContenuHtml(selectedMallette.getId());
-            MainApp.openDocument(fiche);
-        } catch (SQLException | java.io.IOException e) {
-            showError("Erreur d'impression", e.getMessage());
+            File htmlFile = malletteService.genererFicheContenuHtml(selectedMallette.getId());
+            MainApp.openDocument(htmlFile);
+        } catch (Exception e) {
+            showError("Erreur d'impression", "Impossible de générer la fiche : " + e.getMessage());
         }
     }
 
@@ -1527,22 +1891,32 @@ public class MallettesController {
     public void handleImprimerEtiquette() {
         if (selectedMallette == null) return;
         try {
-            File etiquette = malletteService.genererEtiquetteMalletteHtml(selectedMallette.getId());
-            MainApp.openDocument(etiquette);
-        } catch (SQLException | java.io.IOException e) {
-            showError("Erreur d'impression", e.getMessage());
+            File htmlFile = malletteService.genererEtiquetteMalletteHtml(selectedMallette.getId());
+            MainApp.openDocument(htmlFile);
+        } catch (Exception e) {
+            showError("Erreur d'impression", "Impossible de générer l'étiquette : " + e.getMessage());
         }
     }
 
     // =====================================================================
-    //  Alerts Helpers
+    //  Helpers Notifications
     // =====================================================================
 
     private void showInfo(String title, String content) {
-        DialogHelper.showInfo(title, content);
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        MainApp.prepareDialog(a);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(content);
+        a.showAndWait();
     }
 
     private void showError(String title, String content) {
-        DialogHelper.showError(title, content);
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        MainApp.prepareDialog(a);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(content);
+        a.showAndWait();
     }
 }

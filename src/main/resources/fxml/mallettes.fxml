@@ -6,18 +6,22 @@
 
 <!--
     Onglet Mallettes Pédagogiques & Thématiques — BCD Express
-    Permet de créer des collections thématiques de livres (ex: Harcèlement scolaire,
-    Contes, Émotions...), de gérer leur contenu et de les prêter en 1 clic aux enseignants.
+    Refonte graphique moderne basée sur la maquette :
+    - Pilules de synthèse KPI (disponibles, en prêt, livres)
+    - Liste latérale de cartes thématiques avec bordure de couleur d'accent
+    - Navigation par onglets (Contenu, Ressources, Historique, Infos)
+    - Grille visuelle de couvertures de livres avec badges de quantité
+    - Tiroir inspecteur d'ouvrage avec contrôles pas-à-pas (+) / (-)
 -->
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="fr.ecole.bcd.controller.MallettesController"
-      spacing="14" styleClass="tab-content">
+      spacing="12" styleClass="tab-content">
 
     <!-- ── 1. En-tête : Titre & Action principale ───────────────────────── -->
     <HBox spacing="12" alignment="CENTER_LEFT">
         <VBox spacing="2">
-            <Label text="Mallettes Pédagogiques" styleClass="screen-title"/>
+            <Label text="🧰 Mallettes Pédagogiques" styleClass="screen-title"/>
             <Label text="Créez des malles thématiques (Harcèlement, Contes, Histoire…) et prêtez-les en un clic aux classes"
                    style="-fx-font-size: 12px; -fx-text-fill: #64748B;"/>
         </VBox>
@@ -26,82 +30,42 @@
                 onAction="#handleCreateMallette"/>
     </HBox>
 
-    <!-- ── 2. Cartes KPI ────────────────────────────────────────────────── -->
-    <HBox spacing="12">
-        <!-- Total Mallettes -->
-        <HBox spacing="12" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" styleClass="kpi-card">
-            <Label text="🧰" styleClass="kpi-icon-box-blue"/>
-            <VBox spacing="2">
-                <Label text="Total Mallettes" styleClass="kpi-title"/>
-                <Label fx:id="lblKpiTotal" text="0" styleClass="kpi-value"/>
-            </VBox>
-        </HBox>
-
-        <!-- Disponibles -->
-        <HBox spacing="12" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" styleClass="kpi-card">
-            <Label text="✅" styleClass="kpi-icon-box-emerald"/>
-            <VBox spacing="2">
-                <Label text="Disponibles" styleClass="kpi-title"/>
-                <Label fx:id="lblKpiDispo" text="0" styleClass="kpi-value"/>
-            </VBox>
-        </HBox>
-
-        <!-- En prêt -->
-        <HBox spacing="12" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" styleClass="kpi-card">
-            <Label text="📖" styleClass="kpi-icon-box-purple"/>
-            <VBox spacing="2">
-                <Label text="En Prêt dans les classes" styleClass="kpi-title"/>
-                <Label fx:id="lblKpiPret" text="0" styleClass="kpi-value"/>
-            </VBox>
-        </HBox>
-
-        <!-- Total Livres en Mallettes -->
-        <HBox spacing="12" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" styleClass="kpi-card">
-            <Label text="📚" styleClass="kpi-icon-box-amber"/>
-            <VBox spacing="2">
-                <Label text="Livres en Mallettes" styleClass="kpi-title"/>
-                <Label fx:id="lblKpiLivres" text="0" styleClass="kpi-value"/>
-            </VBox>
-        </HBox>
+    <!-- ── 2. Pilules KPI de Synthèse (Style Maquette) ─────────────────────── -->
+    <HBox fx:id="boxKpiPills" spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 2 0;">
+        <Label fx:id="lblKpiTotal" text="0 mallettes" styleClass="kpi-pill"/>
+        <Label fx:id="lblKpiDispo" text="0 disponibles" styleClass="kpi-pill"/>
+        <Label fx:id="lblKpiPret" text="0 en prêt" styleClass="kpi-pill"/>
+        <Label fx:id="lblKpiLivres" text="0 livres" styleClass="kpi-pill"/>
     </HBox>
 
-    <!-- ── 3. Barre de recherche et filtres ─────────────────────────────── -->
-    <HBox spacing="12" alignment="CENTER_LEFT" styleClass="mockup-card">
+    <!-- ── 3. Barre d'outils et de recherche ────────────────────────────── -->
+    <HBox spacing="10" alignment="CENTER_LEFT" styleClass="mockup-card" style="-fx-padding: 8 12;">
         <TextField fx:id="searchField"
                    promptText="🔍 Rechercher par titre, thème, code (ex: Harcèlement, MAL-001)…"
                    prefWidth="320" HBox.hgrow="ALWAYS"/>
 
-        <Label text="Thème :" styleClass="filter-label"/>
-        <ComboBox fx:id="cbThemeFilter" promptText="Tous les thèmes" prefWidth="180"/>
-
         <Label text="Statut :" styleClass="filter-label"/>
         <ComboBox fx:id="cbStatutFilter" promptText="Tous les statuts" prefWidth="140"/>
+
+        <Label text="Thème :" styleClass="filter-label"/>
+        <ComboBox fx:id="cbThemeFilter" promptText="Tous les thèmes" prefWidth="170"/>
 
         <Button fx:id="btnResetFilters" text="🔄 Réinitialiser" styleClass="btn-outline"
                 onAction="#handleResetFilters"/>
     </HBox>
 
-    <!-- ── 4. Vue Partagée (SplitPane) : Liste (Gauche) | Détail & Livres (Droite) ─ -->
-    <SplitPane dividerPositions="0.36" VBox.vgrow="ALWAYS">
+    <!-- ── 4. Vue Partagée (SplitPane) : Liste (Gauche) | Détail (Droite) ──── -->
+    <SplitPane dividerPositions="0.32" VBox.vgrow="ALWAYS">
 
-        <!-- Colonne Gauche : Liste des Mallettes -->
-        <VBox spacing="8" styleClass="mockup-card">
-            <HBox alignment="CENTER_LEFT" spacing="8">
-                <Label text="Liste des Mallettes" style="-fx-font-weight: 700; -fx-font-size: 14px;"/>
+        <!-- Colonne Gauche : Liste des Mallettes sous forme de cartes -->
+        <VBox spacing="8" styleClass="mockup-card" minWidth="290" prefWidth="320" maxWidth="420">
+            <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 2 4;">
+                <Label text="Collections &amp; Malles" style="-fx-font-weight: 700; -fx-font-size: 13.5px;"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Label fx:id="lblCountMallettes" text="0 mallette(s)" style="-fx-text-fill: #64748B; -fx-font-size: 12px;"/>
+                <Label fx:id="lblCountMallettes" text="0 mallette(s)" style="-fx-text-fill: #64748B; -fx-font-size: 11.5px;"/>
             </HBox>
 
-            <TableView fx:id="mallettesTable" VBox.vgrow="ALWAYS">
-                <columns>
-                    <TableColumn fx:id="colCode" text="Code" prefWidth="80"/>
-                    <TableColumn fx:id="colTitre" text="Titre de la mallette" prefWidth="160"/>
-                    <TableColumn fx:id="colTheme" text="Thème" prefWidth="110"/>
-                    <TableColumn fx:id="colNiveau" text="Niveau" prefWidth="85"/>
-                    <TableColumn fx:id="colNbLivres" text="Livres" prefWidth="60"/>
-                    <TableColumn fx:id="colStatut" text="Statut" prefWidth="90"/>
-                    <TableColumn fx:id="colEmprunteur" text="Emprunteur actuel" prefWidth="120"/>
-                </columns>
+            <ListView fx:id="mallettesListView" VBox.vgrow="ALWAYS" styleClass="mallette-list-view">
                 <placeholder>
                     <VBox alignment="CENTER" spacing="8" style="-fx-padding: 30;">
                         <Label text="🧰" style="-fx-font-size: 32px;"/>
@@ -109,50 +73,55 @@
                         <Label text="Cliquez sur '➕ Nouvelle Mallette' pour en créer une." style="-fx-font-size: 12px; -fx-text-fill: #94A3B8;"/>
                     </VBox>
                 </placeholder>
-            </TableView>
+            </ListView>
         </VBox>
 
-        <!-- Colonne Droite : Fiche Mallette & Gestion des Livres -->
+        <!-- Colonne Droite : Fiche Détaillée avec Onglets -->
         <VBox spacing="10" VBox.vgrow="ALWAYS">
             <!-- État vide si aucune sélection -->
             <VBox fx:id="vboxEmptySelection" alignment="CENTER" spacing="12" VBox.vgrow="ALWAYS" styleClass="mockup-card">
                 <Label text="🎒" style="-fx-font-size: 44px;"/>
                 <Label text="Sélectionnez une mallette pour gérer son contenu" style="-fx-font-size: 15px; -fx-font-weight: 700; -fx-text-fill: #475569;"/>
-                <Label text="Vous pourrez ajouter des livres par titre ou thème, imprimer la fiche A4 et prêter la mallette en un clic."
+                <Label text="Vous pourrez ajouter des livres par titre ou thème, consulter les fiches pédagogiques et prêter la mallette en un clic."
                        style="-fx-font-size: 12px; -fx-text-fill: #64748B; -fx-text-alignment: center;" wrapText="true"/>
             </VBox>
 
             <!-- Fiche détaillée active -->
             <VBox fx:id="vboxDetailContent" spacing="10" VBox.vgrow="ALWAYS" visible="false" managed="false">
 
-                <!-- 1. En-tête de la mallette (Compacte & Ergonomique) -->
-                <VBox spacing="8" styleClass="mockup-card" style="-fx-padding: 10 14;">
-                    <!-- Ligne 1 : Code + Titre + Statut + Actions -->
+                <!-- 1. En-tête de la mallette sélectionnée -->
+                <VBox spacing="8" styleClass="mockup-card" style="-fx-padding: 12 16;">
                     <HBox alignment="CENTER_LEFT" spacing="10">
-                        <Label fx:id="lblDetailCode" text="MAL-001"
-                               style="-fx-font-family: monospace; -fx-font-weight: 800; -fx-font-size: 13px; -fx-background-color: #DBEAFE; -fx-text-fill: #1D4ED8; -fx-padding: 3 8; -fx-background-radius: 6;"/>
                         <Label fx:id="lblDetailTitre" text="Titre de la mallette"
-                               style="-fx-font-weight: 800; -fx-font-size: 15px;" HBox.hgrow="ALWAYS"/>
+                               style="-fx-font-weight: 800; -fx-font-size: 17px;" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblDetailCode" text="MAL-001"
+                               style="-fx-font-family: monospace; -fx-font-weight: 800; -fx-font-size: 12px; -fx-background-color: #DBEAFE; -fx-text-fill: #1D4ED8; -fx-padding: 3 8; -fx-background-radius: 6;"/>
                         <Label fx:id="lblDetailStatutBadge" text="DISPONIBLE"
                                style="-fx-font-weight: 700; -fx-font-size: 11px; -fx-padding: 3 8; -fx-background-radius: 12;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Button fx:id="btnPreterMallette" text="🤝 Prêter" styleClass="btn-emerald"
-                                onAction="#handlePreterMallette"/>
-                        <Button fx:id="btnRetournerMallette" text="↩️ Restituer" styleClass="btn-blue"
-                                onAction="#handleRetournerMallette"/>
-                        <Button fx:id="btnImprimerFiche" text="🖨️ Fiche A4" styleClass="btn-outline"
-                                onAction="#handleImprimerFiche"/>
-                        <Button fx:id="btnImprimerEtiquette" text="🏷️ Étiquette" styleClass="btn-outline"
-                                onAction="#handleImprimerEtiquette"/>
-                        <Button fx:id="btnRessourcesMallette" text="📚 Ressources" styleClass="btn-outline"
-                                onAction="#handleRessourcesMallette"/>
-                        <Button fx:id="btnEditMallette" text="✏️" styleClass="btn-outline"
-                                onAction="#handleEditMallette"/>
-                        <Button fx:id="btnDeleteMallette" text="🗑️" styleClass="btn-outline"
-                                onAction="#handleDeleteMallette"/>
+
+                        <!-- Actions Principales (1 gros bouton contextuel + menu '...') -->
+                        <Button fx:id="btnPreterMallette" text="📤 Prêter à une classe" styleClass="btn-emerald"
+                                onAction="#handlePreterMallette" style="-fx-font-size: 12.5px; -fx-font-weight: 700; -fx-padding: 7 14;"/>
+                        <Button fx:id="btnRetournerMallette" text="↩ Enregistrer le retour" styleClass="btn-blue"
+                                onAction="#handleRetournerMallette" style="-fx-font-size: 12.5px; -fx-font-weight: 700; -fx-padding: 7 14;"/>
+
+                        <!-- Menu déroulant actions secondaires -->
+                        <MenuButton fx:id="btnMoreActions" text="⋯ Actions" styleClass="btn-outline"
+                                    style="-fx-font-size: 12px; -fx-padding: 6 10;">
+                            <items>
+                                <MenuItem text="🖨️ Fiche récapitulative A4 (PDF)" onAction="#handleImprimerFiche"/>
+                                <MenuItem text="🏷️ Étiquette caisse / malle" onAction="#handleImprimerEtiquette"/>
+                                <MenuItem text="✏️ Modifier la mallette" onAction="#handleEditMallette"/>
+                                <MenuItem text="🧹 Vider tous les livres" onAction="#handleViderMallette"/>
+                                <SeparatorMenuItem/>
+                                <MenuItem text="🗑️ Supprimer la mallette" onAction="#handleDeleteMallette"
+                                          style="-fx-text-fill: #DC2626;"/>
+                            </items>
+                        </MenuButton>
                     </HBox>
 
-                    <!-- Ligne 2 : Badges Thème, Niveau, Nb Livres & Description condensée -->
+                    <!-- Ligne 2 : Badges Thème, Niveau, Compteur exemplaires -->
                     <HBox spacing="8" alignment="CENTER_LEFT">
                         <Label fx:id="lblDetailThemeTag" text="Thème : Harcèlement"
                                style="-fx-font-size: 11px; -fx-font-weight: 700; -fx-background-color: #E0F2FE; -fx-text-fill: #0369A1; -fx-padding: 2 8; -fx-background-radius: 4;"/>
@@ -160,148 +129,272 @@
                                style="-fx-font-size: 11px; -fx-font-weight: 700; -fx-background-color: #F3E8FF; -fx-text-fill: #7E22CE; -fx-padding: 2 8; -fx-background-radius: 4;"/>
                         <Label fx:id="lblDetailNbLivresTag" text="0 livre(s)"
                                style="-fx-font-size: 11px; -fx-font-weight: 700; -fx-background-color: #FEF3C7; -fx-text-fill: #B45309; -fx-padding: 2 8; -fx-background-radius: 4;"/>
-                        <Label text="•" style="-fx-text-fill: #CBD5E1; -fx-font-size: 12px;"/>
-                        <Label fx:id="lblDetailDescription" text="Description de la mallette..."
-                               wrapText="true" HBox.hgrow="ALWAYS"
-                               style="-fx-font-size: 11.5px; -fx-text-fill: #475569; -fx-font-style: italic;"/>
-                    </HBox>
-
-                    <!-- Info prêt si en cours -->
-                    <HBox fx:id="boxPretInfo" spacing="8" alignment="CENTER_LEFT"
-                          style="-fx-background-color: #EFF6FF; -fx-border-color: #BFDBFE; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 5 10;">
-                        <Label text="ℹ️" style="-fx-font-size: 12px;"/>
-                        <Label fx:id="lblDetailPretInfo" text="Empruntée par..."
-                               style="-fx-font-size: 11.5px; -fx-text-fill: #1E40AF; -fx-font-weight: 600;"/>
                     </HBox>
                 </VBox>
 
-                <!-- 2. Zone Contenu : Tableau des Livres (Gauche) + Volet Fiche Livre Sélectionné (Droite) -->
-                <HBox spacing="10" VBox.vgrow="ALWAYS">
+                <!-- 2. Barre d'Onglets de Navigation (Contenu | Ressources | Historique | Infos) -->
+                <HBox spacing="4" styleClass="tab-nav-bar">
+                    <Button fx:id="btnTabContenu" text="📦 Contenu" styleClass="tab-nav-btn, tab-nav-btn-active"
+                            onAction="#handleSelectTabContenu"/>
+                    <Button fx:id="btnTabRessources" text="📚 Ressources" styleClass="tab-nav-btn"
+                            onAction="#handleSelectTabRessources"/>
+                    <Button fx:id="btnTabHistorique" text="📜 Historique" styleClass="tab-nav-btn"
+                            onAction="#handleSelectTabHistorique"/>
+                    <Button fx:id="btnTabInfos" text="ℹ️ Infos" styleClass="tab-nav-btn"
+                            onAction="#handleSelectTabInfos"/>
+                </HBox>
 
-                    <!-- Colonne Principale : Tableau des livres avec recherche et actions -->
-                    <VBox spacing="8" HBox.hgrow="ALWAYS" styleClass="mockup-card">
-                        <HBox alignment="CENTER_LEFT" spacing="8">
-                            <Label fx:id="lblSectionItemsTitle" text="Livres contenus dans la mallette" style="-fx-font-weight: 700; -fx-font-size: 13.5px;"/>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Button fx:id="btnFillTheme" text="🪄 Remplir avec les livres du thème" styleClass="btn-outline"
-                                    onAction="#handleFillByTheme" style="-fx-font-size: 11px;"/>
+                <!-- 3. Conteneur des 4 Onglets -->
+                <StackPane VBox.vgrow="ALWAYS">
+
+                    <!-- ── Onglet 1 : Contenu (Grille de Livres + Inspecteur) ── -->
+                    <VBox fx:id="paneContenu" spacing="8" VBox.vgrow="ALWAYS">
+
+                        <!-- Alerte prêt en cours -->
+                        <HBox fx:id="boxPretInfo" spacing="8" alignment="CENTER_LEFT"
+                              style="-fx-background-color: #EFF6FF; -fx-border-color: #BFDBFE; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 6 10;">
+                            <Label text="📦" style="-fx-font-size: 13px;"/>
+                            <Label fx:id="lblDetailPretInfo" text="Empruntée par..."
+                                   style="-fx-font-size: 11.5px; -fx-text-fill: #1E40AF; -fx-font-weight: 600;"/>
                         </HBox>
 
-                        <!-- Ajout rapide d'un livre (par titre, N° ou ISBN) -->
-                        <HBox spacing="8" alignment="CENTER_LEFT">
+                        <!-- Barre d'ajout rapide et sélection de vue (Grille / Tableau) -->
+                        <HBox spacing="8" alignment="CENTER_LEFT" styleClass="mockup-card" style="-fx-padding: 6 10;">
                             <TextField fx:id="tfAddLivre"
-                                       promptText="🔍 Titre du livre (ex: Le Petit Prince), scan ISBN ou N° d'ex…"
+                                       promptText="🔍 Titre, scan ISBN ou N° d'ex. à ajouter…"
                                        HBox.hgrow="ALWAYS"/>
-                            <Button fx:id="btnAddLivre" text="➕ Ajouter ce livre" styleClass="btn-blue"
-                                    onAction="#handleAddLivre"/>
+                            <Button fx:id="btnAddLivre" text="➕ Ajouter" styleClass="btn-blue"
+                                    onAction="#handleAddLivre" style="-fx-font-size: 11.5px;"/>
+                            <Button fx:id="btnFillTheme" text="🪄 Remplir par thème" styleClass="btn-outline"
+                                    onAction="#handleFillByTheme" style="-fx-font-size: 11px;"/>
+                            <Region style="-fx-pref-width: 4;"/>
+                            <Button fx:id="btnToggleBooksView" text="☰ Tableau" styleClass="btn-outline"
+                                    onAction="#handleToggleBooksView" style="-fx-font-size: 11px;"/>
                         </HBox>
+
                         <Label fx:id="lblAddLivreFeedback" style="-fx-font-size: 11px;" text=""/>
 
-                        <!-- Bannière d'intégration des exemplaires supplémentaires disponibles -->
+                        <!-- Bannière d'intégration des exemplaires supplémentaires -->
                         <HBox fx:id="boxMissingCopiesBanner" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10"
-                              style="-fx-background-color: #FEF3C7; -fx-border-color: #FCD34D; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 7 12;">
-                            <Label fx:id="lblMissingCopiesInfo" text="💡 Des exemplaires supplémentaires de ces livres sont disponibles en BCD."
+                              style="-fx-background-color: #FEF3C7; -fx-border-color: #FCD34D; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 6 12;">
+                            <Label fx:id="lblMissingCopiesInfo" text="💡 Des exemplaires supplémentaires sont disponibles en BCD."
                                    style="-fx-font-size: 11.5px; -fx-text-fill: #92400E; -fx-font-weight: 600;"/>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <Button fx:id="btnIntegrateAllCopies" text="➕ Tout intégrer dans la mallette"
+                            <Button fx:id="btnIntegrateAllCopies" text="➕ Tout intégrer dans la boîte"
                                     onAction="#handleIntegrateAllAvailableCopies"
                                     style="-fx-background-color: #D97706; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 4 10; -fx-background-radius: 4;"/>
                         </HBox>
 
-                        <!-- Tableau des livres dans la boîte (Pleine hauteur garantie !) -->
-                        <TableView fx:id="itemsTable" VBox.vgrow="ALWAYS" minHeight="260">
+                        <!-- Zone Principale des Livres : Vue Grille ou Tableau + Inspecteur -->
+                        <HBox spacing="10" VBox.vgrow="ALWAYS">
+
+                            <!-- Conteneur d'affichage (Grille ou Tableau) -->
+                            <StackPane HBox.hgrow="ALWAYS">
+                                <!-- Vue 1 : Grille Visuelle (Défaut moderne) -->
+                                <ScrollPane fx:id="scrollBooksGrid" fitToWidth="true" VBox.vgrow="ALWAYS"
+                                            styleClass="tab-scroll-pane">
+                                    <FlowPane fx:id="flowBooksGrid" hgap="12" vgap="12" style="-fx-padding: 4;"/>
+                                </ScrollPane>
+
+                                <!-- Vue 2 : Tableau Détaillé (Accessible via le bouton de bascule) -->
+                                <TableView fx:id="itemsTable" visible="false" managed="false" VBox.vgrow="ALWAYS">
+                                    <columns>
+                                        <TableColumn fx:id="colItemExId" text="N° Ex." prefWidth="75"/>
+                                        <TableColumn fx:id="colItemTitre" text="Titre de l'ouvrage" prefWidth="170"/>
+                                        <TableColumn fx:id="colItemAuteur" text="Auteur" prefWidth="120"/>
+                                        <TableColumn fx:id="colItemGenre" text="Genre" prefWidth="85"/>
+                                        <TableColumn fx:id="colItemStatut" text="Disponibilité" prefWidth="95"/>
+                                        <TableColumn fx:id="colItemCopies" text="Ex. en boîte" prefWidth="95"/>
+                                        <TableColumn fx:id="colItemRessources" text="Ressources" prefWidth="105"/>
+                                        <TableColumn fx:id="colItemAction" text="Action" prefWidth="75"/>
+                                    </columns>
+                                    <placeholder>
+                                        <VBox alignment="CENTER" spacing="6" style="-fx-padding: 20;">
+                                            <Label text="📭" style="-fx-font-size: 24px;"/>
+                                            <Label text="Cette mallette est encore vide." style="-fx-font-weight: 600; -fx-text-fill: #64748B;"/>
+                                        </VBox>
+                                    </placeholder>
+                                </TableView>
+                            </StackPane>
+
+                            <!-- Volet / Tiroir Inspecteur de l'ouvrage sélectionné -->
+                            <VBox fx:id="cardBookPreview" visible="false" managed="false" spacing="8"
+                                  prefWidth="290" minWidth="270" maxWidth="330"
+                                  styleClass="mockup-card">
+
+                                <!-- En-tête de la fiche d'aperçu -->
+                                <HBox alignment="CENTER_LEFT" spacing="6">
+                                    <Label text="📖 Fiche Ouvrage"
+                                           style="-fx-font-weight: 800; -fx-font-size: 12.5px; -fx-text-fill: #1E3A8A;"/>
+                                    <Label fx:id="lblPreviewExemplaireId" text="#--"
+                                           style="-fx-font-family: monospace; -fx-font-weight: 800; -fx-font-size: 10.5px; -fx-background-color: #DBEAFE; -fx-text-fill: #1D4ED8; -fx-padding: 2 6; -fx-background-radius: 4;"/>
+                                    <Label fx:id="lblPreviewDispoBadge" text="DISPONIBLE"
+                                           style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-padding: 2 6; -fx-background-radius: 4; -fx-background-color: #DCFCE7; -fx-text-fill: #15803D;"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button fx:id="btnClosePreview" text="✕" onAction="#handleCloseBookPreview"
+                                            style="-fx-background-color: transparent; -fx-text-fill: #94A3B8; -fx-font-size: 12px; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 0 4;"/>
+                                </HBox>
+
+                                <!-- Boîte Couverture centrée -->
+                                <VBox alignment="CENTER" spacing="4" style="-fx-padding: 2 0;">
+                                    <StackPane fx:id="previewCoverBox" minWidth="88" maxWidth="88" minHeight="120" maxHeight="120"
+                                               style="-fx-background-color: #E2E8F0; -fx-background-radius: 8; -fx-alignment: center; -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 8, 0, 0, 2);"/>
+                                </VBox>
+
+                                <!-- Titre & Auteur -->
+                                <VBox spacing="2" alignment="CENTER">
+                                    <Label fx:id="lblPreviewTitre" text="Titre du livre" wrapText="true" textAlignment="CENTER"
+                                           style="-fx-font-weight: 800; -fx-font-size: 13.5px; -fx-text-fill: #0F172A;"/>
+                                    <Label fx:id="lblPreviewAuteur" text="Auteur du livre" wrapText="true" textAlignment="CENTER"
+                                           style="-fx-font-size: 11.5px; -fx-text-fill: #64748B; -fx-font-weight: 500;"/>
+                                </VBox>
+
+                                <!-- Badges Genre, Thème, Niveau, ISBN -->
+                                <FlowPane hgap="4" vgap="4" alignment="CENTER">
+                                    <Label fx:id="lblPreviewGenre" text="Roman" styleClass="badge-genre"/>
+                                    <Label fx:id="lblPreviewTheme" text="Aventure" styleClass="badge-theme"/>
+                                    <Label fx:id="lblPreviewNiveau" text="Cycle 3" styleClass="badge-niveau"/>
+                                    <Label fx:id="lblPreviewIsbn" text="ISBN"
+                                           style="-fx-font-family: monospace; -fx-font-size: 9.5px; -fx-text-fill: #64748B; -fx-background-color: #F1F5F9; -fx-padding: 1 5; -fx-background-radius: 4;"/>
+                                </FlowPane>
+
+                                <!-- Stepper de Quantité d'exemplaires dans la boîte -->
+                                <VBox spacing="4" alignment="CENTER" style="-fx-padding: 4 0; -fx-background-color: #F8FAFC; -fx-background-radius: 8; -fx-border-color: #E2E8F0; -fx-border-radius: 8;">
+                                    <Label fx:id="lblPreviewCopiesBadge" text="📦 1 exemplaire dans la boîte"
+                                           style="-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #334155;"/>
+                                    <HBox alignment="CENTER" spacing="12">
+                                        <Button fx:id="btnPreviewQtyMinus" text="−" onAction="#handlePreviewQtyMinus"
+                                                styleClass="btn-outline" style="-fx-font-weight: 900; -fx-font-size: 13px; -fx-padding: 2 10; -fx-cursor: hand;"/>
+                                        <Label fx:id="lblPreviewQtyCount" text="1"
+                                               style="-fx-font-size: 14px; -fx-font-weight: 800; -fx-text-fill: #1E293B;"/>
+                                        <Button fx:id="btnPreviewQtyPlus" text="+" onAction="#handlePreviewQtyPlus"
+                                                styleClass="btn-outline" style="-fx-font-weight: 900; -fx-font-size: 13px; -fx-padding: 2 10; -fx-cursor: hand;"/>
+                                    </HBox>
+                                    <Button fx:id="btnPreviewAddOtherCopies" text="➕ Ajouter tous les autres exemplaires"
+                                            visible="false" managed="false" onAction="#handlePreviewAddOtherCopies"
+                                            style="-fx-background-color: #0284C7; -fx-text-fill: white; -fx-font-size: 10.5px; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 3 8; -fx-background-radius: 4;"/>
+                                </VBox>
+
+                                <!-- Résumé dans un ScrollPane compact -->
+                                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" VBox.vgrow="ALWAYS"
+                                            style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: #F1F5F9; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 4 6;">
+                                    <Label fx:id="lblPreviewDescription" text="Description..." wrapText="true"
+                                           style="-fx-font-size: 11px; -fx-text-fill: #475569; -fx-font-style: italic;"/>
+                                </ScrollPane>
+
+                                <!-- Actions : Ressources pédagogiques & Retirer de la mallette -->
+                                <VBox spacing="6" style="-fx-padding: 4 0 0 0;">
+                                    <Button fx:id="btnPreviewRessources" text="📚 Ressources pédagogiques (0)"
+                                            styleClass="btn-blue" onAction="#handlePreviewRessources"
+                                            maxWidth="Infinity" style="-fx-font-size: 11.5px; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 6 10;"/>
+                                    <Button fx:id="btnPreviewRetirerTous" text="🗑️ Retirer ce titre de la boîte"
+                                            styleClass="btn-outline" onAction="#handlePreviewRetirerTous"
+                                            maxWidth="Infinity" style="-fx-font-size: 11px; -fx-text-fill: #DC2626; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 5 10;"/>
+                                    <Button fx:id="btnPreviewRetirer" text="❌ Retirer seulement cet exemplaire"
+                                            visible="false" managed="false" styleClass="btn-outline" onAction="#handlePreviewRetirer"
+                                            maxWidth="Infinity" style="-fx-font-size: 10px; -fx-text-fill: #64748B; -fx-cursor: hand; -fx-padding: 3 8;"/>
+                                </VBox>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+
+                    <!-- ── Onglet 2 : Ressources Pédagogiques ─────────────────── -->
+                    <VBox fx:id="paneRessources" spacing="10" VBox.vgrow="ALWAYS" visible="false" managed="false"
+                          styleClass="mockup-card" style="-fx-padding: 14;">
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <VBox spacing="2">
+                                <Label text="📚 Ressources Pédagogiques &amp; Exploitation" style="-fx-font-weight: 800; -fx-font-size: 14px;"/>
+                                <Label text="Fiches d'activités, pistes d'exploitation pédagogique et liens Éduscol liés à cette mallette"
+                                       style="-fx-font-size: 11.5px; -fx-text-fill: #64748B;"/>
+                            </VBox>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="btnAddRessourceMallette" text="➕ Ajouter un document / lien" styleClass="btn-blue"
+                                    onAction="#handleRessourcesMallette" style="-fx-font-size: 11.5px;"/>
+                        </HBox>
+
+                        <TableView fx:id="tableRessourcesMallette" VBox.vgrow="ALWAYS">
                             <columns>
-                                <TableColumn fx:id="colItemExId" text="N° Ex." prefWidth="75"/>
-                                <TableColumn fx:id="colItemTitre" text="Titre de l'ouvrage" prefWidth="170"/>
-                                <TableColumn fx:id="colItemAuteur" text="Auteur" prefWidth="120"/>
-                                <TableColumn fx:id="colItemGenre" text="Genre" prefWidth="85"/>
-                                <TableColumn fx:id="colItemStatut" text="Disponibilité" prefWidth="95"/>
-                                <TableColumn fx:id="colItemCopies" text="Ex. en boîte" prefWidth="95"/>
-                                <TableColumn fx:id="colItemRessources" text="Ressources" prefWidth="105"/>
-                                <TableColumn fx:id="colItemAction" text="Action" prefWidth="75"/>
+                                <TableColumn fx:id="colResType" text="Type" prefWidth="90"/>
+                                <TableColumn fx:id="colResTitre" text="Titre de la ressource" prefWidth="240"/>
+                                <TableColumn fx:id="colResCible" text="Associé à" prefWidth="180"/>
+                                <TableColumn fx:id="colResAction" text="Actions" prefWidth="140"/>
                             </columns>
                             <placeholder>
-                                <VBox alignment="CENTER" spacing="6" style="-fx-padding: 20;">
-                                    <Label text="📭" style="-fx-font-size: 24px;"/>
-                                    <Label text="Cette mallette est encore vide." style="-fx-font-weight: 600; -fx-text-fill: #64748B;"/>
-                                    <Label text="Tapez un nom de livre ci-dessus ou utilisez le bouton magique 'Remplir par thème'." style="-fx-font-size: 11px; -fx-text-fill: #94A3B8;"/>
+                                <VBox alignment="CENTER" spacing="8" style="-fx-padding: 30;">
+                                    <Label text="📎" style="-fx-font-size: 30px;"/>
+                                    <Label text="Aucune ressource pédagogique associée pour le moment." style="-fx-font-weight: 600; -fx-text-fill: #64748B;"/>
+                                    <Label text="Cliquez sur '➕ Ajouter un document / lien' pour enrichir cette collection." style="-fx-font-size: 11.5px; -fx-text-fill: #94A3B8;"/>
                                 </VBox>
                             </placeholder>
                         </TableView>
                     </VBox>
 
-                    <!-- Colonne Droite : Volet Fiche / Inspecteur de l'ouvrage sélectionné -->
-                    <VBox fx:id="cardBookPreview" visible="false" managed="false" spacing="8"
-                          prefWidth="290" minWidth="270" maxWidth="330"
-                          styleClass="mockup-card">
+                    <!-- ── Onglet 3 : Historique des Prêts ───────────────────── -->
+                    <VBox fx:id="paneHistorique" spacing="10" VBox.vgrow="ALWAYS" visible="false" managed="false"
+                          styleClass="mockup-card" style="-fx-padding: 14;">
+                        <VBox spacing="2">
+                            <Label text="📜 Historique des Prêts aux Classes" style="-fx-font-weight: 800; -fx-font-size: 14px;"/>
+                            <Label text="Suivi chronologique des sorties de cette mallette dans l'école"
+                                   style="-fx-font-size: 11.5px; -fx-text-fill: #64748B;"/>
+                        </VBox>
 
-                        <!-- En-tête de la fiche d'aperçu -->
-                        <HBox alignment="CENTER_LEFT" spacing="6">
-                            <Label text="📖 Fiche Ouvrage"
-                                   style="-fx-font-weight: 800; -fx-font-size: 12.5px; -fx-text-fill: #1E3A8A;"/>
-                            <Label fx:id="lblPreviewExemplaireId" text="#--"
-                                   style="-fx-font-family: monospace; -fx-font-weight: 800; -fx-font-size: 10.5px; -fx-background-color: #DBEAFE; -fx-text-fill: #1D4ED8; -fx-padding: 2 6; -fx-background-radius: 4;"/>
-                            <Label fx:id="lblPreviewDispoBadge" text="DISPONIBLE"
-                                   style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-padding: 2 6; -fx-background-radius: 4; -fx-background-color: #DCFCE7; -fx-text-fill: #15803D;"/>
+                        <TableView fx:id="tableHistoriqueMallette" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colHistClasse" text="Classe &amp; Enseignant" prefWidth="220"/>
+                                <TableColumn fx:id="colHistSortie" text="Date de Sortie" prefWidth="130"/>
+                                <TableColumn fx:id="colHistRetour" text="Date de Retour" prefWidth="150"/>
+                                <TableColumn fx:id="colHistStatut" text="Statut" prefWidth="110"/>
+                            </columns>
+                            <placeholder>
+                                <VBox alignment="CENTER" spacing="8" style="-fx-padding: 30;">
+                                    <Label text="📜" style="-fx-font-size: 30px;"/>
+                                    <Label text="Aucun prêt enregistré pour le moment pour cette mallette." style="-fx-font-weight: 600; -fx-text-fill: #64748B;"/>
+                                </VBox>
+                            </placeholder>
+                        </TableView>
+                    </VBox>
+
+                    <!-- ── Onglet 4 : Informations & Pédagogie ────────────────── -->
+                    <VBox fx:id="paneInfos" spacing="12" VBox.vgrow="ALWAYS" visible="false" managed="false"
+                          styleClass="mockup-card" style="-fx-padding: 16;">
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="ℹ️ Fiche Pédagogique &amp; Informations" style="-fx-font-weight: 800; -fx-font-size: 14.5px;"/>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <Button fx:id="btnClosePreview" text="✕" onAction="#handleCloseBookPreview"
-                                    style="-fx-background-color: transparent; -fx-text-fill: #94A3B8; -fx-font-size: 12px; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 0 4;"/>
+                            <Button fx:id="btnEditMalletteInfos" text="✏️ Modifier ces informations" styleClass="btn-outline"
+                                    onAction="#handleEditMallette" style="-fx-font-size: 11.5px;"/>
                         </HBox>
 
-                        <!-- Boîte Couverture centrée avec ombre élégante -->
-                        <VBox alignment="CENTER" spacing="4" style="-fx-padding: 2 0;">
-                            <StackPane fx:id="previewCoverBox" minWidth="88" maxWidth="88" minHeight="120" maxHeight="120"
-                                       style="-fx-background-color: #E2E8F0; -fx-background-radius: 8; -fx-alignment: center; -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 8, 0, 0, 2);"/>
+                        <VBox spacing="10" style="-fx-background-color: #F8FAFC; -fx-background-radius: 8; -fx-padding: 14; -fx-border-color: #E2E8F0; -fx-border-radius: 8;">
+                            <GridPane hgap="12" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints minWidth="130" prefWidth="150"/>
+                                    <ColumnConstraints hgrow="ALWAYS"/>
+                                </columnConstraints>
+
+                                <Label text="Thème :" style="-fx-font-weight: 700; -fx-text-fill: #475569;" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <Label fx:id="lblInfoTheme" text="–" style="-fx-font-weight: 600; -fx-text-fill: #1E293B;" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                                <Label text="Niveau recommandé :" style="-fx-font-weight: 700; -fx-text-fill: #475569;" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <Label fx:id="lblInfoNiveau" text="–" style="-fx-font-weight: 600; -fx-text-fill: #1E293B;" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                                <Label text="Date de création :" style="-fx-font-weight: 700; -fx-text-fill: #475569;" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                <Label fx:id="lblInfoDateCreation" text="–" style="-fx-font-weight: 600; -fx-text-fill: #1E293B;" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                                <Label text="Contenu :" style="-fx-font-weight: 700; -fx-text-fill: #475569;" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                <Label fx:id="lblInfoStats" text="–" style="-fx-font-weight: 600; -fx-text-fill: #1E293B;" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                            </GridPane>
                         </VBox>
 
-                        <!-- Titre & Auteur -->
-                        <VBox spacing="2" alignment="CENTER">
-                            <Label fx:id="lblPreviewTitre" text="Titre du livre" wrapText="true" textAlignment="CENTER"
-                                   style="-fx-font-weight: 800; -fx-font-size: 13.5px; -fx-text-fill: #0F172A;"/>
-                            <Label fx:id="lblPreviewAuteur" text="Auteur du livre" wrapText="true" textAlignment="CENTER"
-                                   style="-fx-font-size: 11.5px; -fx-text-fill: #64748B; -fx-font-weight: 500;"/>
-                        </VBox>
-
-                        <!-- Badges Genre, Thème, Niveau, ISBN -->
-                        <FlowPane hgap="4" vgap="4" alignment="CENTER">
-                            <Label fx:id="lblPreviewGenre" text="Roman" styleClass="badge-genre"/>
-                            <Label fx:id="lblPreviewTheme" text="Aventure" styleClass="badge-theme"/>
-                            <Label fx:id="lblPreviewNiveau" text="Cycle 3" styleClass="badge-niveau"/>
-                            <Label fx:id="lblPreviewIsbn" text="ISBN"
-                                   style="-fx-font-family: monospace; -fx-font-size: 9.5px; -fx-text-fill: #64748B; -fx-background-color: #F1F5F9; -fx-padding: 1 5; -fx-background-radius: 4;"/>
-                        </FlowPane>
-
-                        <!-- Indicateur d'exemplaires dans la boîte & en BCD -->
-                        <VBox spacing="4" alignment="CENTER" style="-fx-padding: 2 0;">
-                            <Label fx:id="lblPreviewCopiesBadge" text="📦 1 exemplaire"
-                                   style="-fx-font-size: 11px; -fx-font-weight: 700; -fx-background-color: #F1F5F9; -fx-text-fill: #334155; -fx-padding: 3 8; -fx-background-radius: 6;"/>
-                            <Button fx:id="btnPreviewAddOtherCopies" text="➕ Ajouter les autres exemplaires"
-                                    visible="false" managed="false" onAction="#handlePreviewAddOtherCopies"
-                                    style="-fx-background-color: #0284C7; -fx-text-fill: white; -fx-font-size: 10.5px; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 3 8; -fx-background-radius: 4;"/>
-                        </VBox>
-
-                        <!-- Résumé dans un ScrollPane compact qui ne pousse pas les boutons -->
-                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" VBox.vgrow="ALWAYS"
-                                    style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: #F1F5F9; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 4 6;">
-                            <Label fx:id="lblPreviewDescription" text="Description..." wrapText="true"
-                                    style="-fx-font-size: 11px; -fx-text-fill: #475569; -fx-font-style: italic;"/>
-                        </ScrollPane>
-
-                        <!-- Actions : Ressources pédagogiques & Retirer de la mallette -->
-                        <VBox spacing="6" style="-fx-padding: 4 0 0 0;">
-                            <Button fx:id="btnPreviewRessources" text="📚 Ressources pédagogiques (0)"
-                                    styleClass="btn-blue" onAction="#handlePreviewRessources"
-                                    maxWidth="Infinity" style="-fx-font-size: 11.5px; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 7 10;"/>
-                            <Button fx:id="btnPreviewRetirer" text="❌ Retirer cet exemplaire"
-                                    styleClass="btn-outline" onAction="#handlePreviewRetirer"
-                                    maxWidth="Infinity" style="-fx-font-size: 11px; -fx-text-fill: #DC2626; -fx-cursor: hand; -fx-padding: 5 10;"/>
-                            <Button fx:id="btnPreviewRetirerTous" text="🗑️ Retirer tous les exemplaires de ce titre"
-                                    visible="false" managed="false" styleClass="btn-outline" onAction="#handlePreviewRetirerTous"
-                                    maxWidth="Infinity" style="-fx-font-size: 10.5px; -fx-text-fill: #DC2626; -fx-cursor: hand; -fx-padding: 4 8;"/>
+                        <VBox spacing="6">
+                            <Label text="Notes pédagogiques &amp; Pistes d'exploitation :" style="-fx-font-weight: 700; -fx-text-fill: #334155; -fx-font-size: 12.5px;"/>
+                            <ScrollPane fitToWidth="true" styleClass="tab-scroll-pane" style="-fx-background-color: #FFFFFF; -fx-border-color: #E2E8F0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10;">
+                                <Label fx:id="lblInfoDescription" text="Aucune note pédagogique particulière." wrapText="true"
+                                       style="-fx-font-size: 12px; -fx-text-fill: #475569; -fx-line-spacing: 3px;"/>
+                            </ScrollPane>
                         </VBox>
                     </VBox>
 
-                </HBox>
+                </StackPane>
 
             </VBox>
         </VBox>

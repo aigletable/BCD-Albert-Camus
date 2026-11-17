@@ -1054,3 +1054,81 @@
     -fx-background-color: transparent;
     -fx-background-insets: 0;
 }
+
+/* ── 30. Refonte Visuelle & Ergonomique de l'Onglet Mallettes (Mode Nuit) ── */
+.kpi-pill {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+    -fx-text-fill: #E2E8F0;
+}
+
+.mallette-card {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.mallette-card:hover {
+    -fx-border-color: #60A5FA;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 2);
+}
+
+.mallette-card-selected {
+    -fx-background-color: #0F172A;
+    -fx-border-color: #3B82F6;
+    -fx-border-width: 1.5px;
+}
+
+.mallette-list-view {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-width: 0;
+}
+
+.mallette-list-view .list-cell {
+    -fx-background-color: transparent;
+}
+
+.mallette-list-view .list-cell:selected {
+    -fx-background-color: transparent;
+}
+
+.book-grid-card {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.book-grid-card:hover {
+    -fx-border-color: #3B82F6;
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.25), 8, 0, 0, 3);
+}
+
+.book-rm-btn {
+    -fx-background-color: rgba(239, 68, 68, 0.2);
+    -fx-text-fill: #F87171;
+}
+
+.book-rm-btn:hover {
+    -fx-background-color: #EF4444;
+    -fx-text-fill: #FFFFFF;
+}
+
+.tab-nav-btn {
+    -fx-text-fill: #94A3B8;
+}
+
+.tab-nav-btn:hover {
+    -fx-text-fill: #F1F5F9;
+}
+
+.tab-nav-btn-active {
+    -fx-text-fill: #60A5FA;
+    -fx-font-weight: 700;
+    -fx-border-color: transparent transparent #60A5FA transparent;
+    -fx-border-width: 0 0 3 0;
+}
+
+.tab-nav-bar {
+    -fx-border-color: #334155;
+    -fx-border-width: 0 0 1 0;
+}
+
