@@ -1,409 +1,2645 @@
 <!DOCTYPE html>
-<html lang="fr"><head><meta charset="utf-8"><title>BCD Express – Prototype Interactif & Enquête</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BCD Express – École Albert Camus Pasteur (Meudon)</title>
 <style>
-:root{--bg:#f1f4fb;--card:#fff;--p:#2f5be7;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--tx:#1e293b;--mut:#64748b;--bd:#e2e8f0}
-body.night{--bg:#0f172a;--card:#1e293b;--tx:#e2e8f0;--mut:#94a3b8;--bd:#334155}
-body.pastel{--bg:#faf6ee;--card:#fffdfa;--p:#e06c53;--ok:#2d9d68;--warn:#e69138;--bad:#d33838;--tx:#2c241b;--mut:#786c5e;--bd:#e6dbcd}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--tx);transition:background .15s,color .15s}
-header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;flex-wrap:wrap;gap:12px}
-h1{margin:0;font-size:22px}.sub{color:var(--mut);font-size:13px}
-.btn{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 14px;border-radius:10px;cursor:pointer;font-size:14px;font-family:inherit;transition:.15s}
-.btn:hover{border-color:var(--p)}.btn.pri{background:var(--p);color:#fff;border-color:var(--p);font-weight:600}
-.btn.big{padding:11px 22px;font-size:15px}.btn.danger{color:var(--bad)}
-.pills{display:flex;gap:10px;padding:0 24px;flex-wrap:wrap}
-.pill{background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:6px 14px;font-size:13px}.pill b{font-size:15px;color:var(--p)}
-.tools{display:flex;gap:10px;padding:14px 24px;align-items:center;flex-wrap:wrap}
-.tools input,.tools select{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font-size:14px;font-family:inherit}
-.tools input{flex:1;min-width:220px}
-main{display:grid;grid-template-columns:330px 1fr;gap:16px;padding:0 24px 24px;align-items:start}
-.main-single{display:block;padding:0 24px 24px}
-.list{display:flex;flex-direction:column;gap:10px}
-.mal{background:var(--card);border:2px solid transparent;border-left:6px solid var(--c);border-radius:14px;padding:12px 14px;cursor:pointer;box-shadow:0 1px 3px #0001;transition:.15s}
-.mal:hover{transform:translateY(-1px);box-shadow:0 3px 6px #0002}
-.mal.sel{border-color:var(--p);border-left-color:var(--c)}
-.mal .t{font-weight:700}.mal .m{color:var(--mut);font-size:12px;margin:2px 0 8px}
-.mal .r{display:flex;justify-content:space-between;align-items:center}
-.badge{font-size:12px;padding:3px 10px;border-radius:999px;font-weight:600}
-.b-ok{background:#dcfce7;color:#166534}.b-loan{background:#fef3c7;color:#92400e}.b-late{background:#fee2e2;color:#991b1b}
-.detail{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 1px 3px #0001;min-height:520px}
-.dh{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
-.dh h2{margin:0}.code{font-family:monospace;background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:6px;font-size:12px}
-.tags{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.tag{font-size:12px;padding:3px 10px;border-radius:8px;background:#e0f2fe;color:#075985}
-.acts{display:flex;gap:8px;position:relative}
-.menu{position:absolute;right:0;top:46px;background:var(--card);border:1px solid var(--bd);border-radius:10px;display:none;z-index:5;min-width:170px;box-shadow:0 8px 24px #0002}
-.menu.on{display:block}.menu div{padding:10px 14px;cursor:pointer;font-size:14px}.menu div:hover{background:var(--bg)}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin:12px 0 16px}
-.tab{padding:9px 16px;cursor:pointer;color:var(--mut);border-bottom:3px solid transparent;font-size:14px;font-weight:600;transition:.15s}
-.tab:hover{color:var(--tx)}
-.tab.on{color:var(--p);border-color:var(--p);font-weight:700}
-.alert{background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
-.book{position:relative;border:1px solid var(--bd);border-radius:12px;padding:10px;text-align:center;cursor:pointer;background:var(--card);transition:.15s}
-.book:hover{border-color:var(--p);transform:translateY(-2px);box-shadow:0 4px 10px #0002}
-.cover{height:130px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:42px;color:#fff;margin-bottom:8px;box-shadow:inset 0 0 0 1px #fff3}
-.book .bt{font-size:13px;font-weight:600;line-height:1.2;margin-bottom:3px}.book .ba{font-size:11px;color:var(--mut)}
-.qty{position:absolute;top:6px;right:6px;background:var(--p);color:#fff;border-radius:999px;font-size:12px;font-weight:700;padding:2px 9px}
-.rm{position:absolute;top:6px;left:6px;background:var(--bad);color:#fff;border:0;border-radius:8px;font-size:11px;padding:3px 8px;cursor:pointer;display:none}
-.book:hover .rm{display:block}
-.add{display:flex;gap:8px;margin-bottom:14px}.add input{flex:1;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx)}
-.drawer{position:fixed;right:-390px;top:0;bottom:0;width:370px;background:var(--card);box-shadow:-8px 0 30px #0003;padding:24px;transition:.25s;z-index:30;overflow:auto}
-.drawer.on{right:0}.drawer .cover{height:180px}
-table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:10px 12px;border-bottom:1px solid var(--bd);text-align:left}th{color:var(--mut);font-size:12px;text-transform:uppercase}
-.empty{color:var(--mut);text-align:center;padding:30px}
-.modal{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;z-index:40}
-.modal.on{display:flex}.modal .box{background:var(--card);border-radius:16px;padding:24px;width:400px;max-width:90vw}
-.modal select,.modal input,.modal textarea{width:100%;padding:10px;margin:6px 0 14px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font-family:inherit}
-.toast{position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 8px 24px #0004;z-index:99;display:none}
-.toast.on{display:block;animation:fade .2s}
-@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-</style></head><body>
+/* ── Reset & Variables CSS calquées 1:1 sur app.css et Primer AtlantaFX ── */
+:root {
+  --bg-canvas: #EEF4FA;
+  --bg-card: #FFFFFF;
+  --bg-subtle: #F8FAFC;
+  --border-color: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --primary: #1A66FF;
+  --primary-hover: #1252D6;
+  --primary-focus: rgba(26, 102, 255, 0.2);
+  --text-main: #0F172A;
+  --text-sub: #475569;
+  --text-muted: #64748B;
+  --success-bg: #F0FDF4;
+  --success-text: #15803D;
+  --success-border: #22C55E;
+  --warning-bg: #FFF7ED;
+  --warning-text: #C2410C;
+  --warning-border: #FB923C;
+  --danger-bg: #FEF2F2;
+  --danger-text: #DC2626;
+  --danger-border: #F87171;
+  --blue-badge-bg: #EFF6FF;
+  --blue-badge-text: #1D4ED8;
+  --blue-badge-border: #60A5FA;
+  --purple-badge-bg: #FAF5FF;
+  --purple-badge-text: #7E22CE;
+  --purple-badge-border: #D8B4FE;
+  --table-alt-row: #FAFCFF;
+  --table-hover-row: #F0F6FF;
+  --table-selected-row: #EBF2FF;
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 2px 10px rgba(15, 23, 42, 0.04);
+  --shadow-modal: 0 20px 40px rgba(15, 23, 42, 0.2);
+}
 
-<header>
+body.dark-mode {
+  --bg-canvas: #0B1120;
+  --bg-card: #1E293B;
+  --bg-subtle: #0F172A;
+  --border-color: #334155;
+  --border-strong: #475569;
+  --primary: #3B82F6;
+  --primary-hover: #2563EB;
+  --primary-focus: rgba(59, 130, 246, 0.25);
+  --text-main: #F8FAFC;
+  --text-sub: #CBD5E1;
+  --text-muted: #94A3B8;
+  --success-bg: #064E3B;
+  --success-text: #6EE7B7;
+  --success-border: #059669;
+  --warning-bg: #7C2D12;
+  --warning-text: #FDBA74;
+  --warning-border: #EA580C;
+  --danger-bg: #7F1D1D;
+  --danger-text: #FCA5A5;
+  --danger-border: #DC2626;
+  --blue-badge-bg: #1E3A8A;
+  --blue-badge-text: #93C5FD;
+  --blue-badge-border: #3B82F6;
+  --purple-badge-bg: #581C87;
+  --purple-badge-text: #E9D5FF;
+  --purple-badge-border: #A855F7;
+  --table-alt-row: #1E293B;
+  --table-hover-row: #2D3D58;
+  --table-selected-row: #1E3A8A;
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Fenêtre Application Virtuelle & En-tête macOS ──────────────────────── */
+.app-window-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.macos-titlebar {
+  background: #E8ECEF;
+  border-bottom: 1px solid #D0D7DE;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  user-select: none;
+}
+body.dark-mode .macos-titlebar {
+  background: #182234;
+  border-bottom: 1px solid #334155;
+}
+
+.macos-traffic-lights {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.traffic-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  cursor: pointer;
+}
+.dot-red { background: #FF5F56; border: 1px solid #E0443E; }
+.dot-yellow { background: #FFBD2E; border: 1px solid #DEA123; }
+.dot-green { background: #27C93F; border: 1px solid #1AAB29; }
+
+.macos-window-title {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  margin-right: 50px;
+}
+body.dark-mode .macos-window-title {
+  color: #94A3B8;
+}
+
+/* ── 1. Bandeau supérieur officiel de l'école (top-school-header) ──────── */
+.top-school-header {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.brand-box {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+}
+
+.brand-logo-icon {
+  font-size: 14px;
+  color: white;
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  border-radius: 8px;
+  min-width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.brand-title {
+  font-weight: 800;
+  font-size: 17px;
+  color: #1D4ED8;
+  letter-spacing: -0.2px;
+}
+body.dark-mode .brand-title {
+  color: #60A5FA;
+}
+
+.brand-separator {
+  color: #CBD5E1;
+  font-size: 14px;
+}
+
+.school-name-badge {
+  background-color: var(--bg-subtle);
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kpi-header-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kpi-pill-livres {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-sub);
+  background-color: var(--bg-subtle);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+}
+
+.kpi-pill-prets {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1D4ED8;
+  background-color: var(--blue-badge-bg);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--blue-badge-border);
+}
+
+.header-spacer {
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── 2. Onglets de Navigation TabPane (AtlantaFX Cupertino style) ───────── */
+.tab-header-area {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 24px;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.tab-nav-item {
+  height: 44px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.tab-nav-item:hover {
+  color: var(--primary);
+  background-color: rgba(26, 102, 255, 0.03);
+}
+
+.tab-nav-item.active {
+  color: var(--primary);
+  font-weight: 700;
+  border-bottom-color: var(--primary);
+}
+
+/* ── Contenu d'onglet général ─────────────────────────────────────────── */
+.tab-content-container {
+  padding: 20px 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.screen-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+/* ── Boutons standards conformes à app.css ─────────────────────────────── */
+.btn-blue {
+  background-color: var(--primary);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(26, 102, 255, 0.25);
+  font-family: inherit;
+  transition: background-color 0.15s;
+}
+.btn-blue:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-outline {
+  background-color: var(--bg-card);
+  color: var(--text-sub);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.btn-outline:hover {
+  background-color: var(--bg-subtle);
+  border-color: #94A3B8;
+  color: var(--text-main);
+}
+
+.btn-danger-outline {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--danger-border);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+.btn-danger-outline:hover {
+  filter: brightness(0.95);
+}
+
+.btn-emerald {
+  background-color: #16A34A;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  transition: background-color 0.15s;
+}
+.btn-emerald:hover {
+  background-color: #15803D;
+}
+
+.btn-sm {
+  font-size: 11.5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+/* ── Cartes style Maquette (.mockup-card) ──────────────────────────────── */
+.mockup-card {
+  background-color: var(--bg-card);
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.mockup-card-accent {
+  background-color: var(--bg-card);
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* ── Cartes KPI (3 ou 4 colonnes) ─────────────────────────────────────── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.kpi-card {
+  background-color: var(--bg-card);
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+.kpi-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.kpi-icon-box-emerald { background-color: #ECFDF5; color: #059669; }
+.kpi-icon-box-orange { background-color: #FFF7ED; color: #EA580C; }
+.kpi-icon-box-blue { background-color: #EFF6FF; color: #2563EB; }
+.kpi-icon-box-purple { background-color: #FAF5FF; color: #9333EA; }
+
+.kpi-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+/* ── Champs de formulaire & Tableaux ─────────────────────────────────── */
+.input-text, .select-combo {
+  background-color: var(--bg-subtle);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-main);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input-text:focus, .select-combo:focus {
+  background-color: var(--bg-card);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-focus);
+}
+
+.table-responsive {
+  width: 100%;
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table-responsive th {
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 11.5px;
+  text-align: left;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 0.3px;
+}
+
+.table-responsive td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.table-responsive tr:nth-child(even) {
+  background-color: var(--table-alt-row);
+}
+.table-responsive tr:hover {
+  background-color: var(--table-hover-row);
+}
+.table-responsive tr.selected {
+  background-color: var(--table-selected-row);
+}
+
+/* ── Pastilles de statut (.pill-green, .pill-orange, etc.) ─────────────── */
+.pill-green {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success-border);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 10px;
+  display: inline-block;
+}
+
+.pill-orange {
+  background-color: var(--warning-bg);
+  color: var(--warning-text);
+  border: 1px solid var(--warning-border);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 10px;
+  display: inline-block;
+}
+
+.pill-blue {
+  background-color: var(--blue-badge-bg);
+  color: var(--blue-badge-text);
+  border: 1px solid var(--blue-badge-border);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 10px;
+  display: inline-block;
+}
+
+.pill-red {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger-border);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 10px;
+  display: inline-block;
+}
+
+.badge-genre {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-weight: 700;
+  font-size: 11px;
+}
+.badge-genre-bd { background-color: #FEF3C7; color: #92400E; border-color: #FCD34D; }
+.badge-genre-roman { background-color: #E0F2FE; color: #0369A1; border-color: #7DD3FC; }
+.badge-genre-album { background-color: #DCFCE7; color: #15803D; border-color: #86EFAC; }
+.badge-genre-documentaire { background-color: #E0E7FF; color: #4338CA; border-color: #A5B4FC; }
+
+.badge-theme {
+  background-color: #F0FDF4;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.badge-niveau {
+  background-color: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+/* ── SplitPane Layouts ─────────────────────────────────────────────────── */
+.split-pane-layout {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+.split-60-40 {
+  grid-template-columns: 3fr 2fr;
+}
+.split-65-35 {
+  grid-template-columns: 65fr 35fr;
+}
+.split-32-68 {
+  grid-template-columns: 320px 1fr;
+}
+
+@media (max-width: 980px) {
+  .split-60-40, .split-65-35, .split-32-68 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Barre de statut inférieure ────────────────────────────────────────── */
+.status-bar {
+  padding: 8px 14px;
+  background-color: var(--bg-subtle);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Mallettes & Livres Visual Grid (Apple Books style) ─────────────────── */
+.book-cover-box {
+  width: 72px;
+  height: 98px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  text-align: center;
+  padding: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.book-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 14px;
+}
+
+.book-grid-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.book-grid-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+.book-qty-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: var(--primary);
+  color: white;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.book-rm-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: var(--danger-text);
+  color: white;
+  border: none;
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: none;
+}
+.book-grid-card:hover .book-rm-btn {
+  display: block;
+}
+
+.mallette-card-item {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 6px solid #3B82F6;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.15s ease;
+  margin-bottom: 8px;
+}
+.mallette-card-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+.mallette-card-item.selected {
+  border-color: var(--primary);
+  background-color: var(--table-selected-row);
+}
+
+/* ── Modales et Tiroirs ────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-dialog-box {
+  background-color: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  width: 540px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 800;
+}
+.modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background-color: var(--bg-subtle);
+  border-radius: 0 0 16px 16px;
+}
+
+/* ── Tiroir Inspecteur ─────────────────────────────────────────────────── */
+.inspector-drawer {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 400px;
+  max-width: 90vw;
+  height: 100vh;
+  background-color: var(--bg-card);
+  box-shadow: -6px 0 24px rgba(0,0,0,0.18);
+  border-left: 1px solid var(--border-color);
+  transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 120;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.inspector-drawer.active {
+  right: 0;
+}
+
+/* ── Feedback Badge Enseignant ────────────────────────────────────────── */
+.teacher-feedback-pill {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  color: #92400E;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.15s;
+}
+.teacher-feedback-pill:hover {
+  transform: scale(1.03);
+}
+
+.toast-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #0F172A;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  z-index: 200;
+  display: none;
+}
+.toast-notification.active {
+  display: block;
+  animation: slideToast 0.25s ease-out;
+}
+@keyframes slideToast {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-window-frame">
+
+  <!-- ── 0. macOS Window Title Bar (Traffic Lights) ───────────────────────── -->
+  <div class="macos-titlebar">
+    <div class="macos-traffic-lights">
+      <span class="traffic-dot dot-red" title="Fermer" onclick="showToast('Fenêtre BCD Express fermée')"></span>
+      <span class="traffic-dot dot-yellow" title="Réduire" onclick="showToast('Fenêtre réduite dans le Dock')"></span>
+      <span class="traffic-dot dot-green" title="Agrandir / Plein écran" onclick="toggleFullscreen()"></span>
+    </div>
+    <div class="macos-window-title">BCD Express – École Albert Camus Pasteur (Meudon)</div>
+  </div>
+
+  <!-- ── 1. Bandeau supérieur officiel de l'école (top-school-header) ──────── -->
+  <header class="top-school-header">
+    <div class="brand-box">
+      <div class="brand-logo-icon">📖</div>
+      <span class="brand-title">BCD Express</span>
+    </div>
+    <span class="brand-separator">|</span>
+    <div class="school-name-badge">
+      <span>🏫 École Albert Camus Pasteur • Meudon</span>
+    </div>
+    <div class="kpi-header-box">
+      <span class="kpi-pill-livres" id="header-kpi-livres">📚 818 livres</span>
+      <span class="kpi-pill-prets" id="header-kpi-prets">🎒 4 emprunts</span>
+    </div>
+
+    <div class="header-spacer"></div>
+
+    <div class="header-actions">
+      <button class="teacher-feedback-pill" onclick="openFeedbackModal()">
+        💬 Donner mon avis d'enseignant
+      </button>
+      <button class="btn-outline btn-sm" onclick="openSauvegardesModal()">
+        💾 Sauvegardes
+      </button>
+      <button class="btn-outline btn-sm" id="btn-theme-toggle" onclick="toggleTheme()">
+        🌙 Mode Sombre
+      </button>
+    </div>
+  </header>
+
+  <!-- ── 2. AtlantaFX Cupertino TabPane Header (6 Onglets exacts) ─────────── -->
+  <nav class="tab-header-area" id="main-tab-nav">
+    <button class="tab-nav-item active" data-tab="tab-prets" onclick="switchMainTab('tab-prets')">
+      📖 Prêts &amp; Retours
+    </button>
+    <button class="tab-nav-item" data-tab="tab-inventaire" onclick="switchMainTab('tab-inventaire')">
+      📚 Inventaire &amp; Livres
+    </button>
+    <button class="tab-nav-item" data-tab="tab-etiquettes" onclick="switchMainTab('tab-etiquettes')">
+      🏷️ Étiquettes
+    </button>
+    <button class="tab-nav-item" data-tab="tab-recolement" onclick="switchMainTab('tab-recolement')">
+      📋 Récolement
+    </button>
+    <button class="tab-nav-item" data-tab="tab-utilisateurs" onclick="switchMainTab('tab-utilisateurs')">
+      👥 Utilisateurs
+    </button>
+    <button class="tab-nav-item" data-tab="tab-mallettes" onclick="switchMainTab('tab-mallettes')">
+      🎒 Mallettes Thématiques
+    </button>
+  </nav>
+
+  <!-- ── 3. CONTENUS DES 6 ONGLETS MÉTIER ─────────────────────────────────── -->
+  <main style="flex:1; display:flex; flex-direction:column;">
+
+    <!-- ==================================================================== -->
+    <!-- ONGLET 1 : PRÊTS & RETOURS (prets.fxml)                               -->
+    <!-- ==================================================================== -->
+    <div class="tab-content-container" id="tab-prets" style="display:flex;">
+      <!-- En-tête : Titre & Actions principales -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <h1 class="screen-title">Prêts &amp; Retours</h1>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-outline" onclick="openPanierModal()">🧺 Panier Enseignant</button>
+          <button class="btn-outline" onclick="openBilanModal()">📊 Bilan &amp; Stats</button>
+          <button class="btn-outline" onclick="exportRetardsCsv()">📤 Exporter retards</button>
+          <button class="btn-blue" onclick="openNewLoanModal()">➕ Nouvel emprunt</button>
+        </div>
+      </div>
+
+      <!-- 3 Cartes KPI cliquables -->
+      <div class="kpi-row">
+        <div class="kpi-card" onclick="filterLoans('ALL')">
+          <div class="kpi-icon-box kpi-icon-box-emerald">📖</div>
+          <div>
+            <div class="kpi-title">Prêts en cours</div>
+            <div class="kpi-value" id="kpi-prets-total">4</div>
+          </div>
+        </div>
+        <div class="kpi-card" onclick="filterLoans('RETARDS')">
+          <div class="kpi-icon-box kpi-icon-box-orange">⏰</div>
+          <div>
+            <div class="kpi-title">Retards</div>
+            <div class="kpi-value" style="color:#EA580C;" id="kpi-prets-retards">1</div>
+          </div>
+        </div>
+        <div class="kpi-card" onclick="filterLoans('TODAY')">
+          <div class="kpi-icon-box kpi-icon-box-blue">📅</div>
+          <div>
+            <div class="kpi-title">Retours du jour</div>
+            <div class="kpi-value" style="color:#1A66FF;" id="kpi-prets-today">6</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions : Scanner douchette (Gauche) + Recherche & Filtres (Droite) -->
+      <div style="display:grid; grid-template-columns:380px 1fr; gap:14px; align-items:center;">
+        <!-- Scanner Douchette -->
+        <div class="mockup-card-accent" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="card-title">⚡ Scanner un exemplaire (Retour direct)</span>
+            <span class="pill-green" style="font-size:10.5px;">⚡ Douchette active</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" class="input-text" id="quickReturnInput"
+                   placeholder="Code-barres ou N° d'exemplaire (ex: #2219)…" style="flex:1;"
+                   onkeydown="if(event.key==='Enter') executeQuickReturn()">
+            <button class="btn-blue" onclick="executeQuickReturn()">Retourner</button>
+          </div>
+          <div id="quickReturnMsg" style="font-size:11.5px; font-weight:bold; min-height:16px;"></div>
+        </div>
+
+        <!-- Recherche & Filtres -->
+        <div class="mockup-card" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <input type="text" class="input-text" id="loanSearchInput"
+                 placeholder="🔍 Rechercher un élève, un livre, N° exemplaire…" style="flex:1; min-width:220px;"
+                 oninput="renderLoansTable()">
+          <span style="font-weight:600; font-size:12px; color:var(--text-muted);">Classe</span>
+          <select class="select-combo" id="loanClassFilter" onchange="renderLoansTable()">
+            <option value="">Toutes</option>
+            <option value="CP">CP</option>
+            <option value="CE1">CE1</option>
+            <option value="CE1-A">CE1-A</option>
+            <option value="CM1-A">CM1-A</option>
+            <option value="CM2-A">CM2-A</option>
+            <option value="CM2-B">CM2-B</option>
+          </select>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600;">
+            <input type="checkbox" id="loanLateCheck" onchange="renderLoansTable()"> ⚠️ En retard
+          </label>
+          <button class="btn-outline" onclick="resetLoansView()">🔄</button>
+        </div>
+      </div>
+
+      <!-- Tableau des emprunts -->
+      <div style="overflow-x:auto;">
+        <table class="table-responsive" id="table-loans">
+          <thead>
+            <tr>
+              <th style="width:85px;">N° EX.</th>
+              <th style="width:300px;">LIVRE</th>
+              <th style="width:230px;">ÉLÈVE</th>
+              <th style="width:110px;">DATE PRÊT</th>
+              <th style="width:120px;">RETOUR PRÉVU</th>
+              <th style="width:160px;">STATUT</th>
+              <th style="width:170px;">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="loans-tbody">
+            <!-- Rendu dynamique JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Barre de statut inférieure -->
+      <div class="status-bar">
+        <span id="loans-status-text">4 emprunts affichés</span>
+        <div style="flex:1;"></div>
+        <span style="font-weight:700; font-size:12px;" id="loans-chip-stats">4 en cours • 1 en retard • 0 à déclarer perdu</span>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- ONGLET 2 : INVENTAIRE & LIVRES (inventaire.fxml)                     -->
+    <!-- ==================================================================== -->
+    <div class="tab-content-container" id="tab-inventaire" style="display:none;">
+      <!-- En-tête : Titre & Actions principales -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <h1 class="screen-title">Inventaire &amp; Livres</h1>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-blue" style="background-color:#6366F1;" onclick="openModeDouchetteModal()">
+            ⚡ Mode Douchette (Ajout rapide)
+          </button>
+          <button class="btn-blue" onclick="openAddBookModal()">➕ Ajouter un livre</button>
+          <button class="btn-outline" onclick="openAddNoBarcodeModal()">📖 Sans code-barres</button>
+          <button class="btn-outline" onclick="openImportCsvModal()">📥 Importer CSV</button>
+          <div style="position:relative; display:inline-block;">
+            <button class="btn-outline" onclick="toggleOutilsMenu(event)">Outils ▾</button>
+            <div id="outils-menu-dropdown" style="display:none; position:absolute; right:0; top:42px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; box-shadow:var(--shadow-modal); z-index:50; min-width:230px; padding:6px 0;">
+              <div style="padding:8px 14px; cursor:pointer;" onclick="showToast('Ouverture Boîte à vérifier'); hideOutilsMenu();">📦 Boîte à vérifier &amp; anomalies</div>
+              <div style="padding:8px 14px; cursor:pointer;" onclick="showToast('Catalogue auto-classifié avec succès'); hideOutilsMenu();">🪄 Classifier le catalogue automatiquement</div>
+              <div style="padding:8px 14px; cursor:pointer;" onclick="showToast('Rafraîchissement des couvertures lancé'); hideOutilsMenu();">🖼️ Rafraîchir les couvertures</div>
+              <div style="border-top:1px solid var(--border-color); margin:4px 0;"></div>
+              <div style="padding:8px 14px; cursor:pointer;" onclick="showToast('Export CSV généré'); hideOutilsMenu();">📤 Exporter le catalogue (CSV)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barre de Recherche & Filtres Déroulants -->
+      <div class="mockup-card" style="display:flex; flex-direction:column; gap:10px; padding:12px 16px;">
+        <!-- Ligne 1 : Recherche + Switcher Grille / Liste -->
+        <div style="display:flex; gap:12px; align-items:center;">
+          <input type="text" class="input-text" id="bookSearchInput"
+                 placeholder="🔍 Rechercher un livre, un auteur, un ISBN, un genre, un niveau…" style="flex:1;"
+                 oninput="renderBooksCatalog()">
+          <div style="display:flex; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:10px; padding:2px;">
+            <button id="btnViewGrid" class="btn-outline btn-sm" style="border:none; background:var(--primary); color:white; font-weight:700;" onclick="switchBookView('grid')">⊞ Grille</button>
+            <button id="btnViewList" class="btn-outline btn-sm" style="border:none; background:transparent;" onclick="switchBookView('list')">☰ Liste</button>
+          </div>
+        </div>
+
+        <!-- Ligne 2 : Filtres Genre, Thème, Niveau -->
+        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11.5px; font-weight:600; color:var(--text-muted);">Genre :</span>
+            <select class="select-combo" id="bookGenreFilter" onchange="renderBooksCatalog()">
+              <option value="">Tous les genres</option>
+              <option value="Roman">Roman</option>
+              <option value="Album">Album</option>
+              <option value="BD">BD</option>
+              <option value="Documentaire">Documentaire</option>
+              <option value="Conte">Conte</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11.5px; font-weight:600; color:var(--text-muted);">Thème :</span>
+            <select class="select-combo" id="bookThemeFilter" onchange="renderBooksCatalog()">
+              <option value="">Tous les thèmes</option>
+              <option value="Harcèlement">Harcèlement &amp; Vivre ensemble</option>
+              <option value="EDD">EDD &amp; Environnement</option>
+              <option value="Différence">Différence &amp; Tolérance</option>
+              <option value="Aventure">Aventure &amp; Découverte</option>
+              <option value="Laïcité">Laïcité</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11.5px; font-weight:600; color:var(--text-muted);">Niveau :</span>
+            <select class="select-combo" id="bookNiveauFilter" onchange="renderBooksCatalog()">
+              <option value="">Tous les niveaux</option>
+              <option value="Cycle 1">Cycle 1</option>
+              <option value="Cycle 2">Cycle 2</option>
+              <option value="Cycle 3">Cycle 3</option>
+              <option value="Tous niveaux">Tous niveaux</option>
+            </select>
+          </div>
+          <button class="btn-outline btn-sm" id="btnFilterZeroCopies" onclick="toggleZeroCopies()">⚠️ 0 exemplaire</button>
+          <button class="btn-outline btn-sm" onclick="resetBookFilters()">🔄 Réinitialiser</button>
+        </div>
+      </div>
+
+      <!-- Vue Partagée : Catalogue (Gauche 60%) + Fiche complète (Droite 40%) -->
+      <div class="split-pane-layout split-60-40">
+        <!-- Colonne Gauche : Catalogue -->
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div id="catalog-grid-view" class="book-card-grid"></div>
+          <div id="catalog-list-view" style="display:none; overflow-x:auto;">
+            <table class="table-responsive">
+              <thead>
+                <tr>
+                  <th>TITRE</th>
+                  <th>AUTEUR</th>
+                  <th>GENRE</th>
+                  <th>NIVEAU</th>
+                  <th>THÈME</th>
+                  <th>EXEMPLAIRES</th>
+                </tr>
+              </thead>
+              <tbody id="catalog-list-tbody"></tbody>
+            </table>
+          </div>
+          <div class="status-bar">
+            <span id="catalog-status-count">818 livres au catalogue</span>
+          </div>
+        </div>
+
+        <!-- Colonne Droite : Fiche complète détaillée -->
+        <div class="mockup-card" id="book-detail-panel" style="min-height:480px; position:sticky; top:16px;">
+          <!-- État rempli -->
+          <div id="book-detail-content" style="display:flex; flex-direction:column; gap:14px;">
+            <!-- En-tête : Couverture + Infos de base -->
+            <div style="display:flex; gap:14px; align-items:flex-start;">
+              <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+                <div class="book-cover-box" id="detail-cover-box" style="background:#2563EB;">
+                  <span id="detail-cover-emoji" style="font-size:32px;">📖</span>
+                </div>
+                <button class="btn-outline btn-sm" onclick="showToast('Recherche de couverture en ligne lancée…')">🔍 Couverture…</button>
+              </div>
+
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                  <div>
+                    <h2 style="font-size:16px; font-weight:800;" id="detail-titre">Le Petit Prince</h2>
+                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600;" id="detail-auteur">Antoine de Saint-Exupéry</div>
+                  </div>
+                  <div style="display:flex; gap:4px;">
+                    <button class="btn-outline btn-sm" onclick="openEditBookModal()">✏️ Modifier</button>
+                    <button class="btn-danger-outline btn-sm" onclick="deleteCurrentBook()">🗑️</button>
+                  </div>
+                </div>
+
+                <!-- Métadonnées alignées -->
+                <div style="display:flex; flex-direction:column; gap:6px; padding:10px 0; border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color);">
+                  <div style="display:flex; justify-content:space-between; font-size:12px;">
+                    <span style="color:var(--text-muted);">Genre</span>
+                    <span class="badge-genre badge-genre-roman" id="detail-genre">Roman</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px;">
+                    <span style="color:var(--text-muted);">Thème</span>
+                    <span class="badge-theme" id="detail-theme">Philosophie &amp; Amitié</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px;">
+                    <span style="color:var(--text-muted);">Niveau</span>
+                    <span class="badge-niveau" id="detail-niveau">Cycle 3</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px;">
+                    <span style="color:var(--text-muted);">ISBN</span>
+                    <span style="font-family:monospace; font-weight:bold;" id="detail-isbn">9782070612758</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px;">
+                    <span style="color:var(--text-muted);">Éditeur</span>
+                    <span style="font-weight:600;" id="detail-editeur">Gallimard Jeunesse</span>
+                  </div>
+                  <div id="detail-mallette-row" style="display:flex; justify-content:space-between; font-size:12px;">
+                    <span style="color:var(--text-muted);">Mallette</span>
+                    <span style="background:#F3E8FF; color:#7C3AED; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:11px;" id="detail-mallette">Différence</span>
+                  </div>
+                </div>
+
+                <button class="btn-outline btn-sm" style="width:100%; justify-content:center;" onclick="showToast('Ressources pédagogiques ouvertes')">
+                  📚 Ressources pédagogiques
+                </button>
+              </div>
+            </div>
+
+            <!-- Exemplaires physiques -->
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:800; font-size:12.5px;">📦 Exemplaires physiques</span>
+                  <span class="pill-green" id="detail-exemplaires-ratio">1/1 dispo</span>
+                </div>
+                <div style="display:flex; gap:4px;">
+                  <button class="btn-blue btn-sm" onclick="addExemplaireToCurrentBook()">➕ Exemplaire</button>
+                  <button class="btn-outline btn-sm" onclick="showToast('Exemplaire séparé')">🔀 Séparer…</button>
+                  <button class="btn-outline btn-sm" onclick="editCurrentExemplaireState()">⚠️ État</button>
+                  <button class="btn-danger-outline btn-sm" onclick="deleteCurrentExemplaire()">🗑️</button>
+                </div>
+              </div>
+
+              <table class="table-responsive" style="font-size:12px;">
+                <thead>
+                  <tr>
+                    <th>N° ID</th>
+                    <th>STATUT</th>
+                    <th>ÉTAT / REMARQUE</th>
+                    <th>AJOUT</th>
+                  </tr>
+                </thead>
+                <tbody id="detail-exemplaires-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- ONGLET 3 : ÉTIQUETTES (etiquettes.fxml)                             -->
+    <!-- ==================================================================== -->
+    <div class="tab-content-container" id="tab-etiquettes" style="display:none;">
+      <!-- En-tête -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h1 class="screen-title">Impression des Étiquettes &amp; Codes-barres</h1>
+          <div style="color:var(--text-muted); font-size:12px;">
+            Cochez les livres à imprimer, choisissez les quantités d'exemplaires et lancez l'impression de vos planches A4.
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-outline" onclick="loadLabelsData()">🔄 Actualiser</button>
+          <button class="btn-outline" onclick="checkAllLabels(true)">☑️ Tout cocher</button>
+          <button class="btn-outline" onclick="checkAllLabels(false)">⬜ Tout décocher</button>
+          <button class="btn-outline" onclick="checkLast24Labels()">✨ 24 derniers ajouts</button>
+        </div>
+      </div>
+
+      <!-- Bandeau d'ajout & recherche ultra-rapide -->
+      <div style="background:white; border:1.5px solid #93C5FD; border-radius:12px; padding:10px 16px; display:flex; gap:12px; align-items:center; box-shadow:0 2px 8px rgba(37,99,235,0.08);">
+        <span style="font-weight:800; color:#1D4ED8; font-size:12.5px; white-space:nowrap;">⚡ Recherche &amp; Ajout rapide :</span>
+        <input type="text" class="input-text" id="quickLabelInput"
+               placeholder="Tapez le titre d'un livre ou scannez son code-barres (puis appuyez sur Entrée)..."
+               style="flex:1;" onkeydown="if(event.key==='Enter') quickAddLabel()">
+        <button class="btn-blue" style="font-size:12px; padding:8px 16px;" onclick="quickAddLabel()">➕ Valider / Ajouter (Entrée)</button>
+      </div>
+
+      <!-- Corps principal : Tableau (Gauche) + Paramètres d'impression (Droite) -->
+      <div style="display:grid; grid-template-columns:1fr 340px; gap:16px; align-items:start;">
+        <!-- Colonne Gauche -->
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; gap:12px; align-items:center;">
+            <input type="text" class="input-text" id="filterLabelInput"
+                   placeholder="🔍 Filtrer la liste par titre, auteur, ISBN..." style="flex:1;"
+                   oninput="renderLabelsTable()">
+            <label style="display:flex; align-items:center; gap:6px; font-weight:600; font-size:12px; cursor:pointer;">
+              <input type="checkbox" id="chkOnlySelectedLabels" onchange="renderLabelsTable()"> ✨ Afficher uniquement les livres cochés
+            </label>
+            <div style="flex:1;"></div>
+            <span style="color:var(--text-muted); font-size:12px; font-weight:600;" id="labels-table-count">8 livres affichés</span>
+          </div>
+
+          <table class="table-responsive">
+            <thead>
+              <tr>
+                <th style="width:52px; text-align:center;">☑️</th>
+                <th>TITRE DU LIVRE</th>
+                <th>AUTEUR &amp; ÉDITEUR</th>
+                <th style="text-align:center;">ISBN</th>
+                <th style="text-align:center;">EN BCD</th>
+                <th style="text-align:center; width:160px;">ÉTIQUETTES À IMPRIMER</th>
+                <th style="text-align:center;">GENRE</th>
+              </tr>
+            </thead>
+            <tbody id="labels-tbody"></tbody>
+          </table>
+
+          <div style="display:flex; align-items:center; gap:8px; font-size:11.5px;">
+            <span style="font-weight:bold; color:#0284C7;">💡 Conseil :</span>
+            <span style="color:var(--text-muted);">Cochez les livres à imprimer. Pour les livres ayant plusieurs exemplaires, vous pouvez choisir la quantité exacte d'étiquettes.</span>
+          </div>
+        </div>
+
+        <!-- Colonne Droite : Paramètres Planche A4 -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <!-- 1. Résumé en direct -->
+          <div class="mockup-card" style="display:flex; flex-direction:column; gap:10px;">
+            <div style="font-weight:800; font-size:13.5px;">📊 Résumé de votre tirage</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:18px;">📚</span>
+              <div>
+                <div style="font-size:11px; color:var(--text-muted);">Livres sélectionnés</div>
+                <div style="font-weight:800; font-size:15px;" id="lblSummaryBooks">4 livres</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:18px;">🏷️</span>
+              <div>
+                <div style="font-size:11px; color:var(--text-muted);">Total d'étiquettes</div>
+                <div style="font-weight:800; font-size:15px; color:#1D4ED8;" id="lblSummaryLabels">12 étiquettes</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:18px;">📄</span>
+              <div>
+                <div style="font-size:11px; color:var(--text-muted);">Feuilles A4 requises</div>
+                <div style="font-weight:800; font-size:15px; color:#059669;" id="lblSummarySheets">1 feuille</div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:#0284C7; background:#E0F2FE; padding:6px 10px; border-radius:6px;" id="lblSummaryAntiWaste">
+              ♻️ Anti-gaspillage : 12 étiquettes restantes sur la planche.
+            </div>
+          </div>
+
+          <!-- 2. Réglages de la Planche A4 -->
+          <div class="mockup-card" style="display:flex; flex-direction:column; gap:10px;">
+            <div style="font-weight:800; font-size:13.5px;">⚙️ Format &amp; Anti-gaspillage</div>
+            <div>
+              <div style="font-size:11.5px; font-weight:600; color:var(--text-sub); margin-bottom:4px;">Format de planche A4 :</div>
+              <select class="select-combo" style="width:100%;">
+                <option>24 étiquettes 70×37mm (3 col × 8 lig) – Avery L7160</option>
+                <option>21 étiquettes 63.5×38.1mm – Avery L7163</option>
+                <option>30 étiquettes 70×29.7mm (3 col × 10 lig)</option>
+              </select>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:11.5px; font-weight:600; color:var(--text-sub);">Commencer à la case n° :</span>
+              <input type="number" class="input-text" value="1" min="1" max="24" style="width:65px;">
+              <span style="font-size:11px; color:var(--text-muted);">(page 1)</span>
+            </div>
+            <div>
+              <div style="font-size:11.5px; font-weight:600; color:var(--text-sub); margin-bottom:4px;">En-tête de l'école :</div>
+              <input type="text" class="input-text" value="ÉCOLE ALBERT CAMUS PASTEUR" style="width:100%;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px; font-size:11.5px;">
+              <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" checked> Afficher le titre de l'ouvrage</label>
+              <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" checked> Afficher le code-barres scannable</label>
+              <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox"> Tracer les repères de découpe</label>
+            </div>
+          </div>
+
+          <!-- 3. Aperçu miniature -->
+          <div class="mockup-card" style="text-align:center; display:flex; flex-direction:column; gap:6px; align-items:center;">
+            <div style="font-size:11px; font-weight:bold; color:var(--text-muted);">Aperçu d'une étiquette :</div>
+            <div style="background:#FAFAFA; border:1px dashed #94A3B8; border-radius:6px; padding:8px 12px; width:220px; display:flex; flex-direction:column; gap:2px;">
+              <div style="font-size:8px; font-weight:bold; color:#475569;">ÉCOLE ALBERT CAMUS PASTEUR</div>
+              <div style="font-size:10px; font-weight:bold;" id="previewLabelTitle">Le Petit Prince</div>
+              <div style="font-family:monospace; font-size:14px; letter-spacing:2px; font-weight:bold;">||| | |||| || |||</div>
+              <div style="font-family:monospace; font-size:9.5px; font-weight:bold; color:#0284C7;">Ex. #2212</div>
+            </div>
+          </div>
+
+          <!-- 4. Grands boutons -->
+          <button class="btn-blue" style="width:100%; justify-content:center; padding:12px 18px; font-size:13.5px;" onclick="printLabels()">
+            🖨️ Générer &amp; Imprimer les étiquettes
+          </button>
+          <button class="btn-outline" style="width:100%; justify-content:center;" onclick="showToast('Fichier HTML d\'étiquettes exporté')">
+            💾 Enregistrer le fichier HTML…
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- ONGLET 4 : RÉCOLEMENT (recolement.fxml)                              -->
+    <!-- ==================================================================== -->
+    <div class="tab-content-container" id="tab-recolement" style="display:none;">
+      <!-- En-tête -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h1 class="screen-title">Récolement &amp; Inventaire</h1>
+          <div style="color:var(--text-muted); font-size:12px;">
+            Campagnes d'inventaire avec gel de stock temporaire, pointage douchette et qualification des écarts.
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-outline" onclick="showToast('Données de récolement actualisées')">🔄 Actualiser</button>
+          <button class="btn-blue" id="btnRecoStart" onclick="startRecoCampaign()">🚀 Démarrer un inventaire</button>
+          <button class="btn-emerald" id="btnRecoClose" style="display:none;" onclick="closeRecoCampaign()">✅ Valider &amp; Clôturer l'inventaire</button>
+          <button class="btn-outline" onclick="showToast('Export CSV du récolement téléchargé')">📤 Exporter CSV</button>
+        </div>
+      </div>
+
+      <!-- Bandeau d'état Session -->
+      <div class="mockup-card" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="pill-green" id="lblRecoStatusBadge">🟢 Mode Veille</span>
+          <span id="lblRecoStatusText" style="font-size:12.5px; font-weight:600;">Aucune session active — Les mouvements de prêt/retour fonctionnent normalement sur toute la BCD.</span>
+        </div>
+        <span style="font-size:12px; font-weight:700; color:#1D4ED8;" id="lblRecoFreeze">🧊 Prêts autorisés</span>
+      </div>
+
+      <!-- 4 Cartes KPI -->
+      <div class="kpi-row" style="grid-template-columns:repeat(4, 1fr);">
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-box-blue">📚</div>
+          <div>
+            <div class="kpi-title">Périmètre suivi</div>
+            <div class="kpi-value" id="recoKpiTotal">818</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-box-emerald">✅</div>
+          <div>
+            <div class="kpi-title">Présents scannés</div>
+            <div class="kpi-value" style="color:#15803D;" id="recoKpiPresent">612 (75%)</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-box-blue">👤</div>
+          <div>
+            <div class="kpi-title">En prêt (Justifiés)</div>
+            <div class="kpi-value" style="color:#1A66FF;" id="recoKpiLoans">4 (1%)</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-box-orange">⚠️</div>
+          <div>
+            <div class="kpi-title">Écarts / Manquants</div>
+            <div class="kpi-value" style="color:#EA580C;" id="recoKpiMissing">202 (24%)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progression + Scanner douchette étagère -->
+      <div style="display:grid; grid-template-columns:420px 1fr; gap:14px; align-items:center;">
+        <div class="mockup-card" style="display:flex; flex-direction:column; gap:10px;">
+          <span class="card-title">Progression de la campagne</span>
+          <div style="background:var(--border-color); border-radius:999px; height:12px; overflow:hidden;">
+            <div id="recoProgressBar" style="background:#16A34A; height:100%; width:75%;"></div>
+          </div>
+          <span style="font-size:11.5px; color:#1A66FF; font-weight:700;" id="recoProgressText">75% (616 / 818 vérifiés)</span>
+        </div>
+
+        <div class="mockup-card-accent" style="display:flex; flex-direction:column; gap:8px;">
+          <span class="card-title">⚡ Scanner un exemplaire sur l'étagère</span>
+          <div style="display:flex; gap:8px;">
+            <input type="text" class="input-text" id="recoScanInput"
+                   placeholder="Code-barres ISBN au dos ou N° physique d'exemplaire (ex: #2212)…"
+                   style="flex:1;" onkeydown="if(event.key==='Enter') executeRecoScan()">
+            <button class="btn-blue" onclick="executeRecoScan()">Scanner</button>
+          </div>
+          <span style="font-size:11.5px; color:#1A66FF; font-weight:600;" id="recoScanFeedback">
+            💡 Positionnez la douchette sur les livres des étagères du périmètre.
+          </span>
+        </div>
+      </div>
+
+      <!-- Filtres et Tableau Récolement -->
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn-outline btn-sm" style="background:var(--primary); color:white; font-weight:700;">À vérifier / Manquants</button>
+        <button class="btn-outline btn-sm">Présents</button>
+        <button class="btn-outline btn-sm">En prêt</button>
+        <button class="btn-outline btn-sm">Surplus</button>
+        <button class="btn-outline btn-sm">Tous</button>
+        <div style="flex:1;"></div>
+        <input type="text" class="input-text" placeholder="🔍 Filtrer le tableau…" style="width:180px;">
+        <button class="btn-outline btn-sm" onclick="showToast('ISBN copié dans le presse-papier')">📋 Copier l'ISBN</button>
+        <button class="btn-blue btn-sm" onclick="showToast('Exemplaire pointé présent')">✅ Pointer présent</button>
+        <button class="btn-outline btn-sm" onclick="showToast('Boîte justification ouverte')">✏️ Justifier l'écart (+/-)</button>
+      </div>
+
+      <table class="table-responsive">
+        <thead>
+          <tr>
+            <th>EXEMPLAIRE</th>
+            <th>LIVRE (TITRE &amp; AUTEUR)</th>
+            <th>ISBN</th>
+            <th>STATUT</th>
+            <th>MOTIF D'ÉCART (+ / -)</th>
+            <th>SITUATION / SCAN</th>
+            <th>REMARQUE &amp; ÉTAT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b style="font-family:monospace;">#2128</b></td>
+            <td><b>Le harcèlement</b> <span style="color:var(--text-muted); font-size:11.5px;">(Sandra Laboucarie)</span></td>
+            <td style="font-family:monospace;">9782745995400</td>
+            <td><span class="pill-orange">Non vu</span></td>
+            <td>À vérifier dans la boîte de retour</td>
+            <td>Dernier scan le 12/10/2026</td>
+            <td>Bon état</td>
+          </tr>
+          <tr>
+            <td><b style="font-family:monospace;">#2219</b></td>
+            <td><b>Le Tour du Monde en 80 Jours</b> <span style="color:var(--text-muted); font-size:11.5px;">(Jules Verne)</span></td>
+            <td style="font-family:monospace;">9782070515622</td>
+            <td><span class="pill-blue">En prêt</span></td>
+            <td>Emprunté par Claire DURAND (CM2-B)</td>
+            <td>Prêt régulier jusqu'au 29/12/2026</td>
+            <td>Exemplaire neuf</td>
+          </tr>
+          <tr>
+            <td><b style="font-family:monospace;">#2212</b></td>
+            <td><b>Le Petit Prince</b> <span style="color:var(--text-muted); font-size:11.5px;">(Saint-Exupéry)</span></td>
+            <td style="font-family:monospace;">9782070612758</td>
+            <td><span class="pill-green">Présent</span></td>
+            <td>Scanné en rayon A3</td>
+            <td>Vu à 14:15</td>
+            <td>Couverture scotchée</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- ONGLET 5 : UTILISATEURS (utilisateurs.fxml)                          -->
+    <!-- ==================================================================== -->
+    <div class="tab-content-container" id="tab-utilisateurs" style="display:none;">
+      <!-- En-tête -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <h1 class="screen-title">Utilisateurs &amp; Élèves</h1>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-outline" onclick="showToast('Rentrée scolaire & Import ONDE ouverte')">🎓 Rentrée scolaire &amp; Import ONDE</button>
+          <button class="btn-outline" onclick="showToast('Assistant d\'import CSV ouvert')">📥 Importer CSV</button>
+          <button class="btn-blue" onclick="openNewUserModal()">➕ Ajouter un utilisateur</button>
+        </div>
+      </div>
+
+      <!-- Recherche & Filtre classe -->
+      <div class="mockup-card" style="display:flex; gap:14px; align-items:center;">
+        <input type="text" class="input-text" id="userSearchInput"
+               placeholder="🔍 Rechercher par nom, prénom ou numéro (ex: EL-042)…" style="flex:1;"
+               oninput="renderUsersTable()">
+        <span style="font-weight:600; font-size:12px; color:var(--text-muted);">Classe</span>
+        <select class="select-combo" id="userClassFilter" onchange="renderUsersTable()" style="width:180px;">
+          <option value="">Toutes les classes</option>
+          <option value="CP">CP</option>
+          <option value="CE1">CE1</option>
+          <option value="CE1-A">CE1-A</option>
+          <option value="CM1-1">CM1-1</option>
+          <option value="CM1-A">CM1-A</option>
+          <option value="CM2-A">CM2-A</option>
+          <option value="CM2-B">CM2-B</option>
+          <option value="Direction">Direction</option>
+        </select>
+      </div>
+
+      <!-- Vue Partagée : KPIs + Tableau (Gauche) | Fiche Élève (Droite) -->
+      <div class="split-pane-layout split-65-35">
+        <!-- Gauche -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="kpi-row" style="grid-template-columns:repeat(3, 1fr);">
+            <div class="kpi-card">
+              <div class="kpi-icon-box kpi-icon-box-emerald">👧</div>
+              <div>
+                <div class="kpi-title">Élèves</div>
+                <div class="kpi-value" id="kpi-users-eleves">9</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon-box kpi-icon-box-blue">👩‍🏫</div>
+              <div>
+                <div class="kpi-title">Enseignants</div>
+                <div class="kpi-value" id="kpi-users-profs">4</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon-box kpi-icon-box-purple">🏫</div>
+              <div>
+                <div class="kpi-title">Classes</div>
+                <div class="kpi-value" id="kpi-users-classes">7</div>
+              </div>
+            </div>
+          </div>
+
+          <table class="table-responsive">
+            <thead>
+              <tr>
+                <th>NUMÉRO</th>
+                <th>NOM &amp; PRÉNOM</th>
+                <th>CLASSE</th>
+                <th>TYPE</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+
+          <div class="status-bar">
+            <span id="users-status-text">13 utilisateurs enregistrés</span>
+          </div>
+        </div>
+
+        <!-- Droite : Fiche Élève -->
+        <div class="mockup-card" id="user-detail-card" style="display:flex; flex-direction:column; gap:14px; position:sticky; top:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="card-title">Fiche élève</span>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-outline btn-sm" onclick="showToast('Modification utilisateur')">✏️ Modifier</button>
+              <button class="btn-danger-outline btn-sm" onclick="showToast('Suppression utilisateur')">🗑️ Supprimer</button>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div id="uDetailAvatar" style="background:#1A66FF; color:white; font-weight:800; font-size:16px; width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center;">CD</div>
+            <div>
+              <div style="font-weight:800; font-size:16px;" id="uDetailName">Claire DURAND</div>
+              <div style="font-weight:600; font-size:12px; color:var(--text-muted);" id="uDetailSub">CM2-B • Carte n° EL-004</div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px; padding:10px 0; border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color);">
+            <div style="font-size:10.5px; font-weight:800; color:var(--text-muted);">INFORMATIONS</div>
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <span style="color:var(--text-muted);">Numéro identifiant</span>
+              <span style="font-family:monospace; font-weight:bold;" id="uDetailNum">EL-004</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <span style="color:var(--text-muted);">Classe</span>
+              <span style="font-weight:700;" id="uDetailClass">CM2-B</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <span style="color:var(--text-muted);">Type</span>
+              <span style="font-weight:600;" id="uDetailType">Élève</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <span style="color:var(--text-muted);">Prêts en cours</span>
+              <span style="font-weight:800; color:#1A66FF;" id="uDetailLoans">3</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="card-title" style="margin-bottom:8px;">Emprunts en cours</div>
+            <div id="uDetailActiveLoansList" style="display:flex; flex-direction:column; gap:6px;">
+              <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; font-size:12px; display:flex; justify-content:space-between;">
+                <span>📖 Le Tour du Monde en 80 Jours (#2219)</span>
+                <span class="pill-blue" style="font-size:10px;">Retour 29/12</span>
+              </div>
+              <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; font-size:12px; display:flex; justify-content:space-between;">
+                <span>📖 Le Tour du Monde en 80 Jours (#2220)</span>
+                <span class="pill-blue" style="font-size:10px;">Retour 29/12</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- ONGLET 6 : MALLETTES THÉMATIQUES (mallettes.fxml)                   -->
+    <!-- ==================================================================== -->
+    <div class="tab-content-container" id="tab-mallettes" style="display:none;">
+      <!-- En-tête -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h1 class="screen-title">🧰 Mallettes Pédagogiques</h1>
+          <div style="color:var(--text-muted); font-size:12px;">
+            Créez des malles thématiques (Harcèlement, Contes, Histoire…) et prêtez-les en un clic aux classes
+          </div>
+        </div>
+        <button class="btn-blue" onclick="openNewMalletteModal()">➕ Nouvelle Mallette</button>
+      </div>
+
+      <!-- Pilules KPI de Synthèse -->
+      <div style="display:flex; gap:10px; flex-wrap:wrap;" id="mallettes-kpi-pills">
+        <span class="school-name-badge"><b>4</b> mallettes</span>
+        <span class="school-name-badge"><b>3</b> disponibles</span>
+        <span class="school-name-badge"><b>1</b> en prêt</span>
+        <span class="school-name-badge"><b>48</b> livres</span>
+      </div>
+
+      <!-- Barre d'outils et de recherche -->
+      <div class="mockup-card" style="display:flex; gap:10px; align-items:center; padding:8px 12px; flex-wrap:wrap;">
+        <input type="text" class="input-text" id="malletteSearchInput"
+               placeholder="🔍 Rechercher par titre, thème, code (ex: Harcèlement, MAL-001)…" style="flex:1; min-width:240px;"
+               oninput="renderMallettesList()">
+        <span style="font-weight:600; font-size:12px; color:var(--text-muted);">Statut :</span>
+        <select class="select-combo" id="malletteStatusFilter" onchange="renderMallettesList()">
+          <option value="">Tous les statuts</option>
+          <option value="DISPO">Disponible</option>
+          <option value="LOAN">En prêt</option>
+        </select>
+        <span style="font-weight:600; font-size:12px; color:var(--text-muted);">Thème :</span>
+        <select class="select-combo" id="malletteThemeFilter" onchange="renderMallettesList()">
+          <option value="">Tous les thèmes</option>
+          <option value="Harcèlement">Harcèlement &amp; Vivre ensemble</option>
+          <option value="EDD">EDD</option>
+          <option value="Laïcité">Laïcité</option>
+          <option value="Différence">Différence</option>
+        </select>
+        <button class="btn-outline" onclick="resetMalletteFilters()">🔄 Réinitialiser</button>
+      </div>
+
+      <!-- SplitPane : Liste des mallettes (Gauche 320px) | Fiche Détaillée (Droite) -->
+      <div class="split-pane-layout split-32-68">
+        <!-- Liste gauche -->
+        <div class="mockup-card" style="padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-weight:700; font-size:13.5px;">Collections &amp; Malles</span>
+            <span style="color:var(--text-muted); font-size:11.5px;" id="mallettes-count-label">4 mallettes</span>
+          </div>
+          <div id="mallettes-list-container"></div>
+        </div>
+
+        <!-- Fiche détaillée droite -->
+        <div class="mockup-card" style="display:flex; flex-direction:column; gap:12px; min-height:540px;">
+          <!-- 1. En-tête de la mallette active -->
+          <div style="display:flex; flex-direction:column; gap:8px; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <h2 style="font-size:18px; font-weight:800;" id="mDetailTitle">Harcèlement</h2>
+                <span style="font-family:monospace; font-weight:800; font-size:12px; background:#DBEAFE; color:#1D4ED8; padding:3px 8px; border-radius:6px;" id="mDetailCode">MAL-047</span>
+                <span class="pill-green" id="mDetailStatusBadge">DISPONIBLE</span>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn-emerald" id="btnLoanMallette" onclick="openLoanMalletteModal()">📤 Prêter à une classe</button>
+                <button class="btn-blue" id="btnReturnMallette" style="display:none;" onclick="returnCurrentMallette()">↩ Enregistrer le retour</button>
+                <div style="position:relative;">
+                  <button class="btn-outline" onclick="toggleMalletteActionsMenu(event)">⋯ Actions</button>
+                  <div id="mallette-actions-menu" style="display:none; position:absolute; right:0; top:40px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; box-shadow:var(--shadow-modal); z-index:50; min-width:210px; padding:6px 0;">
+                    <div style="padding:8px 14px; cursor:pointer;" onclick="showToast('Fiche A4 générée en PDF'); hideMalletteMenu();">🖨️ Fiche récapitulative A4 (PDF)</div>
+                    <div style="padding:8px 14px; cursor:pointer;" onclick="showToast('Étiquette de malle générée'); hideMalletteMenu();">🏷️ Étiquette caisse / malle</div>
+                    <div style="padding:8px 14px; cursor:pointer;" onclick="showToast('Édition mallette'); hideMalletteMenu();">✏️ Modifier la mallette</div>
+                    <div style="padding:8px 14px; cursor:pointer;" onclick="clearMalletteBooks(); hideMalletteMenu();">🧹 Vider tous les livres</div>
+                    <div style="border-top:1px solid var(--border-color); margin:4px 0;"></div>
+                    <div style="padding:8px 14px; color:var(--danger-text); cursor:pointer;" onclick="deleteCurrentMallette(); hideMalletteMenu();">🗑️ Supprimer la mallette</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <span class="badge-theme" id="mDetailThemeTag">Thème : Harcèlement &amp; Vivre ensemble</span>
+              <span class="badge-niveau" id="mDetailNiveauTag">Tous niveaux</span>
+              <span class="badge-genre" style="background:#FEF3C7; color:#B45309; border-color:#FDE68A;" id="mDetailCountTag">10 livres (10 titres)</span>
+            </div>
+          </div>
+
+          <!-- 2. Barre d'Onglets interne (Contenu | Ressources | Historique | Infos) -->
+          <div style="display:flex; gap:4px; border-bottom:1px solid var(--border-color); margin-bottom:4px;">
+            <button class="tab-nav-item active" style="height:38px;" id="mSubTabContenu" onclick="switchMalletteSubTab('contenu')">📦 Contenu</button>
+            <button class="tab-nav-item" style="height:38px;" id="mSubTabRessources" onclick="switchMalletteSubTab('ressources')">📚 Ressources</button>
+            <button class="tab-nav-item" style="height:38px;" id="mSubTabHistorique" onclick="switchMalletteSubTab('historique')">📜 Historique</button>
+            <button class="tab-nav-item" style="height:38px;" id="mSubTabInfos" onclick="switchMalletteSubTab('infos')">ℹ️ Infos</button>
+          </div>
+
+          <!-- 3. Contenus des sous-onglets -->
+          <div id="mSubContent-contenu" style="display:flex; flex-direction:column; gap:12px;">
+            <div id="mLoanAlertBox" style="display:none; background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; padding:10px 14px; border-radius:10px; font-size:13px;"></div>
+            
+            <div style="display:flex; gap:8px;">
+              <input type="text" class="input-text" id="mAddBookInput" placeholder="🔍 Ajouter un livre à cette mallette (titre ou code-barres)..." style="flex:1;">
+              <button class="btn-blue" onclick="addBookToMallette()">+ Ajouter</button>
+            </div>
+
+            <div class="book-card-grid" id="mBooksGrid"></div>
+          </div>
+
+          <div id="mSubContent-ressources" style="display:none; flex-direction:column; gap:12px;">
+            <div style="font-weight:700; font-size:13.5px;">📎 Fiches d'exploitation &amp; Documents pédagogiques</div>
+            <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:700;">📄 Guide d'animation Harcèlement – Cycle 3.pdf</div>
+                <div style="font-size:11px; color:var(--text-muted);">Fiche Eduscol • Questions de débat et activités de groupe</div>
+              </div>
+              <button class="btn-outline btn-sm" onclick="showToast('Téléchargement du guide pédagogique')">Télécharger</button>
+            </div>
+            <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:700;">📄 Fiche de lecture Lili est harcelée.pdf</div>
+                <div style="font-size:11px; color:var(--text-muted);">Questionnaire de compréhension et pistes d'écriture</div>
+              </div>
+              <button class="btn-outline btn-sm" onclick="showToast('Téléchargement de la fiche de lecture')">Télécharger</button>
+            </div>
+          </div>
+
+          <div id="mSubContent-historique" style="display:none;">
+            <table class="table-responsive">
+              <thead>
+                <tr>
+                  <th>CLASSE EMPRUNTEUSE</th>
+                  <th>DATE DE SORTIE</th>
+                  <th>RETOUR EFFECTIF</th>
+                  <th>ÉTAT AU RETOUR</th>
+                </tr>
+              </thead>
+              <tbody id="mHistoriqueTbody">
+                <tr>
+                  <td><b>CE2 – Mme Petit</b></td>
+                  <td>10/09/2026</td>
+                  <td>24/09/2026</td>
+                  <td><span class="pill-green">Complet (10/10)</span></td>
+                </tr>
+                <tr>
+                  <td><b>CM1 – M. Roux</b></td>
+                  <td>02/10/2026</td>
+                  <td>16/10/2026</td>
+                  <td><span class="pill-green">Complet (10/10)</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="mSubContent-infos" style="display:none; flex-direction:column; gap:10px;">
+            <p><b>Thématique :</b> Sensibilisation au vivre-ensemble, repérage et prévention des situations de harcèlement scolaire et intimidation.</p>
+            <p><b>Objectifs pédagogiques :</b> Développer l'empathie, libérer la parole des témoins, identifier les personnes ressources dans l'école.</p>
+            <p><b>Emplacement de stockage :</b> Malle plastique bleue n°4 – Étagère Pédagogique Fond BCD.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── TIROIR INSPECTEUR PAS-À-PAS DU LIVRE (Mallettes) ────────────────── -->
+<div class="inspector-drawer" id="inspectorDrawer">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <span class="card-title">Inspecteur de l'ouvrage</span>
+    <button class="btn-outline btn-sm" onclick="closeInspectorDrawer()">✕</button>
+  </div>
+  <div class="book-cover-box" id="inspCoverBox" style="width:100%; height:160px; font-size:48px;">
+    📖
+  </div>
   <div>
-    <h1 id="app-title">🧰 BCD Express – Mallettes &amp; Gestion</h1>
-    <div class="sub" id="app-sub">Créez des malles thématiques et prêtez-les en un clic aux classes</div>
+    <h3 style="font-size:16px; font-weight:800;" id="inspTitle">Titre du livre</h3>
+    <div style="font-size:12.5px; color:var(--text-muted);" id="inspAuthor">Auteur &amp; Genre</div>
   </div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <button class="btn" style="background:#fef3c7;border-color:#fde68a;color:#92400e;font-weight:700" onclick="openFeedback()">💬 Donner mon avis</button>
-    <button class="btn" onclick="toggleStyle()" id="btn-style">🎨 Style : Apple</button>
-    <button class="btn" onclick="document.body.classList.toggle('night')">🌙 Mode nuit</button>
-    <button class="btn pri" id="btn-primary-action" onclick="newMal()">+ Nouvelle mallette</button>
+  <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px;">
+    <span style="font-size:12px; font-weight:700;">Quantité d'exemplaires dans cette malle :</span>
+    <div style="display:flex; align-items:center; gap:12px; justify-content:center;">
+      <button class="btn-outline" style="font-size:16px; font-weight:bold; width:40px; height:40px; justify-content:center;" onclick="stepInspectorQty(-1)">−</button>
+      <span style="font-size:22px; font-weight:800;" id="inspQty">1</span>
+      <button class="btn-outline" style="font-size:16px; font-weight:bold; width:40px; height:40px; justify-content:center;" onclick="stepInspectorQty(1)">+</button>
+    </div>
   </div>
-</header>
-
-<!-- NAVIGATION PRINCIPALE PAR ONGLETS -->
-<div class="tabs" style="padding:0 24px;margin:0 0 14px">
-  <div class="tab on" id="nav-mal" onclick="switchNav('mal')">🧰 Mallettes</div>
-  <div class="tab" id="nav-prets" onclick="switchNav('prets')">📖 Prêts &amp; Retours</div>
-  <div class="tab" id="nav-livres" onclick="switchNav('livres')">📚 Catalogue Livres</div>
-  <div class="tab" id="nav-etiquettes" onclick="switchNav('etiquettes')">🏷️ Étiquettes</div>
-  <div class="tab" id="nav-bilan" onclick="switchNav('bilan')">📊 Bilan &amp; Palmarès</div>
+  <button class="btn-danger-outline" style="width:100%; justify-content:center;" onclick="removeBookFromCurrentMallette()">
+    🗑️ Retirer cet ouvrage de la mallette
+  </button>
 </div>
 
-<div class="pills" id="pills"></div>
-<div class="tools" id="tools"></div>
-
-<!-- CONTENEUR DU MODULE ACTIF -->
-<div id="content-container"></div>
-
-<!-- TIROIR LATÉRAL INSPECTEUR -->
-<div class="drawer" id="drawer"></div>
-
-<!-- MODALE DE PRÊT / FORMULAIRE -->
-<div class="modal" id="modal">
-  <div class="box">
-    <h3 id="mt">Prêter</h3>
-    <div id="modal-content"></div>
+<!-- ── MODALE PRÊT DE MALLETTE ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="loanMalletteModal">
+  <div class="modal-dialog-box">
+    <div class="modal-header">
+      <span class="modal-title">📤 Prêter la mallette thématique</span>
+      <button class="btn-outline btn-sm" onclick="closeLoanMalletteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label style="font-weight:700; font-size:12.5px;">Classe emprunteuse :</label>
+        <select class="select-combo" id="malletteLoanClassSelect" style="width:100%; margin-top:6px;">
+          <option>CP – Mme Martin</option>
+          <option>CE1-A – M. Durand</option>
+          <option>CE2 – Mme Petit</option>
+          <option>CM1-A – M. Roux</option>
+          <option>CM2-A – M. Lecomte</option>
+          <option>CM2-B – Mme Blanc</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-weight:700; font-size:12.5px;">Date de retour prévue :</label>
+        <input type="date" class="input-text" id="malletteLoanDueDate" style="width:100%; margin-top:6px;" value="2026-12-15">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeLoanMalletteModal()">Annuler</button>
+      <button class="btn-blue" onclick="confirmLoanMallette()">Confirmer le prêt de la mallette</button>
+    </div>
   </div>
 </div>
 
-<div class="toast" id="toast">✅ Action validée</div>
+<!-- ── MODALE NOUVEL EMPRUNT (prets.fxml loop) ──────────────────────────── -->
+<div class="modal-overlay" id="newLoanModal">
+  <div class="modal-dialog-box">
+    <div class="modal-header">
+      <span class="modal-title">➕ Enregistrer un nouvel emprunt</span>
+      <button class="btn-outline btn-sm" onclick="closeNewLoanModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label style="font-weight:700; font-size:12.5px;">Élève / Utilisateur :</label>
+        <select class="select-combo" id="newLoanUserSelect" style="width:100%; margin-top:6px;">
+          <option value="EL-004">Claire DURAND (CM2-B)</option>
+          <option value="EL-001">Marie-Claire DUPONT (CM1-A)</option>
+          <option value="EL-002">Lucas MARTIN (CM1-A)</option>
+          <option value="EL-003">Sophie BERNARD (CM2-A)</option>
+          <option value="EL-005">Léa STOCKISTE (CM2-B)</option>
+          <option value="ENS-001">Mme Blanc (Enseignante CM2-B)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-weight:700; font-size:12.5px;">Livre ou N° d'exemplaire :</label>
+        <select class="select-combo" id="newLoanBookSelect" style="width:100%; margin-top:6px;">
+          <option value="2212">Le Petit Prince (Ex. #2212)</option>
+          <option value="2214">Lili est harcelée à l'école (Ex. #2214)</option>
+          <option value="2215">Elmer l'éléphant (Ex. #2215)</option>
+          <option value="2216">Otto, ours en peluche (Ex. #2216)</option>
+          <option value="2217">Astérix le Gaulois (Ex. #2217)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-weight:700; font-size:12.5px;">Date limite de retour :</label>
+        <input type="date" class="input-text" id="newLoanDueDate" style="width:100%; margin-top:6px;" value="2026-12-08">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeNewLoanModal()">Fermer</button>
+      <button class="btn-blue" onclick="validateContinuousLoan()">⚡ Valider &amp; Élève suivant ➔</button>
+    </div>
+  </div>
+</div>
 
+<!-- ── MODALE AVIS ENSEIGNANT & FEEDBACK PROTOTYPE ──────────────────────── -->
+<div class="modal-overlay" id="teacherFeedbackModal">
+  <div class="modal-dialog-box" style="width:600px;">
+    <div class="modal-header">
+      <span class="modal-title">💬 Enquête &amp; Avis du Corps Enseignant</span>
+      <button class="btn-outline btn-sm" onclick="closeFeedbackModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12.5px; color:var(--text-sub); line-height:1.5;">
+        Chers collègues, testez l'ergonomie, les boutons, la gestion des mallettes et des prêts. Vos retours nous permettent de perfectionner BCD Express avant le déploiement sur les postes de l'école.
+      </div>
+      <div>
+        <label style="font-weight:700; font-size:12.5px;">Votre Nom / Classe :</label>
+        <input type="text" class="input-text" id="feedbackAuthor" placeholder="Ex: M. Roux (CM1-A)" style="width:100%; margin-top:6px;">
+      </div>
+      <div>
+        <label style="font-weight:700; font-size:12.5px;">Note globale sur la lisibilité &amp; l'ergonomie :</label>
+        <div style="display:flex; gap:10px; margin-top:6px;">
+          <label style="cursor:pointer;"><input type="radio" name="rating" value="5" checked> ⭐⭐⭐⭐⭐ Parfait</label>
+          <label style="cursor:pointer;"><input type="radio" name="rating" value="4"> ⭐⭐⭐⭐ Très bien</label>
+          <label style="cursor:pointer;"><input type="radio" name="rating" value="3"> ⭐⭐⭐ Moyen</label>
+        </div>
+      </div>
+      <div>
+        <label style="font-weight:700; font-size:12.5px;">Vos suggestions ou remarques pour l'équipe BCD :</label>
+        <textarea class="input-text" id="feedbackComment" rows="4" style="width:100%; margin-top:6px;" placeholder="Ex: La vue en grille avec les badges de quantités ×Q sur les mallettes est super claire…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeFeedbackModal()">Fermer</button>
+      <button class="btn-blue" onclick="submitFeedback()">Envoyer mon avis</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST NOTIFICATION ──────────────────────────────────────────────── -->
+<div class="toast-notification" id="appToast">✅ Action validée avec succès</div>
+
+<!-- ====================================================================== -->
+<!-- JAVASCRIPT : Logique 100% interactive synchronisée avec SQLite BCD    -->
+<!-- ====================================================================== -->
 <script>
-const col=['#ef4444','#3b82f6','#10b981','#a855f7','#f59e0b','#06b6d4'];
-
-// ── 1. Données Mallettes (Code exact fourni) ──────────────────────────
-let M=[
-{id:'MAL-004',t:'Harcèlement',th:'Harcèlement & Vivre ensemble',n:'Tous niveaux',loan:null,hist:[],
- b:[{t:'Le harcèlement',a:'Sandra Laboucarie',g:'Documentaire',q:3,e:'📕'},
-    {t:'Le jour où je suis devenue invisible',a:'Amélie Javaux',g:'Album',q:3,e:'📗'},
-    {t:'Lili est harcelée à l’école',a:'Dominique de Saint Mars',g:'Roman',q:4,e:'📘'},
-    {t:'Max se fait insulter à la récré',a:'Serge Bloch',g:'BD',q:3,e:'💬'},
-    {t:'Rouge',a:'Jan De Kinder',g:'Album',q:4,e:'🔴'}]},
-{id:'MAL-003',t:'EDD',th:'EDD',n:'Tous niveaux',loan:null,hist:[],
- b:[{t:'La planète en danger',a:'Collectif',g:'Documentaire',q:4,e:'🌍'},
-    {t:'Trier ses déchets',a:'Collectif',g:'Album',q:4,e:'♻️'}]},
-{id:'MAL-002',t:'Laïcité',th:'Laïcité',n:'Tous niveaux',loan:null,hist:[],
- b:[{t:'La laïcité expliquée',a:'Collectif',g:'Documentaire',q:3,e:'⚖️'}]},
-{id:'MAL-001',t:'Différence',th:'Différence',n:'Tous niveaux',loan:{c:'CE2 – Mme Petit',d:'2026-12-05'},hist:[{c:'CM1 – M. Roux',o:'2026-09-10',r:'2026-09-24'}],
- b:[{t:'La différence, c’est quoi ?',a:'Collectif',g:'Album',q:5,e:'🌈'},
-    {t:'Les couleurs de l’amitié',a:'Collectif',g:'Album',q:6,e:'🎨'}]}
-];
-M.forEach((m,i)=>m.c=col[i%6]);
-
-// ── 2. Données Prêts & Retours ───────────────────────────────────────
-let L=[
-  {id:101,u:'Léopold DUPONT',c:'CM2 – M. Durand',b:'Lili est harcelée à l’école',ex:2108,o:'2026-11-10',l:'2026-11-24',r:false},
-  {id:102,u:'Camille MARTIN',c:'CE1 – M. Durand',b:'Le Petit Prince',ex:1042,o:'2026-11-03',l:'2026-11-17',r:false},
-  {id:103,u:'Lucas BERNARD',c:'CM1 – M. Roux',b:'Les enfants de la Résistance',ex:3012,o:'2026-10-20',l:'2026-11-03',r:true},
-  {id:104,u:'Inès LEFEBVRE',c:'CP – Mme Martin',b:'Rouge',ex:4102,o:'2026-11-12',l:'2026-11-26',r:false}
+/* ── 1. Données réelles SQLite miroir ─────────────────────────────────── */
+const DB_BOOKS = [
+  { id: 1, isbn: "9782070612758", titre: "Le Petit Prince", auteur: "Antoine de Saint-Exupéry", genre: "Roman", theme: "Philosophie & Amitié", niveau: "Cycle 3", editeur: "Gallimard Jeunesse", exDispo: 2, exTotal: 2, emoji: "⭐", bg: "#2563EB", mallette: "Différence" },
+  { id: 2, isbn: "9782070515622", titre: "Le Tour du Monde en 80 Jours", auteur: "Jules Verne", genre: "Roman", theme: "Aventure & Découverte", niveau: "Cycle 3", editeur: "Gallimard Jeunesse", exDispo: 0, exTotal: 3, emoji: "🌍", bg: "#0D9488", mallette: null },
+  { id: 3, isbn: "9782745995400", titre: "Le harcèlement", auteur: "Sandra Laboucarie", genre: "Documentaire", theme: "Harcèlement & Vivre ensemble", niveau: "Cycle 3", editeur: "Milan", exDispo: 2, exTotal: 3, emoji: "📕", bg: "#EF4444", mallette: "Harcèlement" },
+  { id: 4, isbn: "9782874263651", titre: "Le jour où je suis devenue plus méchante", auteur: "Amélie Javaux", genre: "Album", theme: "Harcèlement & Vivre ensemble", niveau: "Cycle 2", editeur: "Alice Jeunesse", exDispo: 3, exTotal: 3, emoji: "📗", bg: "#10B981", mallette: "Harcèlement" },
+  { id: 5, isbn: "9782227702288", titre: "Lili est harcelée à l'école", auteur: "Dominique de Saint Mars", genre: "Roman", theme: "Harcèlement & Vivre ensemble", niveau: "Cycle 2", editeur: "Calligram", exDispo: 4, exTotal: 4, emoji: "📘", bg: "#3B82F6", mallette: "Harcèlement" },
+  { id: 6, isbn: "9782877670876", titre: "Elmer l'éléphant", auteur: "David McKee", genre: "Album", theme: "Différence & Tolérance", niveau: "Cycle 1", editeur: "Kaléidoscope", exDispo: 2, exTotal: 2, emoji: "🐘", bg: "#F59E0B", mallette: "Différence" },
+  { id: 7, isbn: "9782211054362", titre: "Otto, autobiographie d'un ours en peluche", auteur: "Tomi Ungerer", genre: "Album", theme: "EDD & Environnement", niveau: "Cycle 3", editeur: "L'école des loisirs", exDispo: 2, exTotal: 2, emoji: "🧸", bg: "#8B5CF6", mallette: "EDD" },
+  { id: 8, isbn: "9782012101340", titre: "Astérix le Gaulois", auteur: "René Goscinny & Albert Uderzo", genre: "BD", theme: "Humour & Histoire", niveau: "Cycle 3", editeur: "Hachette", exDispo: 4, exTotal: 4, emoji: "🛡️", bg: "#DC2626", mallette: null }
 ];
 
-// ── 3. Données Catalogue Livres ──────────────────────────────────────
-let B=[
-  {t:'Le Petit Prince',a:'Antoine de Saint-Exupéry',g:'Roman',q:4,d:3,e:'⭐',c:col[1],desc:'Le chef-d’œuvre universel sur l’amitié et le regard d’enfant.'},
-  {t:'Lili est harcelée à l’école',a:'Dominique de Saint Mars',g:'Roman',q:4,d:0,e:'📘',c:col[0],desc:'Pour libérer la parole sur le harcèlement scolaire.'},
-  {t:'Les enfants de la Résistance (T.1)',a:'Vincent Dugomier',g:'BD',q:3,d:2,e:'🎖️',c:col[2],desc:'Trois enfants refusent de baisser les bras sous l’Occupation.'},
-  {t:'Rouge',a:'Jan De Kinder',g:'Album',q:4,d:1,e:'🔴',c:col[4],desc:'Un livre sur le courage de dire non aux moqueries.'},
-  {t:'La planète en danger',a:'Collectif',g:'Documentaire',q:4,d:4,e:'🌍',c:col[5],desc:'Comprendre le réchauffement climatique et la biodiversité.'},
-  {t:'Max se fait insulter à la récré',a:'Serge Bloch',g:'BD',q:3,d:3,e:'💬',c:col[3],desc:'Comprendre les mots blessants et trouver des solutions.'}
+let DB_LOANS = [
+  { id: 727, exId: 2219, livreTitre: "Le Tour du Monde en 80 Jours", eleve: "Claire DURAND", classe: "CM2-B", dateEmprunt: "2026-11-17", dateLimite: "2026-12-29", statut: "En cours" },
+  { id: 728, exId: 2220, livreTitre: "Le Tour du Monde en 80 Jours", eleve: "Claire DURAND", classe: "CM2-B", dateEmprunt: "2026-11-17", dateLimite: "2026-12-29", statut: "En cours" },
+  { id: 729, exId: 2221, livreTitre: "Le Tour du Monde en 80 Jours", eleve: "Claire DURAND", classe: "CM2-B", dateEmprunt: "2026-11-17", dateLimite: "2026-12-29", statut: "En cours" },
+  { id: 730, exId: 2223, livreTitre: "Le Petit Prince", eleve: "Léa STOCKISTE", classe: "CM2-B", dateEmprunt: "2026-11-17", dateLimite: "2026-11-24", statut: "En cours" },
+  { id: 720, exId: 2128, livreTitre: "Lili est harcelée à l'école", eleve: "Lucas MARTIN", classe: "CM1-A", dateEmprunt: "2026-10-20", dateLimite: "2026-11-03", statut: "En retard" }
 ];
 
-let sel='MAL-004',tab='Contenu',pending=null,currentNav='mal';
-const $=id=>document.getElementById(id), cnt=m=>m.b.reduce((s,x)=>s+x.q,0);
+let DB_MALLETTES = [
+  {
+    id: "MAL-047",
+    titre: "Harcèlement",
+    theme: "Harcèlement & Vivre ensemble",
+    niveau: "Tous niveaux",
+    color: "#EF4444",
+    statut: "DISPO",
+    loan: null,
+    books: [
+      { titre: "Le harcèlement", auteur: "Sandra Laboucarie", genre: "Documentaire", qty: 3, emoji: "📕" },
+      { titre: "Le jour où je suis devenue invisible", auteur: "Amélie Javaux", genre: "Album", qty: 3, emoji: "📗" },
+      { titre: "Lili est harcelée à l'école", auteur: "Dominique de Saint Mars", genre: "Roman", qty: 4, emoji: "📘" },
+      { titre: "Max se fait insulter à la récré", auteur: "Serge Bloch", genre: "BD", qty: 2, emoji: "💬" },
+      { titre: "Rouge", auteur: "Jan De Kinder", genre: "Album", qty: 3, emoji: "🔴" }
+    ]
+  },
+  {
+    id: "MAL-045",
+    titre: "EDD",
+    theme: "EDD",
+    niveau: "Tous niveaux",
+    color: "#10B981",
+    statut: "DISPO",
+    loan: null,
+    books: [
+      { titre: "La planète en danger", auteur: "Collectif", genre: "Documentaire", qty: 4, emoji: "🌍" },
+      { titre: "Trier ses déchets", auteur: "Collectif", genre: "Album", qty: 4, emoji: "♻️" },
+      { titre: "Otto, ours en peluche", auteur: "Tomi Ungerer", genre: "Album", qty: 2, emoji: "🧸" }
+    ]
+  },
+  {
+    id: "MAL-044",
+    titre: "Laïcité",
+    theme: "Laïcité",
+    niveau: "Tous niveaux",
+    color: "#3B82F6",
+    statut: "DISPO",
+    loan: null,
+    books: [
+      { titre: "La laïcité expliquée", auteur: "Collectif", genre: "Documentaire", qty: 3, emoji: "⚖️" },
+      { titre: "1 foi, 2 fois, 3 foi !", auteur: "Collectif", genre: "Album", qty: 2, emoji: "🕊️" }
+    ]
+  },
+  {
+    id: "MAL-005",
+    titre: "Différence",
+    theme: "Différence",
+    niveau: "Tous niveaux",
+    color: "#F59E0B",
+    statut: "LOAN",
+    loan: { classe: "CE2 – Mme Petit", dateRetour: "2026-12-05" },
+    books: [
+      { titre: "La différence, c'est quoi ?", auteur: "Collectif", genre: "Album", qty: 5, emoji: "🌈" },
+      { titre: "Elmer l'éléphant", auteur: "David McKee", genre: "Album", qty: 2, emoji: "🐘" },
+      { titre: "Le Petit Prince", auteur: "Saint-Exupéry", genre: "Roman", qty: 2, emoji: "⭐" }
+    ]
+  }
+];
 
-function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2500)}
+let DB_USERS = [
+  { numero: "EL-001", nom: "DUPONT", prenom: "Marie-Claire", classe: "CM1-A", type: "ELEVE" },
+  { numero: "EL-002", nom: "MARTIN", prenom: "Lucas", classe: "CM1-A", type: "ELEVE" },
+  { numero: "EL-003", nom: "BERNARD", prenom: "Sophie", classe: "CM2-A", type: "ELEVE" },
+  { numero: "EL-004", nom: "DURAND", prenom: "Claire", classe: "CM2-B", type: "ELEVE" },
+  { numero: "EL-005", nom: "STOCKISTE", prenom: "Léa", classe: "CM2-B", type: "ELEVE" },
+  { numero: "ENS-001", nom: "BLANC", prenom: "Isabelle", classe: "CM2-B", type: "ENSEIGNANT" },
+  { numero: "ENS-002", nom: "ROUX", prenom: "Marc", classe: "CM1-A", type: "ENSEIGNANT" }
+];
 
-// ── Navigation ────────────────────────────────────────────────────────
-function switchNav(nav){
-  currentNav=nav;
-  ['mal','prets','livres','etiquettes','bilan'].forEach(k=>{
-    $('nav-'+k).classList.toggle('on',k==nav);
+let selectedMalletteId = "MAL-047";
+let selectedBookId = 1;
+let currentInspectorBookIndex = 0;
+
+/* ── 2. Navigation entre Onglets ─────────────────────────────────────── */
+function switchMainTab(tabId) {
+  document.querySelectorAll('.tab-nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
   });
-  if(nav=='mal'){
-    $('app-title').innerHTML='🧰 BCD Express – Mallettes pédagogiques';
-    $('app-sub').innerHTML='Créez des malles thématiques et prêtez-les en un clic aux classes';
-    $('btn-primary-action').style.display='inline-block';
-    $('btn-primary-action').textContent='+ Nouvelle mallette';
-    $('btn-primary-action').onclick=newMal;
-    render();
-  } else if(nav=='prets'){
-    $('app-title').innerHTML='📖 Prêts &amp; Retours en classe';
-    $('app-sub').innerHTML='Enregistrez les sorties, retours et gérez les retards scolaires';
-    $('btn-primary-action').style.display='inline-block';
-    $('btn-primary-action').textContent='+ Nouveau prêt élève';
-    $('btn-primary-action').onclick=openPretModal;
-    renderPrets();
-  } else if(nav=='livres'){
-    $('app-title').innerHTML='📚 Catalogue &amp; Inventaire BCD';
-    $('app-sub').innerHTML='1 420 titres répertoriés · 2 850 exemplaires physiques';
-    $('btn-primary-action').style.display='inline-block';
-    $('btn-primary-action').textContent='+ Nouveau livre';
-    $('btn-primary-action').onclick=()=>alert('Fiche création livre ouverte !');
-    renderLivres();
-  } else if(nav=='etiquettes'){
-    $('app-title').innerHTML='🏷️ Planche d’étiquettes Code 39';
-    $('app-sub').innerHTML='Impression prête à l’emploi sur papier autocollant A4 standard';
-    $('btn-primary-action').style.display='inline-block';
-    $('btn-primary-action').textContent='🖨️ Imprimer la planche';
-    $('btn-primary-action').onclick=()=>window.print();
-    renderEtiquettes();
-  } else if(nav=='bilan'){
-    $('app-title').innerHTML='📊 Bilan d’activité &amp; Palmarès BCD';
-    $('app-sub').innerHTML='Statistiques de lecture pour le Conseil d’école et la Direction';
-    $('btn-primary-action').style.display='none';
-    renderBilan();
+  document.querySelectorAll('.tab-content-container').forEach(panel => {
+    panel.style.display = (panel.id === tabId) ? 'flex' : 'none';
+  });
+
+  if (tabId === 'tab-prets') renderLoansTable();
+  if (tabId === 'tab-inventaire') renderBooksCatalog();
+  if (tabId === 'tab-etiquettes') renderLabelsTable();
+  if (tabId === 'tab-utilisateurs') renderUsersTable();
+  if (tabId === 'tab-mallettes') renderMallettes();
+}
+
+/* ── 3. Onglet 1 : Prêts & Retours ───────────────────────────────────── */
+function renderLoansTable() {
+  const tbody = document.getElementById('loans-tbody');
+  const search = document.getElementById('loanSearchInput').value.toLowerCase();
+  const cls = document.getElementById('loanClassFilter').value;
+  const lateOnly = document.getElementById('loanLateCheck').checked;
+
+  let filtered = DB_LOANS.filter(l => {
+    const matchSearch = l.livreTitre.toLowerCase().includes(search) ||
+                        l.eleve.toLowerCase().includes(search) ||
+                        String(l.exId).includes(search);
+    const matchClass = !cls || l.classe === cls;
+    const matchLate = !lateOnly || l.statut === "En retard";
+    return matchSearch && matchClass && matchLate;
+  });
+
+  tbody.innerHTML = filtered.map(l => `
+    <tr>
+      <td><b style="font-family:monospace; font-size:12px;">#${l.exId}</b></td>
+      <td>
+        <div style="font-weight:700;">${l.livreTitre}</div>
+        <div style="font-size:11px; color:var(--text-muted);">Exemplaire physique prêté</div>
+      </td>
+      <td>
+        <div style="font-weight:700;">${l.eleve}</div>
+        <span class="badge-genre" style="font-size:10.5px;">${l.classe}</span>
+      </td>
+      <td>${l.dateEmprunt}</td>
+      <td><b style="${l.statut === 'En retard' ? 'color:#EA580C;' : ''}">${l.dateLimite}</b></td>
+      <td>
+        <span class="${l.statut === 'En retard' ? 'pill-orange' : 'pill-blue'}">
+          ${l.statut === 'En retard' ? '⚠️ En retard' : '● En cours'}
+        </span>
+      </td>
+      <td>
+        <button class="btn-blue btn-sm" onclick="returnLoan(${l.id})">↩ Enregistrer retour</button>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('loans-status-text').textContent = `${filtered.length} emprunt(s) affiché(s)`;
+  document.getElementById('kpi-prets-total').textContent = DB_LOANS.length;
+  document.getElementById('kpi-prets-retards').textContent = DB_LOANS.filter(x => x.statut === 'En retard').length;
+  document.getElementById('header-kpi-prets').textContent = `🎒 ${DB_LOANS.length} emprunts`;
+}
+
+function returnLoan(id) {
+  const loan = DB_LOANS.find(x => x.id === id);
+  if (loan) {
+    DB_LOANS = DB_LOANS.filter(x => x.id !== id);
+    showToast(`Livre #${loan.exId} retourné avec succès !`);
+    renderLoansTable();
   }
 }
 
-// ── MODULE 1 : MALLETTES (100% Exact Code du user) ────────────────────
-function pills(){const l=M.filter(m=>m.loan).length;$('pills').innerHTML=
-`<span class="pill"><b>${M.length}</b> mallettes</span><span class="pill"><b>${M.length-l}</b> disponibles</span><span class="pill"><b>${l}</b> en prêt</span><span class="pill"><b>${M.reduce((s,m)=>s+cnt(m),0)}</b> livres</span>`}
-
-function renderList(){const q=($('q')?$('q').value:'').toLowerCase(),f=($('fs')?$('fs').value:'');
-$('list').innerHTML=M.filter(m=>(m.t+m.th+m.id).toLowerCase().includes(q)&&(!f||(f=='En prêt')==!!m.loan)).map(m=>
-`<div class="mal ${m.id==sel?'sel':''}" style="--c:${m.c}" onclick="sel='${m.id}';tab='Contenu';render()">
-<div class="t">${m.t}</div><div class="m">${m.id} · ${m.n} · ${cnt(m)} livres · ${m.b.length} titres</div>
-<div class="r"><span class="badge ${m.loan?'b-loan':'b-ok'}">${m.loan?'En prêt – '+m.loan.c:'Disponible'}</span>
-${m.loan?'':`<button class="btn pri" onclick="event.stopPropagation();openLoan('${m.id}')">Prêter</button>`}</div></div>`).join('')}
-
-function renderDetail(){
-const m=M.find(x=>x.id==sel);if(!m){$('detail').innerHTML='';return}
-let body='';
-if(tab=='Contenu'){
-body=`${m.loan?`<div class="alert">📦 Cette mallette est chez <b>${m.loan.c}</b> jusqu'au <b>${m.loan.d}</b>.</div>`:''}
-<div class="add"><input id="nb" placeholder="Titre du livre à ajouter..."><button class="btn pri" onclick="addB()">+ Ajouter</button><button class="btn" onclick="fill()">🪄 Remplir par thème</button></div>
-<div class="grid">${m.b.map((b,i)=>`<div class="book" onclick="openB(${i})">
-<span class="qty">×${b.q}</span><button class="rm" onclick="event.stopPropagation();rmB(${i})">Retirer</button>
-<div class="cover" style="background:${col[(i+2)%6]}">${b.e}</div><div class="bt">${b.t}</div><div class="ba">${b.a} · ${b.g}</div></div>`).join('')}</div>`}
-else if(tab=='Ressources'){body='<div class="empty">📎 Aucune ressource pédagogique.<br><br><button class="btn" onclick="toast(\'Ajout ressource PDF / lien\')">+ Ajouter un PDF / lien</button></div>'}
-else if(tab=='Historique'){const h=[...(m.loan?[{c:m.loan.c,o:'2026-11-17',r:'en cours'}]:[]),...m.hist];
-body=h.length?`<table><tr><th>Classe</th><th>Sortie</th><th>Retour</th></tr>${h.map(x=>`<tr><td>${x.c}</td><td>${x.o}</td><td>${x.r}</td></tr>`).join('')}</table>`:'<div class="empty">Aucun prêt pour le moment</div>'}
-else body=`<p><b>Thème :</b> ${m.th}</p><p><b>Niveau :</b> ${m.n}</p><p class="sub">Aucune note pédagogique particulière.</p>`;
-$('detail').innerHTML=`<div class="dh"><div><h2>${m.t} <span class="code">${m.id}</span> <span class="badge ${m.loan?'b-loan':'b-ok'}">${m.loan?'En prêt':'Disponible'}</span></h2>
-<div class="tags"><span class="tag">Thème : ${m.th}</span><span class="tag">${m.n}</span><span class="tag">${cnt(m)} exemplaires (${m.b.length} titres)</span></div></div>
-<div class="acts">${m.loan?`<button class="btn pri big" onclick="ret('${m.id}')">↩ Enregistrer le retour</button>`:`<button class="btn pri big" onclick="openLoan('${m.id}')">📤 Prêter</button>`}
-<button class="btn" onclick="$('mn').classList.toggle('on')">⋯</button>
-<div class="menu" id="mn"><div onclick="alert('Fiche A4 générée')">🖨️ Fiche A4</div><div onclick="alert('Étiquette générée')">🏷️ Étiquette</div><div onclick="delM()" style="color:var(--bad)">🗑️ Supprimer</div></div></div></div>
-<div class="tabs">${['Contenu','Ressources','Historique','Infos'].map(t=>`<div class="tab ${t==tab?'on':''}" onclick="tab='${t}';renderDetail()">${t}</div>`).join('')}</div>${body}`}
-
-function openB(i){const m=M.find(x=>x.id==sel),b=m.b[i];$('drawer').innerHTML=`<button class="btn" onclick="$('drawer').classList.remove('on')">✕ Fermer</button>
-<div class="cover" style="background:${col[(i+2)%6]};margin-top:14px">${b.e}</div><h3>${b.t}</h3><p class="sub">${b.a}</p>
-<p><span class="tag">${b.g}</span> <span class="tag">${m.th}</span></p><p>📦 ${b.q} exemplaire(s) dans la boîte</p>
-<div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="qty(${i},-1)">−</button><b>${b.q}</b><button class="btn" onclick="qty(${i},1)">+</button></div>
-<br><button class="btn danger" onclick="rmB(${i});$('drawer').classList.remove('on')">Retirer ce titre</button>`;$('drawer').classList.add('on')}
-
-function qty(i,d){const b=M.find(x=>x.id==sel).b[i];b.q=Math.max(1,b.q+d);render();openB(i)}
-function rmB(i){if(confirm('Retirer ce titre de la mallette ?')){M.find(x=>x.id==sel).b.splice(i,1);render()}}
-function addB(){const v=$('nb').value.trim();if(!v)return;M.find(x=>x.id==sel).b.push({t:v,a:'À compléter',g:'Livre',q:1,e:'📖'});render()}
-function fill(){const m=M.find(x=>x.id==sel);m.b.push({t:'Livre du thème (auto)',a:'Catalogue BCD',g:'Album',q:2,e:'📚'});render()}
-
-function openLoan(id){
-  pending=id;const d=new Date();d.setDate(d.getDate()+21);
-  $('mt').textContent='Prêter « '+M.find(x=>x.id==id).t+' »';
-  $('modal-content').innerHTML=`<label>Classe</label><select id="cl"><option>CP – Mme Martin</option><option>CE1 – M. Durand</option><option>CE2 – Mme Petit</option><option>CM1 – M. Roux</option><option>CM2 – Mme Blanc</option></select>
-  <label>Date de retour</label><input type="date" id="dr" value="${d.toISOString().slice(0,10)}">
-  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeM()">Annuler</button><button class="btn pri" onclick="confirmLoan()">Confirmer le prêt</button></div>`;
-  $('modal').classList.add('on');
-}
-function closeM(){$('modal').classList.remove('on')}
-function confirmLoan(){M.find(x=>x.id==pending).loan={c:$('cl').value,d:$('dr').value};closeM();render();toast('Mallette prêtée avec succès !')}
-function ret(id){const m=M.find(x=>x.id==id);if(confirm('Tous les livres sont-ils rendus ?')){m.hist.unshift({c:m.loan.c,o:'—',r:new Date().toISOString().slice(0,10)});m.loan=null;render();toast('Mallette restituée !')}}
-function delM(){if(confirm('Supprimer cette mallette ?')){M=M.filter(x=>x.id!=sel);sel=M[0]?.id;render()}}
-function newMal(){const t=prompt('Titre de la mallette ?');if(!t)return;const id='MAL-00'+(M.length+5);M.unshift({id,t,th:t,n:'Tous niveaux',loan:null,hist:[],b:[],c:col[M.length%6]});sel=id;render()}
-
-function render(){
-  $('tools').innerHTML=`<input id="q" placeholder="🔍 Rechercher par titre, thème, code…" oninput="renderList()">
-  <select id="fs" onchange="renderList()"><option value="">Tous les statuts</option><option>Disponible</option><option>En prêt</option></select>`;
-  $('content-container').innerHTML=`<main><div class="list" id="list"></div><section class="detail" id="detail"></section></main>`;
-  pills();renderList();renderDetail();
-}
-
-// ── MODULE 2 : PRÊTS & RETOURS ────────────────────────────────────────
-function renderPrets(){
-  $('pills').innerHTML=`<span class="pill"><b>${L.length}</b> emprunts en cours</span><span class="pill"><b>${L.filter(x=>x.r).length}</b> en retard</span><span class="pill"><b>18</b> prêts aujourd'hui</span><span class="pill"><b>99.1%</b> taux de retour</span>`;
-  $('tools').innerHTML=`<input id="qp" placeholder="🔍 Rechercher un élève, un livre ou une classe..." oninput="renderPretsList()">
-  <select id="fcl" onchange="renderPretsList()"><option value="">Toutes les classes</option><option>CP</option><option>CE1</option><option>CE2</option><option>CM1</option><option>CM2</option></select>
-  <button class="btn pri" onclick="openPretModal()">+ Nouveau prêt (Boucle continue)</button>`;
-  $('content-container').innerHTML=`<div class="main-single"><div class="detail"><table id="table-prets"></table></div></div>`;
-  renderPretsList();
-}
-
-function renderPretsList(){
-  const q=($('qp')?$('qp').value:'').toLowerCase(),cl=($('fcl')?$('fcl').value:'');
-  const filtered=L.filter(x=>(x.u+x.b+x.c).toLowerCase().includes(q)&&(!cl||x.c.includes(cl)));
-  $('table-prets').innerHTML=`<tr><th>Élève</th><th>Classe</th><th>Livre</th><th>N° Ex.</th><th>Sortie</th><th>Limite</th><th>Statut</th><th>Action</th></tr>`+
-  filtered.map((x,i)=>`<tr><td><b>${x.u}</b></td><td>${x.c}</td><td>📖 ${x.b}</td><td><code>#${x.ex}</code></td><td>${x.o}</td><td>${x.l}</td>
-  <td><span class="badge ${x.r?'b-late':'b-ok'}">${x.r?'En retard':'En cours'}</span></td>
-  <td><button class="btn" onclick="retourPret(${x.id})">↩ Restituer</button></td></tr>`).join('');
-}
-
-function retourPret(id){
-  L=L.filter(x=>x.id!==id);
-  renderPrets();
-  toast('Livre restitué avec succès ! Bip audio émis.');
-}
-
-function openPretModal(){
-  $('mt').textContent='Nouveau prêt élève';
-  $('modal-content').innerHTML=`<label>Élève</label><select id="n-elv"><option>Lucas BERNARD (CM2 – M. Durand)</option><option>Léopold DUPONT (CM2 – M. Durand)</option><option>Camille MARTIN (CE1 – M. Durand)</option><option>Inès LEFEBVRE (CP – Mme Martin)</option></select>
-  <label>Livre (Titre ou scan)</label><input id="n-liv" value="Le Petit Prince (#1042)">
-  <div style="background:#eff6ff;color:#1e40af;padding:10px;border-radius:10px;font-size:12px;margin:8px 0 14px">⚡ <b>Boucle continue active :</b> enregistre le prêt et passe directement au lecteur suivant sans fermer la fenêtre.</div>
-  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeM()">Fermer</button><button class="btn pri" onclick="validerPretSuivant()">⚡ Valider &amp; Élève suivant ➔</button></div>`;
-  $('modal').classList.add('on');
-}
-
-function validerPretSuivant(){
-  const elv=$('n-elv').value.split(' (')[0], liv=$('n-liv').value.split(' (#')[0];
-  L.unshift({id:Date.now(),u:elv,c:'CM2 – M. Durand',b:liv,ex:Math.floor(1000+Math.random()*9000),o:'2026-11-17',l:'2026-12-08',r:false});
-  renderPrets();
-  toast('Prêt validé pour '+elv+' ! Élève suivant.');
-  $('n-liv').value='';$('n-liv').focus();
-}
-
-// ── MODULE 3 : CATALOGUE LIVRES ───────────────────────────────────────
-function renderLivres(){
-  $('pills').innerHTML=`<span class="pill"><b>1 420</b> titres</span><span class="pill"><b>2 850</b> exemplaires</span><span class="pill"><b>124</b> en mallettes</span><span class="pill"><b>6</b> à réparer</span>`;
-  $('tools').innerHTML=`<input id="ql" placeholder="🔍 Rechercher un livre par titre, auteur, genre..." oninput="renderLivresGrid()">
-  <select id="fg" onchange="renderLivresGrid()"><option value="">Tous les genres</option><option>Roman</option><option>Album</option><option>BD</option><option>Documentaire</option></select>`;
-  $('content-container').innerHTML=`<div class="main-single"><div class="grid" id="grid-livres"></div></div>`;
-  renderLivresGrid();
-}
-
-function renderLivresGrid(){
-  const q=($('ql')?$('ql').value:'').toLowerCase(),g=($('fg')?$('fg').value:'');
-  const filtered=B.filter(x=>(x.t+x.a).toLowerCase().includes(q)&&(!g||x.g==g));
-  $('grid-livres').innerHTML=filtered.map((b,i)=>`<div class="book" onclick="openBookDrawer(${i})">
-  <span class="qty">${b.q} ex.</span>
-  <div class="cover" style="background:${b.c}">${b.e}</div>
-  <div class="bt">${b.t}</div>
-  <div class="ba">${b.a} · ${b.g}</div>
-  <div style="margin-top:6px"><span class="badge ${b.d>0?'b-ok':'b-loan'}">${b.d>0?b.d+' dispo':'Prêté'}</span></div>
-  </div>`).join('');
-}
-
-function openBookDrawer(i){
-  const b=B[i];
-  $('drawer').innerHTML=`<button class="btn" onclick="$('drawer').classList.remove('on')">✕ Fermer</button>
-  <div class="cover" style="background:${b.c};margin-top:14px">${b.e}</div>
-  <h3>${b.t}</h3><p class="sub">${b.a}</p>
-  <p><span class="tag">${b.g}</span> <span class="tag">${b.d} disponible(s) / ${b.q} total</span></p>
-  <p style="font-size:13px;line-height:1.5">${b.desc}</p>
-  <div style="background:var(--bg);padding:10px;border-radius:10px;margin-bottom:14px;font-size:12px">
-    <div>• Exemplaire #1042 — <b>Rayon A (Disponible)</b></div>
-    <div>• Exemplaire #1043 — <b>Rayon A (Disponible)</b></div>
-  </div>
-  <button class="btn pri" style="width:100%" onclick="toast('Prêt direct lancé pour ce livre !');$('drawer').classList.remove('on')">📖 Prêter cet ouvrage</button>`;
-  $('drawer').classList.add('on');
-}
-
-// ── MODULE 4 : ÉTIQUETTES ─────────────────────────────────────────────
-function renderEtiquettes(){
-  $('pills').innerHTML=`<span class="pill"><b>Planche standard</b> 24 étiquettes A4</span><span class="pill"><b>Code 39</b> haute précision</span>`;
-  $('tools').innerHTML=`<select><option>Planche A4 24 étiquettes (70 × 37 mm) - Standard</option><option>Planche A4 65 étiquettes (38 × 21 mm) - Tranches</option></select>
-  <button class="btn pri" onclick="window.print()">🖨️ Lancer l'impression A4</button>`;
-  const items=[
-    {t:'Le Petit Prince',a:'Saint-Exupéry',c:'R SAI',b:'CAMUS-01042'},
-    {t:'Lili est harcelée',a:'Saint Mars',c:'R SAI',b:'CAMUS-02108'},
-    {t:'Rouge',a:'Jan De Kinder',c:'A KIN',b:'CAMUS-04102'},
-    {t:'Les enfants Résist.',a:'Dugomier',c:'BD DUG',b:'CAMUS-03012'},
-    {t:'Planète danger',a:'Collectif',c:'577 PLA',b:'CAMUS-05118'},
-    {t:'Max et Lili',a:'Serge Bloch',c:'BD BLO',b:'CAMUS-06104'}
-  ];
-  $('content-container').innerHTML=`<div class="main-single"><div class="detail" style="max-width:800px;margin:0 auto">
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${items.map(x=>`
-    <div style="border:1px dashed var(--bd);border-radius:8px;padding:10px;text-align:center;background:var(--card)">
-      <div style="font-size:9px;font-weight:700;color:var(--mut)">ÉCOLE ALBERT CAMUS — BCD</div>
-      <div style="font-size:12px;font-weight:700;margin:4px 0">${x.t}</div>
-      <div style="font-family:monospace;font-size:16px;letter-spacing:2px;margin:4px 0">||| | |||| | |||</div>
-      <div style="display:flex;justify-content:space-between;font-size:10px"><span>${x.b}</span><b>${x.c}</b></div>
-    </div>`).join('')}</div></div></div>`;
-}
-
-// ── MODULE 5 : BILAN & PALMARÈS ───────────────────────────────────────
-function renderBilan(){
-  $('pills').innerHTML=`<span class="pill"><b>3 410</b> prêts annuels</span><span class="pill"><b>12.1</b> livres lus / élève</span><span class="pill"><b>99.2%</b> taux de retour</span>`;
-  $('tools').innerHTML=`<button class="btn pri" onclick="toast('Rapport annuel complet exporté en PDF !')">📄 Exporter le Rapport Conseil d'école</button>`;
-  $('content-container').innerHTML=`<div class="main-single"><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-  <div class="detail"><h3>🏆 Top 5 des Livres les plus empruntés</h3>
-  <ol style="line-height:2.2;font-size:14px;padding-left:20px">
-    <li>🥇 <b>Le Petit Prince</b> — Saint-Exupéry <i>(42 prêts)</i></li>
-    <li>🥈 <b>Lili est harcelée à l'école</b> — Saint Mars <i>(38 prêts)</i></li>
-    <li>🥉 <b>Les enfants de la Résistance</b> — Dugomier <i>(35 prêts)</i></li>
-    <li>4. <b>Max et Lili veulent tout tout de suite</b> <i>(31 prêts)</i></li>
-    <li>5. <b>Rouge</b> — Jan De Kinder <i>(29 prêts)</i></li>
-  </ol></div>
-  <div class="detail"><h3>🏫 Palmarès des Classes Lectrices</h3>
-  <ol style="line-height:2.2;font-size:14px;padding-left:20px">
-    <li>🥇 <b>CM2 – M. Durand</b> — 612 livres lus <i>(23.5 liv./élève)</i></li>
-    <li>🥈 <b>CE2 – Mme Petit</b> — 540 livres lus <i>(21.2 liv./élève)</i></li>
-    <li>🥉 <b>CM1 – M. Roux</b> — 495 livres lus <i>(19.8 liv./élève)</i></li>
-    <li>4. <b>CE1 – M. Durand</b> — 420 livres lus</li>
-    <li>5. <b>CP – Mme Martin</b> — 380 livres lus</li>
-  </ol></div></div></div>`;
-}
-
-// ── COMMUTATEUR DE STYLES COMPARATIFS ─────────────────────────────────
-function toggleStyle(){
-  if(document.body.classList.contains('pastel')){
-    document.body.classList.remove('pastel');
-    $('btn-style').textContent='🎨 Style : Apple';
-    toast('Style : Apple Cupertino activé');
+function executeQuickReturn() {
+  const val = document.getElementById('quickReturnInput').value.trim().replace('#', '');
+  if (!val) return;
+  const loan = DB_LOANS.find(x => String(x.exId) === val);
+  const msgEl = document.getElementById('quickReturnMsg');
+  if (loan) {
+    DB_LOANS = DB_LOANS.filter(x => x.id !== loan.id);
+    msgEl.style.color = '#15803D';
+    msgEl.textContent = `✅ Retour validé : « ${loan.livreTitre} » (${loan.eleve})`;
+    showToast(`Retour enregistré : #${loan.exId}`);
+    document.getElementById('quickReturnInput').value = '';
+    renderLoansTable();
   } else {
-    document.body.classList.add('pastel');
-    $('btn-style').textContent='🎨 Style : Pastel';
-    toast('Style : Pastel Chaleureux activé');
+    msgEl.style.color = '#DC2626';
+    msgEl.textContent = `⚠️ Aucun prêt en cours trouvé pour l'exemplaire #${val}.`;
   }
 }
 
-// ── ENQUÊTE ENSEIGNANTS MODAL ─────────────────────────────────────────
-function openFeedback(){
-  $('mt').textContent='💬 Enquête Enseignants BCD Express';
-  $('modal-content').innerHTML=`<label>Votre Nom &amp; Classe :</label><input id="f-nom" placeholder="ex: Mme Martin (CP)">
-  <label>Style visuel préféré :</label><select id="f-st"><option>Apple Cupertino (Sobre, épuré, bleu)</option><option>Pastel Chaleureux (Couleurs douces école)</option></select>
-  <label>Note globale sur l'interface :</label><select id="f-sc"><option>⭐⭐⭐⭐⭐ Excellent (5/5)</option><option>⭐⭐⭐⭐ Très bien (4/5)</option><option>⭐⭐⭐ Moyen (3/5)</option></select>
-  <label>Vos remarques &amp; suggestions :</label><textarea id="f-rm" rows="3" placeholder="Ce qui vous plaît ou ce qu'il faudrait modifier..."></textarea>
-  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeM()">Fermer</button><button class="btn pri" onclick="saveFeedback()">💾 Enregistrer mon avis</button></div>`;
-  $('modal').classList.add('on');
+function resetLoansView() {
+  document.getElementById('loanSearchInput').value = '';
+  document.getElementById('loanClassFilter').value = '';
+  document.getElementById('loanLateCheck').checked = false;
+  renderLoansTable();
+  showToast('Filtres réinitialisés');
 }
 
-function saveFeedback(){
-  const txt=`AVIS BCD EXPRESS\nEnseignant : ${$('f-nom').value||'Enseignant'}\nStyle : ${$('f-st').value}\nNote : ${$('f-sc').value}\nRemarques : ${$('f-rm').value||'Aucune'}`;
-  if(navigator.clipboard){navigator.clipboard.writeText(txt);}
-  closeM();
-  toast('Merci ! Votre avis a été copié dans le presse-papier.');
+/* ── 4. Onglet 2 : Inventaire & Livres ────────────────────────────────── */
+function renderBooksCatalog() {
+  const gridContainer = document.getElementById('catalog-grid-view');
+  const search = document.getElementById('bookSearchInput').value.toLowerCase();
+  const genre = document.getElementById('bookGenreFilter').value;
+  const theme = document.getElementById('bookThemeFilter').value;
+  const niveau = document.getElementById('bookNiveauFilter').value;
+
+  const filtered = DB_BOOKS.filter(b => {
+    const matchSearch = b.titre.toLowerCase().includes(search) ||
+                        b.auteur.toLowerCase().includes(search) ||
+                        b.isbn.includes(search);
+    const matchGenre = !genre || b.genre === genre;
+    const matchTheme = !theme || b.theme.includes(theme);
+    const matchNiveau = !niveau || b.niveau === niveau;
+    return matchSearch && matchGenre && matchTheme && matchNiveau;
+  });
+
+  gridContainer.innerHTML = filtered.map(b => `
+    <div class="book-grid-card ${b.id === selectedBookId ? 'selected' : ''}" onclick="selectBook(${b.id})">
+      <div class="book-cover-box" style="width:100%; height:110px; background:${b.bg}; margin-bottom:8px;">
+        <span style="font-size:32px;">${b.emoji}</span>
+      </div>
+      <div style="font-weight:700; font-size:12.5px; line-height:1.2; margin-bottom:2px;">${b.titre}</div>
+      <div style="font-size:11px; color:var(--text-muted);">${b.auteur}</div>
+      <div style="margin-top:6px; display:flex; justify-content:center; gap:4px; flex-wrap:wrap;">
+        <span class="badge-genre" style="font-size:10px;">${b.genre}</span>
+        <span class="pill-green" style="font-size:10px;">${b.exDispo}/${b.exTotal}</span>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('catalog-status-count').textContent = `${filtered.length} livre(s) affiché(s) sur ${DB_BOOKS.length} au catalogue`;
+  renderBookDetail();
 }
 
-render();
-</script></body></html>
+function selectBook(id) {
+  selectedBookId = id;
+  renderBooksCatalog();
+}
+
+function renderBookDetail() {
+  const b = DB_BOOKS.find(x => x.id === selectedBookId) || DB_BOOKS[0];
+  if (!b) return;
+
+  document.getElementById('detail-cover-box').style.background = b.bg;
+  document.getElementById('detail-cover-emoji').textContent = b.emoji;
+  document.getElementById('detail-titre').textContent = b.titre;
+  document.getElementById('detail-auteur').textContent = b.auteur;
+  document.getElementById('detail-genre').textContent = b.genre;
+  document.getElementById('detail-theme').textContent = b.theme;
+  document.getElementById('detail-niveau').textContent = b.niveau;
+  document.getElementById('detail-isbn').textContent = b.isbn;
+  document.getElementById('detail-editeur').textContent = b.editeur;
+  document.getElementById('detail-exemplaires-ratio').textContent = `${b.exDispo}/${b.exTotal} dispo`;
+
+  const malletteRow = document.getElementById('detail-mallette-row');
+  if (b.mallette) {
+    malletteRow.style.display = 'flex';
+    document.getElementById('detail-mallette').textContent = b.mallette;
+  } else {
+    malletteRow.style.display = 'none';
+  }
+
+  // Exemplaires
+  const tbody = document.getElementById('detail-exemplaires-tbody');
+  tbody.innerHTML = `
+    <tr>
+      <td><b style="font-family:monospace;">#2212</b></td>
+      <td><span class="pill-green">● DISPONIBLE</span></td>
+      <td>Bon état (Rayon A)</td>
+      <td>12/10/2026</td>
+    </tr>
+    <tr>
+      <td><b style="font-family:monospace;">#2213</b></td>
+      <td><span class="pill-blue">● EMPRUNTÉ</span></td>
+      <td>Couverture plastifiée</td>
+      <td>12/10/2026</td>
+    </tr>
+  `;
+}
+
+function switchBookView(view) {
+  const isGrid = view === 'grid';
+  document.getElementById('catalog-grid-view').style.display = isGrid ? 'grid' : 'none';
+  document.getElementById('catalog-list-view').style.display = isGrid ? 'none' : 'block';
+  document.getElementById('btnViewGrid').style.background = isGrid ? 'var(--primary)' : 'transparent';
+  document.getElementById('btnViewGrid').style.color = isGrid ? 'white' : 'inherit';
+  document.getElementById('btnViewList').style.background = !isGrid ? 'var(--primary)' : 'transparent';
+  document.getElementById('btnViewList').style.color = !isGrid ? 'white' : 'inherit';
+}
+
+function resetBookFilters() {
+  document.getElementById('bookSearchInput').value = '';
+  document.getElementById('bookGenreFilter').value = '';
+  document.getElementById('bookThemeFilter').value = '';
+  document.getElementById('bookNiveauFilter').value = '';
+  renderBooksCatalog();
+  showToast('Filtres catalogue réinitialisés');
+}
+
+/* ── 5. Onglet 3 : Étiquettes & Codes-barres ─────────────────────────── */
+let labelSelection = { 1: 2, 3: 3, 5: 4, 6: 1 };
+
+function renderLabelsTable() {
+  const tbody = document.getElementById('labels-tbody');
+  const search = document.getElementById('filterLabelInput').value.toLowerCase();
+  const onlySelected = document.getElementById('chkOnlySelectedLabels').checked;
+
+  const filtered = DB_BOOKS.filter(b => {
+    const isChecked = !!labelSelection[b.id];
+    if (onlySelected && !isChecked) return false;
+    return b.titre.toLowerCase().includes(search) || b.auteur.toLowerCase().includes(search) || b.isbn.includes(search);
+  });
+
+  tbody.innerHTML = filtered.map(b => {
+    const isChecked = !!labelSelection[b.id];
+    const qty = labelSelection[b.id] || b.exTotal;
+    return `
+      <tr>
+        <td style="text-align:center;">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleLabelCheck(${b.id}, this.checked)">
+        </td>
+        <td><b>${b.titre}</b></td>
+        <td>${b.auteur} • <span style="color:var(--text-muted);">${b.editeur}</span></td>
+        <td style="font-family:monospace; text-align:center;">${b.isbn}</td>
+        <td style="text-align:center;"><b>${b.exTotal}</b></td>
+        <td style="text-align:center;">
+          <div style="display:inline-flex; align-items:center; gap:6px;">
+            <button class="btn-outline btn-sm" onclick="adjustLabelQty(${b.id}, -1)">−</button>
+            <b style="min-width:20px; display:inline-block; text-align:center;">${qty}</b>
+            <button class="btn-outline btn-sm" onclick="adjustLabelQty(${b.id}, 1)">+</button>
+          </div>
+        </td>
+        <td style="text-align:center;"><span class="badge-genre">${b.genre}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  // Calcul totaux
+  let totalLabels = Object.values(labelSelection).reduce((s, v) => s + v, 0);
+  let booksCount = Object.keys(labelSelection).length;
+  let sheets = Math.ceil(totalLabels / 24);
+
+  document.getElementById('lblSummaryBooks').textContent = `${booksCount} livre(s)`;
+  document.getElementById('lblSummaryLabels').textContent = `${totalLabels} étiquette(s)`;
+  document.getElementById('lblSummarySheets').textContent = `${sheets} feuille(s)`;
+  document.getElementById('lblSummaryAntiWaste').textContent = `♻️ Anti-gaspillage : ${sheets * 24 - totalLabels} étiquettes restantes sur la planche.`;
+}
+
+function toggleLabelCheck(bookId, checked) {
+  if (checked) {
+    labelSelection[bookId] = 1;
+  } else {
+    delete labelSelection[bookId];
+  }
+  renderLabelsTable();
+}
+
+function adjustLabelQty(bookId, delta) {
+  let curr = labelSelection[bookId] || 1;
+  let updated = Math.max(1, curr + delta);
+  labelSelection[bookId] = updated;
+  renderLabelsTable();
+}
+
+function checkAllLabels(val) {
+  if (val) {
+    DB_BOOKS.forEach(b => labelSelection[b.id] = b.exTotal);
+  } else {
+    labelSelection = {};
+  }
+  renderLabelsTable();
+  showToast(val ? 'Tous les livres cochés' : 'Tous les livres décochés');
+}
+
+function checkLast24Labels() {
+  labelSelection = {};
+  DB_BOOKS.slice(0, 6).forEach(b => labelSelection[b.id] = 4);
+  renderLabelsTable();
+  showToast('Planche complète de 24 étiquettes prête !');
+}
+
+function printLabels() {
+  showToast('Planche A4 24 étiquettes envoyée à l\'impression !');
+}
+
+/* ── 6. Onglet 5 : Utilisateurs ───────────────────────────────────────── */
+function renderUsersTable() {
+  const tbody = document.getElementById('users-tbody');
+  const search = document.getElementById('userSearchInput').value.toLowerCase();
+  const cls = document.getElementById('userClassFilter').value;
+
+  const filtered = DB_USERS.filter(u => {
+    const match = u.nom.toLowerCase().includes(search) || u.prenom.toLowerCase().includes(search) || u.numero.toLowerCase().includes(search);
+    const matchClass = !cls || u.classe === cls;
+    return match && matchClass;
+  });
+
+  tbody.innerHTML = filtered.map(u => `
+    <tr style="cursor:pointer;" onclick="selectUser('${u.numero}')">
+      <td><b style="font-family:monospace;">${u.numero}</b></td>
+      <td><b>${u.nom}</b> ${u.prenom}</td>
+      <td><span class="badge-genre">${u.classe}</span></td>
+      <td><span class="${u.type === 'ENSEIGNANT' ? 'pill-blue' : 'pill-green'}">${u.type}</span></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('users-status-text').textContent = `${filtered.length} utilisateur(s) affiché(s)`;
+}
+
+function selectUser(num) {
+  const u = DB_USERS.find(x => x.numero === num);
+  if (!u) return;
+  document.getElementById('uDetailName').textContent = `${u.prenom} ${u.nom}`;
+  document.getElementById('uDetailSub').textContent = `${u.classe} • Carte n° ${u.numero}`;
+  document.getElementById('uDetailNum').textContent = u.numero;
+  document.getElementById('uDetailClass').textContent = u.classe;
+  document.getElementById('uDetailType').textContent = u.type === 'ENSEIGNANT' ? 'Enseignant' : 'Élève';
+  document.getElementById('uDetailAvatar').textContent = `${u.prenom[0]}${u.nom[0]}`;
+  showToast(`Fiche de ${u.prenom} ${u.nom} affichée`);
+}
+
+/* ── 7. Onglet 6 : Mallettes Thématiques ──────────────────────────────── */
+function renderMallettes() {
+  renderMallettesList();
+  renderMalletteDetail();
+}
+
+function renderMallettesList() {
+  const container = document.getElementById('mallettes-list-container');
+  const search = document.getElementById('malletteSearchInput').value.toLowerCase();
+  const statut = document.getElementById('malletteStatusFilter').value;
+  const theme = document.getElementById('malletteThemeFilter').value;
+
+  const filtered = DB_MALLETTES.filter(m => {
+    const matchSearch = m.titre.toLowerCase().includes(search) || m.id.toLowerCase().includes(search) || m.theme.toLowerCase().includes(search);
+    const matchStatut = !statut || m.statut === statut;
+    const matchTheme = !theme || m.theme.includes(theme);
+    return matchSearch && matchStatut && matchTheme;
+  });
+
+  container.innerHTML = filtered.map(m => {
+    const totalBooks = m.books.reduce((s, b) => s + b.qty, 0);
+    const isSelected = m.id === selectedMalletteId;
+    return `
+      <div class="mallette-card-item ${isSelected ? 'selected' : ''}"
+           style="border-left-color:${m.color};"
+           onclick="selectMallette('${m.id}')">
+        <div style="font-weight:700; font-size:13.5px;">${m.titre}</div>
+        <div style="font-size:11.5px; color:var(--text-muted); margin:2px 0 6px;">
+          ${m.id} • ${m.niveau} • ${totalBooks} livres (${m.books.length} titres)
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="${m.statut === 'LOAN' ? 'pill-orange' : 'pill-green'}">
+            ${m.statut === 'LOAN' ? 'En prêt – ' + m.loan.classe : '● Disponible'}
+          </span>
+          ${m.statut === 'DISPO' ? `<button class="btn-emerald btn-sm" onclick="event.stopPropagation(); openLoanMalletteModal('${m.id}')">Prêter</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectMallette(id) {
+  selectedMalletteId = id;
+  renderMallettes();
+}
+
+function renderMalletteDetail() {
+  const m = DB_MALLETTES.find(x => x.id === selectedMalletteId) || DB_MALLETTES[0];
+  if (!m) return;
+
+  const totalBooks = m.books.reduce((s, b) => s + b.qty, 0);
+
+  document.getElementById('mDetailTitle').textContent = m.titre;
+  document.getElementById('mDetailCode').textContent = m.id;
+  document.getElementById('mDetailThemeTag').textContent = `Thème : ${m.theme}`;
+  document.getElementById('mDetailNiveauTag').textContent = `Niveau : ${m.niveau}`;
+  document.getElementById('mDetailCountTag').textContent = `${totalBooks} livre(s) (${m.books.length} titre(s))`;
+
+  const badge = document.getElementById('mDetailStatusBadge');
+  const btnLoan = document.getElementById('btnLoanMallette');
+  const btnReturn = document.getElementById('btnReturnMallette');
+  const alertBox = document.getElementById('mLoanAlertBox');
+
+  if (m.statut === 'LOAN') {
+    badge.className = 'pill-orange';
+    badge.textContent = `EN PRÊT (${m.loan.classe})`;
+    btnLoan.style.display = 'none';
+    btnReturn.style.display = 'inline-flex';
+    alertBox.style.display = 'block';
+    alertBox.innerHTML = `📦 Cette mallette est actuellement prêtée à la classe de <b>${m.loan.classe}</b> (Retour prévu le ${m.loan.dateRetour}).`;
+  } else {
+    badge.className = 'pill-green';
+    badge.textContent = 'DISPONIBLE';
+    btnLoan.style.display = 'inline-flex';
+    btnReturn.style.display = 'none';
+    alertBox.style.display = 'none';
+  }
+
+  // Grille des livres Apple Books
+  const grid = document.getElementById('mBooksGrid');
+  grid.innerHTML = m.books.map((b, idx) => `
+    <div class="book-grid-card" onclick="openInspectorDrawer(${idx})">
+      <span class="book-qty-badge">×${b.qty}</span>
+      <button class="book-rm-btn" onclick="event.stopPropagation(); removeBookFromMallette(${idx})">Retirer</button>
+      <div class="book-cover-box" style="width:100%; height:110px; background:${m.color}; margin-bottom:8px;">
+        <span style="font-size:36px;">${b.emoji}</span>
+      </div>
+      <div style="font-weight:700; font-size:12.5px; line-height:1.2; margin-bottom:2px;">${b.titre}</div>
+      <div style="font-size:11px; color:var(--text-muted);">${b.auteur} • ${b.genre}</div>
+    </div>
+  `).join('');
+}
+
+function switchMalletteSubTab(tabName) {
+  ['contenu', 'ressources', 'historique', 'infos'].forEach(t => {
+    document.getElementById(`mSubTab${capitalize(t)}`).classList.toggle('active', t === tabName);
+    document.getElementById(`mSubContent-${t}`).style.display = (t === tabName) ? 'flex' : 'none';
+  });
+}
+
+function capitalize(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/* ── 8. Tiroir Inspecteur Pas-à-Pas ──────────────────────────────────── */
+function openInspectorDrawer(index) {
+  currentInspectorBookIndex = index;
+  const m = DB_MALLETTES.find(x => x.id === selectedMalletteId);
+  const b = m.books[index];
+  if (!b) return;
+
+  document.getElementById('inspTitle').textContent = b.titre;
+  document.getElementById('inspAuthor').textContent = `${b.auteur} • ${b.genre}`;
+  document.getElementById('inspCoverBox').style.background = m.color;
+  document.getElementById('inspCoverBox').textContent = b.emoji;
+  document.getElementById('inspQty').textContent = b.qty;
+
+  document.getElementById('inspectorDrawer').classList.add('active');
+}
+
+function closeInspectorDrawer() {
+  document.getElementById('inspectorDrawer').classList.remove('active');
+}
+
+function stepInspectorQty(delta) {
+  const m = DB_MALLETTES.find(x => x.id === selectedMalletteId);
+  const b = m.books[currentInspectorBookIndex];
+  if (b) {
+    b.qty = Math.max(1, b.qty + delta);
+    document.getElementById('inspQty').textContent = b.qty;
+    renderMalletteDetail();
+    showToast(`Quantité mise à jour : ×${b.qty}`);
+  }
+}
+
+function removeBookFromCurrentMallette() {
+  const m = DB_MALLETTES.find(x => x.id === selectedMalletteId);
+  if (m && m.books[currentInspectorBookIndex]) {
+    const title = m.books[currentInspectorBookIndex].titre;
+    m.books.splice(currentInspectorBookIndex, 1);
+    closeInspectorDrawer();
+    renderMallettes();
+    showToast(`« ${title} » retiré de la mallette.`);
+  }
+}
+
+function removeBookFromMallette(idx) {
+  const m = DB_MALLETTES.find(x => x.id === selectedMalletteId);
+  if (m && m.books[idx]) {
+    const title = m.books[idx].titre;
+    m.books.splice(idx, 1);
+    renderMallettes();
+    showToast(`« ${title} » retiré de la mallette.`);
+  }
+}
+
+function addBookToMallette() {
+  const input = document.getElementById('mAddBookInput');
+  const val = input.value.trim();
+  if (!val) return;
+  const m = DB_MALLETTES.find(x => x.id === selectedMalletteId);
+  if (m) {
+    m.books.push({ titre: val, auteur: "Auteur BCD", genre: "Album", qty: 3, emoji: "📗" });
+    input.value = '';
+    renderMallettes();
+    showToast(`« ${val} » (×3) ajouté à la mallette !`);
+  }
+}
+
+/* ── 9. Modales & Prêts ──────────────────────────────────────────────── */
+function openLoanMalletteModal() {
+  document.getElementById('loanMalletteModal').classList.add('active');
+}
+function closeLoanMalletteModal() {
+  document.getElementById('loanMalletteModal').classList.remove('active');
+}
+function confirmLoanMallette() {
+  const m = DB_MALLETTES.find(x => x.id === selectedMalletteId);
+  const classe = document.getElementById('malletteLoanClassSelect').value;
+  const dateRetour = document.getElementById('malletteLoanDueDate').value;
+  if (m) {
+    m.statut = "LOAN";
+    m.loan = { classe, dateRetour };
+    closeLoanMalletteModal();
+    renderMallettes();
+    showToast(`Mallette « ${m.titre} » prêtée à ${classe} !`);
+  }
+}
+function returnCurrentMallette() {
+  const m = DB_MALLETTES.find(x => x.id === selectedMalletteId);
+  if (m) {
+    m.statut = "DISPO";
+    m.loan = null;
+    renderMallettes();
+    showToast(`Retour de la mallette « ${m.titre} » validé !`);
+  }
+}
+
+function openNewLoanModal() {
+  document.getElementById('newLoanModal').classList.add('active');
+}
+function closeNewLoanModal() {
+  document.getElementById('newLoanModal').classList.remove('active');
+}
+function validateContinuousLoan() {
+  const userNum = document.getElementById('newLoanUserSelect').value;
+  const user = DB_USERS.find(x => x.numero === userNum) || DB_USERS[0];
+  const exId = parseInt(document.getElementById('newLoanBookSelect').value);
+  const book = DB_BOOKS.find(x => x.id === 1) || DB_BOOKS[0];
+  const dateDue = document.getElementById('newLoanDueDate').value;
+
+  DB_LOANS.unshift({
+    id: Date.now(),
+    exId: exId,
+    livreTitre: book.titre,
+    eleve: `${user.prenom} ${user.nom}`,
+    classe: user.classe,
+    dateEmprunt: "2026-11-17",
+    dateLimite: dateDue,
+    statut: "En cours"
+  });
+
+  showToast(`Emprunt validé pour ${user.prenom} ${user.nom} !`);
+  renderLoansTable();
+  // Ne ferme pas la modale pour le prêt en continu avec la classe
+}
+
+/* ── 10. Modale Feedback & Avis Enseignant ────────────────────────────── */
+function openFeedbackModal() {
+  document.getElementById('teacherFeedbackModal').classList.add('active');
+}
+function closeFeedbackModal() {
+  document.getElementById('teacherFeedbackModal').classList.remove('active');
+}
+function submitFeedback() {
+  const author = document.getElementById('feedbackAuthor').value;
+  const comment = document.getElementById('feedbackComment').value;
+  closeFeedbackModal();
+  showToast(`Merci pour votre retour ${author || 'collègue'} ! Vos avis sont enregistrés.`);
+}
+
+/* ── 11. Thème et Toast ──────────────────────────────────────────────── */
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('dark-mode');
+  const btn = document.getElementById('btn-theme-toggle');
+  btn.textContent = isDark ? '☀️ Mode Clair' : '🌙 Mode Sombre';
+  showToast(isDark ? 'Mode sombre activé' : 'Mode clair activé');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('appToast');
+  t.textContent = msg;
+  t.classList.add('active');
+  setTimeout(() => t.classList.remove('active'), 2800);
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function toggleOutilsMenu(e) {
+  e.stopPropagation();
+  const m = document.getElementById('outils-menu-dropdown');
+  m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+}
+function hideOutilsMenu() {
+  document.getElementById('outils-menu-dropdown').style.display = 'none';
+}
+
+function toggleMalletteActionsMenu(e) {
+  e.stopPropagation();
+  const m = document.getElementById('mallette-actions-menu');
+  m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+}
+function hideMalletteMenu() {
+  document.getElementById('mallette-actions-menu').style.display = 'none';
+}
+
+window.onclick = function() {
+  hideOutilsMenu();
+  hideMalletteMenu();
+};
+
+/* ── Démarrage initial ───────────────────────────────────────────────── */
+renderLoansTable();
+renderBooksCatalog();
+renderLabelsTable();
+renderUsersTable();
+renderMallettes();
+</script>
+
+</body>
+</html>
