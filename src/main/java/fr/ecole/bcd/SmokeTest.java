@@ -91,8 +91,14 @@ public class SmokeTest {
         System.out.println("  🧪 BCD Express — Test fonctionnel (Smoke Test)");
         System.out.println("═══════════════════════════════════════════════════\n");
 
+        File testDb = new File("target/smoke_test.db");
         try {
-            // Initialiser la base (crée les tables si nécessaire)
+            // Isoler les tests sur une copie de travail pour ne JAMAIS polluer ou réécrire bcd.db
+            testDb.getParentFile().mkdirs();
+            if (new File("bcd.db").exists()) {
+                java.nio.file.Files.copy(java.nio.file.Path.of("bcd.db"), testDb.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            DatabaseManager.setDbUrl("jdbc:sqlite:target/smoke_test.db");
             DatabaseManager.initializeDatabase();
 
             // Nettoyer les données de test précédentes
@@ -131,6 +137,10 @@ public class SmokeTest {
         } finally {
             SoundService.shutdown();
             DatabaseManager.closeConnection();
+            DatabaseManager.setDbUrl(null);
+            if (testDb.exists()) {
+                testDb.delete();
+            }
         }
 
         // Résumé
@@ -140,6 +150,8 @@ public class SmokeTest {
 
         if (failed > 0) {
             System.exit(1);
+        } else {
+            System.exit(0);
         }
     }
 
