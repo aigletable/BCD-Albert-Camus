@@ -843,7 +843,7 @@ body.dark-mode .book-catalog-card.selected {
 
 .map3d-main-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 390px;
   gap: 16px;
   align-items: start;
 }
@@ -861,7 +861,7 @@ body.dark-mode .book-catalog-card.selected {
   border: 1px solid #334155;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  height: 620px;
+  height: 640px;
   display: flex;
   flex-direction: column;
 }
@@ -885,7 +885,7 @@ body.dark-mode .book-catalog-card.selected {
   display: flex;
   gap: 6px;
   z-index: 10;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(8px);
   padding: 6px 10px;
   border-radius: var(--radius-md);
@@ -916,7 +916,7 @@ body.dark-mode .book-catalog-card.selected {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
@@ -955,7 +955,7 @@ body.dark-mode .book-catalog-card.selected {
   bottom: 12px;
   left: 12px;
   right: 12px;
-  background: rgba(15, 23, 42, 0.88);
+  background: rgba(15, 23, 42, 0.9);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
@@ -1010,7 +1010,7 @@ body.dark-mode .book-catalog-card.selected {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-height: 620px;
+  max-height: 640px;
   overflow-y: auto;
 }
 
@@ -1085,6 +1085,19 @@ body.dark-mode .book-catalog-card.selected {
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
+}
+
+.ascii-plan-box {
+  background: #0F172A;
+  color: #38BDF8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.35;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  border: 1px solid #334155;
+  white-space: pre;
 }
 
 </style>
@@ -1980,7 +1993,7 @@ body.dark-mode .book-catalog-card.selected {
 
   
     <!-- ==========================
-         ONGLET 7 : PLAN 3D DE LA BCD (PROTOTYPE / IDÉE)
+         ONGLET 7 : PLAN 3D DE LA BCD (PROTOTYPE / IDÉE EN TEST)
          ========================== -->
     <div class="tab-content-container" id="tab-map3d" style="display:none; flex-direction:column; gap:16px;">
       
@@ -1988,18 +2001,18 @@ body.dark-mode .book-catalog-card.selected {
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
         <div>
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
-            <h1 class="screen-title" style="margin:0;">🗺️ Plan 3D de la BCD &amp; Rangement des Livres</h1>
+            <h1 class="screen-title" style="margin:0;">🗺️ Plan 3D de la BCD &amp; Emplacement des Livres</h1>
             <span style="font-size:11px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:2px 8px; border-radius:9999px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;">
               💡 Prototype / Idée en test
             </span>
           </div>
           <p style="font-size:13px; color:var(--text-muted); margin:0;">
-            Maquette exploratoire de repérage spatial 3D fidèle au croquis original de l'école Albert Camus • Localisation des rayons et reclassement
+            Modélisation spatiale 3D fidèle aux étagères et îlots réels de la BCD Albert Camus • Repérage de rayon et reclassement douchette
           </p>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
           <button class="btn-outline" onclick="openCroquisModal()">
-            📄 Voir le croquis d'origine
+            📄 Voir le schéma &amp; photos réelles
           </button>
           <button class="btn-blue" style="background:#6366F1;" onclick="openShelveAssistantModal()">
             ⚡ Assistant Douchette (Bip &amp; Range)
@@ -2015,7 +2028,7 @@ body.dark-mode .book-catalog-card.selected {
         <div style="display:flex; align-items:center; gap:10px;">
           <span style="font-size:20px;">💡</span>
           <div>
-            <strong>Note d'intention (Concept exploratoire) :</strong> Cet onglet est un <strong>prototype pour tester l'idée</strong> d'une carte 3D interactive de la bibliothèque avec chaque étagère identifiée, pour voir où ranger les livres et guider les retours par douchette.
+            <strong>Note d'intention (Concept exploratoire) :</strong> Cet onglet est un <strong>prototype pour tester l'idée</strong> d'une carte 3D interactive de la bibliothèque avec chaque étagère identifiée (Romans Séries, Docs Histoire, Îlot Central, Biblio verte, Bac BD, Bacs CP/CE1, etc.) pour guider les élèves et bénévoles.
           </div>
         </div>
         <button class="btn-subtle" style="font-size:11.5px; padding:4px 10px; background:#FEF3C7; border:1px solid #FCD34D; color:#92400E; font-weight:600;" onclick="openTeacherFeedbackModal()">
@@ -2027,19 +2040,20 @@ body.dark-mode .book-catalog-card.selected {
       <div class="map3d-topbar">
         <div class="map3d-search-box">
           <span style="font-size:16px;">🔍</span>
-          <input type="text" id="map3dSearchInput" placeholder="Où est rangé ce livre ? (ex: Petit Prince, Astérix, Harcèlement, Roman...)" oninput="handleMap3dSearch(this.value)" autocomplete="off">
+          <input type="text" id="map3dSearchInput" placeholder="Où est rangé ce livre ? (ex: Petit Prince, Astérix, Harry Potter, Wapiti, Dino...)" oninput="handleMap3dSearch(this.value)" autocomplete="off">
           <button id="map3dClearSearchBtn" onclick="clearMap3dSearch()" style="display:none; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px;">✕</button>
         </div>
 
         <div class="map3d-filter-pills" id="map3dFilterPills">
-          <button class="map3d-pill active" data-filter="all" onclick="filterMap3dGenre('all')">Tous les meubles (12)</button>
-          <button class="map3d-pill pill-green" data-filter="etagere" onclick="filterMap3dGenre('etagere')">🟩 Étagères (6)</button>
-          <button class="map3d-pill pill-red" data-filter="bac" onclick="filterMap3dGenre('bac')">🟥 Bacs à livres (3)</button>
+          <button class="map3d-pill active" data-filter="all" onclick="filterMap3dGenre('all')">Tous les espaces (18)</button>
+          <button class="map3d-pill pill-green" data-filter="etagere" onclick="filterMap3dGenre('etagere')">🟩 Étagères murales</button>
+          <button class="map3d-pill pill-green" data-filter="ilot" onclick="filterMap3dGenre('ilot')">🏛️ Îlots centraux</button>
+          <button class="map3d-pill pill-red" data-filter="bac" onclick="filterMap3dGenre('bac')">🟥 Bacs à livres</button>
           <button class="map3d-pill" data-filter="BD" onclick="filterMap3dGenre('BD')">💬 BD &amp; Mangas</button>
-          <button class="map3d-pill" data-filter="Roman" onclick="filterMap3dGenre('Roman')">📚 Romans (C2/C3)</button>
-          <button class="map3d-pill" data-filter="Album" onclick="filterMap3dGenre('Album')">🎨 Albums</button>
+          <button class="map3d-pill" data-filter="Roman" onclick="filterMap3dGenre('Roman')">📚 Romans &amp; Séries</button>
+          <button class="map3d-pill" data-filter="Album" onclick="filterMap3dGenre('Album')">🎨 Albums A-T</button>
           <button class="map3d-pill" data-filter="Documentaire" onclick="filterMap3dGenre('Documentaire')">🔬 Documentaires</button>
-          <button class="map3d-pill" data-filter="Mallette" onclick="filterMap3dGenre('Mallette')">🎒 Mallettes</button>
+          <button class="map3d-pill" data-filter="Revue" onclick="filterMap3dGenre('Revue')">📰 Revues (Astrapi/Wapiti)</button>
         </div>
       </div>
 
@@ -2087,20 +2101,24 @@ body.dark-mode .book-catalog-card.selected {
           <div class="map3d-canvas-hint">
             <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
               <div class="map3d-legend-item">
+                <span class="map3d-swatch" style="background:#2563EB;"></span>
+                <span>Bleu : Romans &amp; Séries</span>
+              </div>
+              <div class="map3d-legend-item">
                 <span class="map3d-swatch" style="background:#10B981;"></span>
-                <span>Vert hachuré : Étagères thématiques (6)</span>
+                <span>Vert : Documentaires &amp; Sciences</span>
               </div>
               <div class="map3d-legend-item">
                 <span class="map3d-swatch" style="background:#EF4444;"></span>
-                <span>Rouge hachuré : Bacs à albums &amp; nouveautés (3)</span>
+                <span>Rouge : Bacs BD, CP/CE1 &amp; Nouveautés</span>
               </div>
               <div class="map3d-legend-item">
-                <span class="map3d-swatch" style="background:#64748B;"></span>
-                <span>Gris / Bleu : Accueil &amp; Ateliers lecture (3)</span>
+                <span class="map3d-swatch" style="background:#F59E0B;"></span>
+                <span>Orange : Albums &amp; Revues jeunesse</span>
               </div>
             </div>
             <div style="color:#94A3B8; font-size:11px;">
-              🖱️ Glisser = pivoter (360°) • Molette = zoomer • Clic = inspecter
+              🖱️ Glisser = pivoter (360°) • Molette = zoomer • Clic = inspecter meuble
             </div>
           </div>
         </div>
@@ -2926,53 +2944,71 @@ body.dark-mode .book-catalog-card.selected {
 <!-- JAVASCRIPT : Logique 100% interactive synchronisée avec SQLite BCD    -->
 <!-- ====================================================================== -->
 
-<!-- ── MODAL CROQUIS ORIGINAL BCD ──────────────────────────────────────── -->
+<!-- ── MODAL CROQUIS & SCHÉMA RÉEL BCD ─────────────────────────────────── -->
 <div class="modal" id="croquisModal">
-  <div class="modal-box" style="max-width:850px; width:95%;">
+  <div class="modal-box" style="max-width:880px; width:95%;">
     <div class="modal-header">
       <div style="display:flex; align-items:center; gap:8px;">
-        <h3 style="margin:0; font-size:17px; font-weight:700;">📄 Croquis Original de la BCD &amp; Correspondance 3D</h3>
+        <h3 style="margin:0; font-size:17px; font-weight:700;">📄 Schéma d'Implantation Réel de la BCD &amp; Photos de Rayonnage</h3>
         <span style="font-size:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:1px 6px; border-radius:9999px; font-weight:700;">PROTOTYPE</span>
       </div>
       <button class="modal-close-btn" onclick="closeCroquisModal()">✕</button>
     </div>
     <div class="modal-body" style="max-height:75vh; overflow-y:auto; display:flex; flex-direction:column; gap:16px;">
       <p style="font-size:13px; color:var(--text-muted); margin:0;">
-        Ce plan a été dessiné à la main pour organiser la BCD de l'école Albert Camus Pasteur. Notre prototype 3D explore l'idée d'une maquette interactive pour retranscrire fidèlement chacun des 12 éléments :
+        Ce plan d'implantation a été relevé directement dans la BCD de l'école Albert Camus Pasteur avec le contenu réel photographié sur chaque étagère :
       </p>
+
+      <div class="ascii-plan-box">MUR NORD (Affiches : America, Star Wars, Pinder Bros)
+  +--------------------------------------------------------------------------+
+  | [Canapé] [=== ROMANS (Séries/S-Z) ===][=== DOCS HIST/GÉO/SOC ===]        |
+  | [ vert ]          (Photo 13)                   (Photo 12)                |
+  |                                                                [Poufs ]  |
+M | [== BAC BD ==][Caisse]      +--- ÎLOT NORD (N-S) ---+          [verts ]  | M
+U | (Photos 14/15)[bois  ]      | Face O : Romans       |  [Tapis]           | U
+R |                             |          incliné (9)  |                    | R
+  | [Fauteuil]                  | Face E : Docs Sciences|                    |
+O | [ vert   ]                  |          /Sports (10) |                    | E
+U | [==== ROMANS A-P (16) ====] +-----------------------+  [== BIBLIO VERTE =| S
+E | [==== CONTES/POÉSIE (17)==]        [Bac blanc]         | N : Docs 500(11)| T
+S |   (Meuble double-face)                                 | S : Albums/  (8)|
+T |                                                        +-----------------+ (
+  | [3 Chaises]                                                              | F
+( | (V, B, B)                                              [Bac 1ères][Docs] | E
+V |                                                        [lect.(7) ][(6) ] | N
+E |  (Porte d'entrée                                       (sous radiateur)  | Ê
+R |   bleue/blanche)        +--- ÎLOT SUD (E-O) ---+                         | T
+R |                         | Face N : Albums A-T  |       [== BAC CP/CE1 ==]| R
+I | [Chariot]               |          (Photo 4)   |          (Photo 5)      | E
+È | [blanc  ]               | Face S : Revues/Mags |                         | S
+R |                         |          (Photo 2)   |       [=== NOUVEAUTÉS ==| )
+E | [Placards]              +----------------------+[Bac ] |    (Photo 3)    |
+  | [muraux  ]  [Bureau PC]                         [vert] | S : SUR PLACE(1)|
+  |                                                 [(2) ] +-----------------+
+  |                                                        [Table de travail]|
+  +--------------------------------------------------------[  Porte bois    ]+
+                                     MUR SUD</div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;">
         <div style="border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; background:#000; text-align:center;">
-          <img src="IMG_0A6C7317F65B-1.jpeg" onerror="this.src='../docs/IMG_0A6C7317F65B-1.jpeg'" alt="Croquis original BCD" style="max-width:100%; height:auto; max-height:420px; object-fit:contain; display:block; margin:0 auto;">
-          <div style="padding:6px; font-size:11px; color:#94A3B8; background:#1e293b;">Image originale docs/IMG_0A6C7317F65B-1.jpeg</div>
+          <img src="IMG_0A6C7317F65B-1.jpeg" onerror="this.src='../docs/IMG_0A6C7317F65B-1.jpeg'" alt="Croquis original BCD" style="max-width:100%; height:auto; max-height:360px; object-fit:contain; display:block; margin:0 auto;">
+          <div style="padding:6px; font-size:11px; color:#94A3B8; background:#1e293b;">Croquis d'architecte original docs/IMG_0A6C7317F65B-1.jpeg</div>
         </div>
 
         <div style="font-size:12.5px; display:flex; flex-direction:column; gap:10px;">
           <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:var(--radius-sm); padding:10px;">
-            <div style="font-weight:700; color:#15803D; margin-bottom:4px;">🟩 Vert Hachuré = 6 Étagères de Livres</div>
+            <div style="font-weight:700; color:#15803D; margin-bottom:4px;">🧭 Correspondance des 17 Photos de Rayonnage :</div>
             <ul style="margin:0; padding-left:18px; color:#166534; font-size:12px; line-height:1.5;">
-              <li><strong>Étagère Est</strong> : Grande murale droite (Documentaires)</li>
-              <li><strong>Étagère Centrale</strong> : Double-face horizontale (BD &amp; Mangas)</li>
-              <li><strong>Étagères Nord 1 &amp; 2</strong> : Verticales haut (Contes &amp; Cycle 2)</li>
-              <li><strong>Étagères Sud 1 &amp; 2</strong> : Verticales bas (Cycle 3 &amp; Mallettes)</li>
-            </ul>
-          </div>
-
-          <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:var(--radius-sm); padding:10px;">
-            <div style="font-weight:700; color:#B91C1C; margin-bottom:4px;">🟥 Rouge Hachuré = 3 Bacs à Albums &amp; Livres</div>
-            <ul style="margin:0; padding-left:18px; color:#991B1B; font-size:12px; line-height:1.5;">
-              <li><strong>Bac Centre-Gauche</strong> : Nouveautés &amp; Coups de cœur</li>
-              <li><strong>Grand Bac Centre-Bas</strong> : Albums illustrés CP/Maternelle</li>
-              <li><strong>Petit Bac Sud Mur</strong> : Tout-carton &amp; Premières notions</li>
-            </ul>
-          </div>
-
-          <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:10px;">
-            <div style="font-weight:700; color:#334155; margin-bottom:4px;">⬜ Mobilier &amp; Espaces</div>
-            <ul style="margin:0; padding-left:18px; color:#475569; font-size:12px; line-height:1.5;">
-              <li><strong>Bureau Ouest</strong> : Accueil &amp; Borne informatique douchette</li>
-              <li><strong>Table Sud-Ouest</strong> : Grande table ateliers &amp; lecture sur place</li>
-              <li><strong>Zone Nord-Ouest</strong> : 3 Poufs lecture calme près de la porte</li>
+              <li><strong>Photos 14 &amp; 15</strong> : Bac BD + Caisse bois (Tintin, Astérix, Lucky Luke)</li>
+              <li><strong>Photos 16 &amp; 17</strong> : Romans A-P et Contes/Poésie (face Ouest)</li>
+              <li><strong>Photo 13</strong> : Romans Séries &amp; S-Z (Harry Potter, Star Wars)</li>
+              <li><strong>Photo 12</strong> : Documentaires Histoire, Géo &amp; Société</li>
+              <li><strong>Photos 9 &amp; 10</strong> : Îlot Nord (Romans inclinés &amp; Sciences/Sports)</li>
+              <li><strong>Photos 2 &amp; 4</strong> : Îlot Sud (Albums A-T &amp; Revues de presse)</li>
+              <li><strong>Photos 8 &amp; 11</strong> : Biblio verte (Docs Sciences 500 &amp; Albums)</li>
+              <li><strong>Photos 6 &amp; 7</strong> : Bacs sous radiateur (1ères lectures débutants)</li>
+              <li><strong>Photo 5</strong> : Bac spécial CP/CE1 (Petits romans &amp; séries)</li>
+              <li><strong>Photos 1 &amp; 3</strong> : Nouveautés &amp; Pop-ups 'Sur Place'</li>
             </ul>
           </div>
         </div>
@@ -3009,11 +3045,12 @@ body.dark-mode .book-catalog-card.selected {
       <div style="font-size:12px; color:var(--text-muted);">
         <strong>Tests rapides en un clic :</strong>
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
-          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782070612758')">⭐ Le Petit Prince</button>
-          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782864970224')">🛡️ Astérix le Gaulois</button>
-          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782227702288')">📘 Lili est harcelée</button>
-          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782745995400')">📕 Le harcèlement</button>
-          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782211096317')">🧸 Otto</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782070584628')">⚡ Harry Potter (Séries)</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782864970224')">🛡️ Astérix (Bac BD)</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782070612758')">⭐ Le Petit Prince (Romans)</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782877670050')">🐘 Elmer (Albums A-T)</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782227702288')">📘 Lili (Bacs CP/CE1)</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('POP-DINO')">🦖 Dino Géant (Sur Place)</button>
         </div>
       </div>
 
@@ -3032,14 +3069,14 @@ body.dark-mode .book-catalog-card.selected {
 
 <!-- ── MODAL IMPRESSION ÉTIQUETTES DE RAYONNAGE ───────────────────────── -->
 <div class="modal" id="shelfLabelsModal">
-  <div class="modal-box" style="max-width:720px; width:95%;">
+  <div class="modal-box" style="max-width:760px; width:95%;">
     <div class="modal-header">
-      <h3 style="margin:0; font-size:17px; font-weight:700;">🏷️ Signalétique &amp; Étiquettes de Rayonnage</h3>
+      <h3 style="margin:0; font-size:17px; font-weight:700;">🏷️ Signalétique &amp; Étiquettes de Rayonnage BCD</h3>
       <button class="modal-close-btn" onclick="closeShelfLabelsModal()">✕</button>
     </div>
     <div class="modal-body" style="max-height:70vh; overflow-y:auto; display:flex; flex-direction:column; gap:14px;">
       <p style="font-size:13px; color:var(--text-muted); margin:0;">
-        Générez et imprimez des étiquettes de meubles claires et colorées pour baliser physiquement la BCD d'après le plan.
+        Générez et imprimez des étiquettes de meubles claires et colorées pour baliser physiquement la BCD d'après le plan réel de l'école Albert Camus.
       </p>
 
       <div id="shelfLabelsPreviewContainer" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -4831,262 +4868,430 @@ function hideMalletteMenu() {
 }
 
 
-/* ── 12. MOTEUR 3D ISOMÉTRIQUE & RANGEMENT BCD (PROTOTYPE / CONCEPT) ─── */
+/* ── 12. MOTEUR 3D ISOMÉTRIQUE & RANGEMENT BCD (PLAN RÉEL BCD CAMUS) ─── */
 
 const FURNITURE_DATA = [
+  // ── MUR NORD ─────────────────────────────────────────────────────────
   {
-    id: "etagere_droite",
-    name: "Étagère Est : Documentaires & Sciences",
-    shortName: "Étagère Est (Documentaires)",
+    id: "mur_nord_romans_sz",
+    name: "Mur Nord : Romans (Séries & S à Z)",
+    shortName: "Romans Séries / S-Z",
     type: "etagere",
     sketchColor: "vert",
-    color: "#10B981",
-    altColor: "#059669",
-    category: "Documentaires, Sciences, Nature & Histoire",
-    cotePrefix: "DOC",
-    coteExemple: "DOC 500 SCI",
-    description: "Grande étagère murale le long du mur Est. Classement décimal Dewey simplifié pour l'école primaire.",
-    capacity: 120,
-    x: 88, y: 16, z: 0, w: 7, d: 84, h: 22,
-    icon: "🔬",
-    dewey: "000-999 (Sciences, Animaux, Histoire, Dictionnaires)",
-    sketchRef: "Grande bande verte hachurée le long du mur droit",
-    orientation: "vertical"
-  },
-  {
-    id: "etagere_centre_h",
-    name: "Étagère Centrale : BD & Mangas",
-    shortName: "Étagère Centrale (BD)",
-    type: "etagere",
-    sketchColor: "vert",
-    color: "#059669",
-    altColor: "#047857",
-    category: "Bandes Dessinées, Mangas & Romans Graphiques",
-    cotePrefix: "BD",
-    coteExemple: "BD AST",
-    description: "Étagère double-face centrale horizontale. Bac rouge attenant à son extrémité gauche.",
+    color: "#2563EB",
+    altColor: "#1D4ED8",
+    category: "Romans Jeunesse, Séries (Harry Potter, Star Wars) & Auteurs S-Z",
+    cotePrefix: "ROM-SZ",
+    coteExemple: "ROM ROW (Rowling)",
+    description: "Étagère murale Nord (gauche). Séries populaires (Harry Potter, Star Wars) et romans auteurs S à Z.",
     capacity: 110,
-    x: 32, y: 44, z: 0, w: 44, d: 8, h: 18,
-    icon: "💬",
-    dewey: "BD [3 lettres auteur ou série] (ex: BD AST, BD TIN)",
-    sketchRef: "Longue étagère verte hachurée horizontale au centre",
+    x: 18, y: 3, z: 0, w: 32, d: 7, h: 20,
+    icon: "⚡",
+    dewey: "ROM [Auteur] • Séries de classe et grands romans",
+    sketchRef: "Mur Nord (gauche) • Photo 13",
     orientation: "horizontal"
   },
   {
-    id: "etagere_haut_1",
-    name: "Étagère Nord-1 : Contes, Poésie & Théâtre",
-    shortName: "Étagère Nord-1 (Contes)",
+    id: "mur_nord_docs_hist",
+    name: "Mur Nord : Docs Histoire, Géographie & Société",
+    shortName: "Docs Histoire / Géo / Société",
     type: "etagere",
     sketchColor: "vert",
     color: "#10B981",
     altColor: "#059669",
-    category: "Contes de fées, Poésie, Théâtre & Fables",
-    cotePrefix: "CONTE",
-    coteExemple: "CONTE PER",
-    description: "Étagère verticale située dans la partie Nord-Ouest de la salle.",
-    capacity: 75,
-    x: 43, y: 10, z: 0, w: 7, d: 24, h: 20,
-    icon: "✨",
-    dewey: "C [Auteur] pour les Contes, P [Auteur] pour la Poésie",
-    sketchRef: "Étagère verte hachurée verticale Nord (gauche)",
-    orientation: "vertical"
+    category: "Documentaires : Histoire du monde, Géographie, Atlas & Société",
+    cotePrefix: "DOC-HIST",
+    coteExemple: "DOC 900 HIS",
+    description: "Étagère murale Nord (droite). Histoire mondiale, seconde guerre, géographie et société.",
+    capacity: 100,
+    x: 52, y: 3, z: 0, w: 32, d: 7, h: 20,
+    icon: "🌍",
+    dewey: "900 (Histoire & Géographie) / 300 (Société)",
+    sketchRef: "Mur Nord (droite) • Photo 12",
+    orientation: "horizontal"
   },
   {
-    id: "etagere_haut_2",
-    name: "Étagère Nord-2 : Premières Lectures (Cycle 2)",
-    shortName: "Étagère Nord-2 (Cycle 2)",
-    type: "etagere",
+    id: "canape_vert_nord",
+    name: "Espace Détente : Canapé Vert",
+    shortName: "Canapé vert",
+    type: "mobilier",
     sketchColor: "vert",
     color: "#10B981",
     altColor: "#059669",
-    category: "Romans Premières Lectures (CP-CE1, Max & Lili)",
-    cotePrefix: "ROM-C2",
-    coteExemple: "ROM MAR",
-    description: "Étagère verticale Nord-Centre. Adaptée à la hauteur des élèves de CP-CE1.",
-    capacity: 80,
-    x: 58, y: 10, z: 0, w: 7, d: 24, h: 20,
-    icon: "🌱",
-    dewey: "R (pastille bleue Cycle 2) + 3 lettres auteur",
-    sketchRef: "Étagère verte hachurée verticale Nord (droite)",
-    orientation: "vertical"
+    category: "Espace détente et lecture confortable",
+    cotePrefix: "DETENTE",
+    coteExemple: "ESP-CANAP",
+    description: "Canapé vert d'angle pour lire au calme sous les affiches.",
+    capacity: 3,
+    x: 4, y: 4, z: 0, w: 11, d: 8, h: 10,
+    icon: "🛋️",
+    dewey: "Espace repos & confort",
+    sketchRef: "Coin Nord-Ouest",
+    orientation: "horizontal"
   },
   {
-    id: "etagere_bas_1",
-    name: "Étagère Sud-1 : Romans Jeunesse (Cycle 3)",
-    shortName: "Étagère Sud-1 (Cycle 3)",
-    type: "etagere",
+    id: "coin_poufs_tapis_est",
+    name: "Coin Lecture : Tapis & Poufs Verts",
+    shortName: "Tapis & Poufs verts",
+    type: "mobilier",
     sketchColor: "vert",
-    color: "#10B981",
-    altColor: "#059669",
-    category: "Romans Jeunesse, Séries & Classiques (CE2-CM2)",
-    cotePrefix: "ROM-C3",
-    coteExemple: "ROM SAI",
-    description: "Étagère verticale Sud-Ouest. Grands classiques et romans d'aventure.",
-    capacity: 90,
-    x: 34, y: 68, z: 0, w: 7, d: 28, h: 20,
-    icon: "📖",
-    dewey: "R (pastille rouge Cycle 3) + 3 lettres auteur",
-    sketchRef: "Étagère verte hachurée verticale Sud (gauche)",
+    color: "#34D399",
+    altColor: "#10B981",
+    category: "Coin lecture au sol pour les petits et classes",
+    cotePrefix: "POUFS",
+    coteExemple: "ESP-POUFS",
+    description: "Grand tapis avec poufs verts le long des fenêtres Nord-Est.",
+    capacity: 6,
+    x: 86, y: 8, z: 0, w: 11, d: 16, h: 6,
+    icon: "🟢",
+    dewey: "Espace lecture au sol",
+    sketchRef: "Coin Nord-Est (fenêtres)",
     orientation: "vertical"
   },
+
+  // ── MUR OUEST (VERRIÈRE) ──────────────────────────────────────────────
   {
-    id: "etagere_bas_2",
-    name: "Étagère Sud-2 : Mallettes Thématiques & Séries",
-    shortName: "Étagère Sud-2 (Mallettes)",
-    type: "etagere",
-    sketchColor: "vert",
-    color: "#10B981",
-    altColor: "#059669",
-    category: "Mallettes Pédagogiques & Séries complètes de classe",
-    cotePrefix: "MAL",
-    coteExemple: "MAL-047",
-    description: "Étagère verticale Sud-Est. Réservée aux enseignants et mallettes de prêt.",
-    capacity: 70,
-    x: 68, y: 68, z: 0, w: 7, d: 28, h: 20,
-    icon: "🎒",
-    dewey: "MAL-XXX (Identifiant unique de mallette)",
-    sketchRef: "Étagère verte hachurée verticale Sud (droite)",
-    orientation: "vertical"
-  },
-  {
-    id: "bac_centre_gauche",
-    name: "Bac Rouge : Nouveautés & Coups de Cœur",
-    shortName: "Bac Nouveautés",
+    id: "bac_bd_ouest",
+    name: "Mur Ouest : Bac Bandes Dessinées (BD)",
+    shortName: "Bac BD (Astérix, Tintin...)",
     type: "bac",
     sketchColor: "rouge",
     color: "#EF4444",
     altColor: "#DC2626",
-    category: "Nouveaux arrivages & Coups de cœur du Service Civique",
-    cotePrefix: "NOUV",
-    coteExemple: "NOUV KIN",
-    description: "Bac rouge à bacs frontaux situé à l'extrémité gauche de l'étagère centrale.",
-    capacity: 35,
-    x: 24, y: 44, z: 0, w: 6, d: 8, h: 10,
-    icon: "⭐",
-    dewey: "Livres présentés face visible pour susciter la curiosité",
-    sketchRef: "Petit rectangle rouge hachuré collé à gauche de l'étagère centrale",
-    orientation: "horizontal"
-  },
-  {
-    id: "bac_centre_bas",
-    name: "Grand Bac : Albums Illustrés (Maternelle - CP)",
-    shortName: "Grand Bac Albums",
-    type: "bac",
-    sketchColor: "rouge",
-    color: "#DC2626",
-    altColor: "#B91C1C",
-    category: "Grands Albums Illustrés & Livres d'images",
-    cotePrefix: "ALB",
-    coteExemple: "ALB UNG",
-    description: "Grand bac vertical rouge au centre de la zone Sud. Facile d'accès aux petits.",
-    capacity: 65,
-    x: 49, y: 72, z: 0, w: 8, d: 20, h: 10,
-    icon: "🎨",
-    dewey: "A [3 lettres auteur] (Albums grand format)",
-    sketchRef: "Grand bac vertical rouge hachuré entre les deux étagères Sud",
+    category: "Bandes Dessinées Jeunesse (Astérix, Tintin, Lucky Luke, Divers BD)",
+    cotePrefix: "BD",
+    coteExemple: "BD AST / BD TIN",
+    description: "Grand bac à BD près de la verrière avec caisse en bois pour les séries complètes.",
+    capacity: 120,
+    x: 3, y: 16, z: 0, w: 10, d: 14, h: 10,
+    icon: "💬",
+    dewey: "BD [Série / Auteur]",
+    sketchRef: "Mur Ouest (haut) • Photos 14 & 15",
     orientation: "vertical"
   },
   {
-    id: "bac_bas_mur",
-    name: "Petit Bac : Petits Formats & Tout-Carton",
-    shortName: "Bac Petits Formats",
+    id: "caisse_bois_bd",
+    name: "Caisse en Bois : BD Complémentaires",
+    shortName: "Caisse bois BD",
     type: "bac",
-    sketchColor: "rouge",
-    color: "#DC2626",
-    altColor: "#B91C1C",
-    category: "Livres cartonnés, imagiers & petites mains",
-    cotePrefix: "MINI",
-    coteExemple: "MINI FOI",
-    description: "Bac rouge bas adossé au mur Sud.",
-    capacity: 30,
-    x: 58, y: 104, z: 0, w: 8, d: 7, h: 8,
-    icon: "🧸",
-    dewey: "Livres robustes et d'éveil pour les TPS/PS/MS",
-    sketchRef: "Petit rectangle rouge hachuré contre le mur Sud",
+    sketchColor: "blanc",
+    color: "#D97706",
+    altColor: "#B45309",
+    category: "Séries BD et albums cartonnés",
+    cotePrefix: "BD",
+    coteExemple: "BD DIV",
+    description: "Caisse en bois attenante au bac BD.",
+    capacity: 35,
+    x: 14, y: 19, z: 0, w: 6, d: 8, h: 8,
+    icon: "📦",
+    dewey: "BD [Compléments]",
+    sketchRef: "Contre le Bac BD",
     orientation: "horizontal"
   },
   {
-    id: "bureau_accueil",
-    name: "Poste d'Accueil & Borne Douchette BCD",
-    shortName: "Bureau d'accueil",
+    id: "fauteuil_vert_ouest",
+    name: "Fauteuil Vert de Lecture",
+    shortName: "Fauteuil vert",
+    type: "mobilier",
+    sketchColor: "vert",
+    color: "#059669",
+    altColor: "#047857",
+    category: "Fauteuil individuel",
+    cotePrefix: "FAUTEUIL",
+    coteExemple: "ESP-FAUT",
+    description: "Fauteuil vert confortable pour la lecture individuelle.",
+    capacity: 1,
+    x: 4, y: 33, z: 0, w: 8, d: 8, h: 9,
+    icon: "💺",
+    dewey: "Place individuelle",
+    sketchRef: "Mur Ouest (milieu)",
+    orientation: "horizontal"
+  },
+  {
+    id: "meuble_double_romans_contes",
+    name: "Meuble Double-Face Ouest : Romans A-P & Contes / Poésie",
+    shortName: "Romans A-P & Contes/Poésie",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#8B5CF6",
+    altColor: "#7C3AED",
+    category: "Romans auteurs A à P (Face Nord) • Contes, Fables & Poésie (Face Sud)",
+    cotePrefix: "ROM-AP",
+    coteExemple: "ROM PEN (Pennac) / C PER (Perrault)",
+    description: "Meuble double-face perpendiculaire. Face Nord : Romans A-P. Face Sud : Contes et Poésie. Avec 3 chaises devant.",
+    capacity: 130,
+    x: 3, y: 44, z: 0, w: 22, d: 9, h: 20,
+    icon: "✨",
+    dewey: "ROM [A-P] / C [Contes] / P [Poésie]",
+    sketchRef: "Meuble double-face Ouest • Photos 16 & 17",
+    orientation: "horizontal"
+  },
+  {
+    id: "chariot_blanc_sud_ouest",
+    name: "Chariot Mobile Blanc (Retours)",
+    shortName: "Chariot de retours",
+    type: "mobilier",
+    sketchColor: "blanc",
+    color: "#CBD5E1",
+    altColor: "#94A3B8",
+    category: "Chariot de desserte pour les livres retournés en cours de reclassement",
+    cotePrefix: "CHARIOT",
+    coteExemple: "CHAR-RETOUR",
+    description: "Chariot mobile à 3 étagères pour trier les retours avant remise en rayon.",
+    capacity: 40,
+    x: 3, y: 80, z: 0, w: 6, d: 9, h: 10,
+    icon: "🛒",
+    dewey: "Zone de transit des retours",
+    sketchRef: "Près de l'entrée et des placards",
+    orientation: "vertical"
+  },
+  {
+    id: "placards_bureau_pc",
+    name: "Bureau d'Accueil & Borne Douchette BCD Express",
+    shortName: "Bureau d'accueil & PC",
     type: "mobilier",
     sketchColor: "blanc",
     color: "#3B82F6",
     altColor: "#2563EB",
-    category: "Poste informatique, prêts/retours et douchette",
-    cotePrefix: "ACC",
-    coteExemple: "ACC-RETOUR",
-    description: "Bureau de gestion à l'entrée de la BCD avec PC et lecteur code-barres.",
+    category: "Poste informatique de gestion BCD, lecteur douchette et placards muraux",
+    cotePrefix: "ACCUEIL",
+    coteExemple: "ACC-PC",
+    description: "Poste principal avec ordinateur, douchette code-barres et dossiers de gestion.",
     capacity: 25,
-    x: 12, y: 38, z: 0, w: 8, d: 18, h: 12,
+    x: 10, y: 98, z: 0, w: 14, d: 14, h: 12,
     icon: "💻",
-    dewey: "Zone de transit des retours avant reclassement",
-    sketchRef: "Rectangle blanc le long du mur Ouest (milieu)",
+    dewey: "Gestion & Prêts/Retours",
+    sketchRef: "Mur Sud-Ouest (près de l'entrée)",
+    orientation: "horizontal"
+  },
+
+  // ── CENTRE (ÎLOT NORD & ÎLOT SUD) ────────────────────────────────────
+  {
+    id: "ilot_nord_central",
+    name: "Îlot Nord Central : Romans Présentoir & Docs Sciences / Sports",
+    shortName: "Îlot Nord (Romans & Sciences/Sports)",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#059669",
+    altColor: "#047857",
+    category: "Face O : Romans en présentoir incliné • Face E : Documentaires Sciences, Technique & Sports",
+    cotePrefix: "DOC-SCI",
+    coteExemple: "DOC 500 / DOC 796 SPO",
+    description: "Îlot central vertical (N-S). Face Ouest : Romans inclinés mis en avant. Face Est : Sciences, Nature, Santé, Sports.",
+    capacity: 95,
+    x: 38, y: 22, z: 0, w: 9, d: 28, h: 18,
+    icon: "🔬",
+    dewey: "500 (Sciences) / 600 (Technique) / 796 (Sports)",
+    sketchRef: "Îlot Nord (N-S) • Photos 9 & 10",
     orientation: "vertical"
   },
   {
-    id: "table_lecture",
-    name: "Grande Table de Lecture & Ateliers",
-    shortName: "Table Ateliers",
+    id: "bac_blanc_ilot_nord",
+    name: "Bac Blanc (Au pied de l'Îlot Nord)",
+    shortName: "Bac blanc",
+    type: "bac",
+    sketchColor: "blanc",
+    color: "#E2E8F0",
+    altColor: "#CBD5E1",
+    category: "Ouvrages sélectionnés et thématiques du moment",
+    cotePrefix: "BAC-BLANC",
+    coteExemple: "BAC-SEL",
+    description: "Bac blanc placé au pied Sud de l'îlot Nord.",
+    capacity: 25,
+    x: 39, y: 52, z: 0, w: 7, d: 7, h: 8,
+    icon: "◽",
+    dewey: "Sélection tournante",
+    sketchRef: "Au pied de l'îlot Nord",
+    orientation: "horizontal"
+  },
+  {
+    id: "ilot_sud_central",
+    name: "Îlot Sud Central : Albums A-T & Revues / Magazines",
+    shortName: "Îlot Sud (Albums A-T & Revues)",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#F59E0B",
+    altColor: "#D97706",
+    category: "Face N : Albums illustrés (A à T) • Face S : Revues et magazines (J'aime Lire, Astrapi...)",
+    cotePrefix: "ALB-AT",
+    coteExemple: "ALB UNG (Ungerer) / REV ASTRAPI",
+    description: "Îlot central horizontal (E-O). Face Nord : Albums grands formats A-T. Face Sud : Revues de presse jeunesse et magazines.",
+    capacity: 110,
+    x: 30, y: 72, z: 0, w: 32, d: 10, h: 18,
+    icon: "🎨",
+    dewey: "A [A-T] pour les Albums / REV pour les Revues",
+    sketchRef: "Îlot Sud (E-O) • Photos 2 & 4",
+    orientation: "horizontal"
+  },
+  {
+    id: "bac_vert_ilot_sud",
+    name: "Bac Vert (Attenant à l'Îlot Sud)",
+    shortName: "Bac vert (Revues)",
+    type: "bac",
+    sketchColor: "vert",
+    color: "#10B981",
+    altColor: "#059669",
+    category: "Revues de presse récentes (Youpi, Wapiti, J'aime lire)",
+    cotePrefix: "REV-BAC",
+    coteExemple: "REV WAPITI",
+    description: "Bac vert placé à l'extrémité Est de l'îlot Sud pour les périodiques.",
+    capacity: 30,
+    x: 64, y: 72, z: 0, w: 7, d: 10, h: 10,
+    icon: "📗",
+    dewey: "Périodiques récents",
+    sketchRef: "Bout Est de l'îlot Sud • Photo 2",
+    orientation: "horizontal"
+  },
+
+  // ── MUR EST (FENÊTRES) ────────────────────────────────────────────────
+  {
+    id: "biblio_verte_est",
+    name: "Bibliothèque Verte Est : Docs 500 Sciences & Albums/BD",
+    shortName: "Biblio Verte Est (Docs 500 / Albums)",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#059669",
+    altColor: "#047857",
+    category: "Face N : Docs 500 (Animaux, Espace, Corps) • Face S : Albums et BD complémentaires",
+    cotePrefix: "DOC-500",
+    coteExemple: "DOC 520 ESP (Espace)",
+    description: "Grande bibliothèque verte avancée. Face Nord : Sciences et nature. Face Sud : Albums et BD.",
+    capacity: 115,
+    x: 74, y: 36, z: 0, w: 22, d: 9, h: 20,
+    icon: "🌱",
+    dewey: "500 (Sciences pures) / Albums complémentaires",
+    sketchRef: "Bibliothèque verte avancée • Photos 8 & 11",
+    orientation: "horizontal"
+  },
+  {
+    id: "bacs_sous_radiateur",
+    name: "Bacs sous Radiateur : 1ères Lectures & Docs",
+    shortName: "Bacs sous Radiateur (1ères Lect.)",
+    type: "bac",
+    sketchColor: "rouge",
+    color: "#DC2626",
+    altColor: "#B91C1C",
+    category: "Bacs bas : Premières lectures CP/CE1 & Petits documentaires",
+    cotePrefix: "LEC-RAD",
+    coteExemple: "ROM C1 / DOC JEU",
+    description: "Bacs bas logés sous le radiateur le long des fenêtres Est.",
+    capacity: 55,
+    x: 80, y: 50, z: 0, w: 16, d: 7, h: 9,
+    icon: "☀️",
+    dewey: "Lectures guidées débutants",
+    sketchRef: "Sous le radiateur Est • Photos 6 & 7",
+    orientation: "horizontal"
+  },
+  {
+    id: "bac_cp_ce1_est",
+    name: "Bac Spécial CP / CE1 (Petits Romans & Séries)",
+    shortName: "Bac CP / CE1",
+    type: "bac",
+    sketchColor: "rouge",
+    color: "#EF4444",
+    altColor: "#DC2626",
+    category: "Petits romans CP/CE1, J'apprends à lire, Les Belles Histoires",
+    cotePrefix: "ROM-C2",
+    coteExemple: "ROM-C2 LAL (Loup)",
+    description: "Grand bac rouge dédié aux apprentis lecteurs du Cycle 2.",
+    capacity: 65,
+    x: 82, y: 66, z: 0, w: 14, d: 12, h: 10,
+    icon: "🎒",
+    dewey: "R (Pastille bleue Cycle 2)",
+    sketchRef: "Mur Est (milieu-bas) • Photo 5",
+    orientation: "vertical"
+  },
+  {
+    id: "meuble_nouveautes_sur_place",
+    name: "Meuble Nouveautés & Ouvrages 'Sur Place / Pop-ups'",
+    shortName: "Nouveautés & Ouvrages Sur Place",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#F59E0B",
+    altColor: "#D97706",
+    category: "Face N : Nouveautés & Coups de cœur • Face S : Livres d'art, Pop-ups 'À regarder sur place'",
+    cotePrefix: "NOUV",
+    coteExemple: "NOUV 2026 / POP-UP DINO",
+    description: "Meuble présentoir. Nouveautés face visible. Face Sud : Pop-ups géants et atlas à consulter obligatoirement sur table.",
+    capacity: 70,
+    x: 78, y: 86, z: 0, w: 18, d: 11, h: 18,
+    icon: "⭐",
+    dewey: "NOUV (Nouveautés) / SUR PLACE (Non empruntable)",
+    sketchRef: "Mur Est (bas) • Photos 1 & 3",
+    orientation: "horizontal"
+  },
+  {
+    id: "table_travail_porte_sud",
+    name: "Grande Table de Travail & Consultation Sur Place",
+    shortName: "Table de travail & Consultation",
     type: "mobilier",
     sketchColor: "blanc",
     color: "#64748B",
     altColor: "#475569",
-    category: "Espace de travail en groupe, dessin et lecture silencieuse",
-    cotePrefix: "ESPACE",
-    coteExemple: "ESP-TAB",
-    description: "Grande table avec 8 chaises pour les séances de BCD en classe entière.",
+    category: "Table collective 8 places pour consulter les pop-ups et travailler en groupe",
+    cotePrefix: "TABLE",
+    coteExemple: "ESP-TABLE",
+    description: "Grande table en bois devant la porte Sud, avec 8 chaises pour les séances BCD.",
     capacity: 8,
-    x: 12, y: 80, z: 0, w: 14, d: 26, h: 11,
+    x: 72, y: 102, z: 0, w: 22, d: 14, h: 10,
     icon: "🪑",
-    dewey: "Espace convivial de consultation sur place",
-    sketchRef: "Grand rectangle blanc en bas à gauche (Sud-Ouest)",
-    orientation: "vertical"
-  },
-  {
-    id: "coin_poufs",
-    name: "Coin Détente & Poufs Moelleux",
-    shortName: "Coin Poufs",
-    type: "mobilier",
-    sketchColor: "blanc",
-    color: "#F59E0B",
-    altColor: "#D97706",
-    category: "Coin lecture libre et coussins pour les élèves",
-    cotePrefix: "COIN",
-    coteExemple: "COIN-POUF",
-    description: "3 poufs colorés près de la porte d'entrée pour une lecture décontractée.",
-    capacity: 3,
-    x: 26, y: 12, z: 0, w: 12, d: 8, h: 6,
-    icon: "🛋️",
-    dewey: "Zone calme 'Plaisir de lire'",
-    sketchRef: "Zone de détente en haut à gauche le long du mur Nord",
+    dewey: "Consultation sur place obligatoire pour les pop-ups",
+    sketchRef: "Coin Sud-Est (devant porte bois)",
     orientation: "horizontal"
   }
 ];
 
-// Enrichissement du catalogue pour peupler fidèlement chaque meuble
+// Catalogue étendu synchronisé avec les photos et cotes réelles relevées
 const MAP3D_EXTENDED_BOOKS = [
-  { id: 101, isbn: "9782070612758", titre: "Le Petit Prince", auteur: "Antoine de Saint-Exupéry", genre: "Roman", niveau: "Cycle 3", shelfId: "etagere_bas_1", cote: "ROM-C3 SAI", tier: "Tablette 2 • Milieu", dispo: "DISPONIBLE", emoji: "⭐", color: "#2563EB" },
-  { id: 102, isbn: "9782070515622", titre: "Le Tour du Monde en 80 Jours", auteur: "Jules Verne", genre: "Roman", niveau: "Cycle 3", shelfId: "etagere_bas_1", cote: "ROM-C3 VER", tier: "Tablette 3 • Droite", dispo: "EMPRUNTÉ", emoji: "🌍", color: "#0D9488" },
-  { id: 103, isbn: "9782266200234", titre: "L'Œil du Loup", auteur: "Daniel Pennac", genre: "Roman", niveau: "Cycle 3", shelfId: "etagere_bas_1", cote: "ROM-C3 PEN", tier: "Tablette 1 • Gauche", dispo: "DISPONIBLE", emoji: "🐺", color: "#475569" },
-  { id: 104, isbn: "9782070584628", titre: "Harry Potter à l'école des sorciers", auteur: "J.K. Rowling", genre: "Roman", niveau: "Cycle 3", shelfId: "etagere_bas_1", cote: "ROM-C3 ROW", tier: "Tablette 4 • Milieu", dispo: "DISPONIBLE", emoji: "⚡", color: "#DC2626" },
-  { id: 105, isbn: "9782864970224", titre: "Astérix le Gaulois", auteur: "René Goscinny", genre: "BD", niveau: "Cycle 3", shelfId: "etagere_centre_h", cote: "BD AST", tier: "Face Nord • Tablette 1", dispo: "DISPONIBLE", emoji: "🛡️", color: "#F59E0B" },
-  { id: 106, isbn: "9782203001190", titre: "Tintin au Tibet", auteur: "Hergé", genre: "BD", niveau: "Cycle 3", shelfId: "etagere_centre_h", cote: "BD TIN", tier: "Face Nord • Tablette 2", dispo: "DISPONIBLE", emoji: "🏔️", color: "#3B82F6" },
-  { id: 107, isbn: "9782848657004", titre: "Mortelle Adèle : Tout ça finira mal", auteur: "Mr Tan", genre: "BD", niveau: "Cycle 2", shelfId: "etagere_centre_h", cote: "BD ADE", tier: "Face Sud • Tablette 1", dispo: "DISPONIBLE", emoji: "💥", color: "#EC4899" },
-  { id: 108, isbn: "9782227702288", titre: "Lili est harcelée à l'école", auteur: "Dominique de Saint Mars", genre: "Roman", niveau: "Cycle 2", shelfId: "etagere_haut_2", cote: "ROM-C2 MAR", tier: "Tablette 1 • Centre", dispo: "DISPONIBLE", emoji: "📘", color: "#3B82F6" },
-  { id: 109, isbn: "9782227702295", titre: "Max se fait insulter à la récré", auteur: "Dominique de Saint Mars", genre: "Roman", niveau: "Cycle 2", shelfId: "etagere_haut_2", cote: "ROM-C2 MAR", tier: "Tablette 1 • Droite", dispo: "DISPONIBLE", emoji: "🗣️", color: "#6366F1" },
-  { id: 110, isbn: "9782745995400", titre: "Le harcèlement", auteur: "Sandra Laboucarie", genre: "Documentaire", niveau: "Cycle 3", shelfId: "etagere_droite", cote: "DOC 300 LAB", tier: "Tablette 2 • Gauche", dispo: "DISPONIBLE", emoji: "📕", color: "#EF4444" },
-  { id: 111, isbn: "9782092557891", titre: "La planète en danger (EDD)", auteur: "Collectif Milan", genre: "Documentaire", niveau: "Cycle 3", shelfId: "etagere_droite", cote: "DOC 570 ECO", tier: "Tablette 3 • Milieu", dispo: "DISPONIBLE", emoji: "🌱", color: "#10B981" },
-  { id: 112, isbn: "9782215150824", titre: "L'Espace et le Système Solaire", auteur: "Fleurus Jeunesse", genre: "Documentaire", niveau: "Cycle 3", shelfId: "etagere_droite", cote: "DOC 520 ESP", tier: "Tablette 4 • Droite", dispo: "DISPONIBLE", emoji: "🚀", color: "#06B6D4" },
-  { id: 113, isbn: "9782070628841", titre: "Les Contes de ma mère l'Oye", auteur: "Charles Perrault", genre: "Contes", niveau: "Cycle 3", shelfId: "etagere_haut_1", cote: "CONTE PER", tier: "Tablette 2 • Milieu", dispo: "DISPONIBLE", emoji: "🏰", color: "#8B5CF6" },
-  { id: 114, isbn: "9782070618033", titre: "Fables de La Fontaine", auteur: "Jean de La Fontaine", genre: "Contes", niveau: "Cycle 3", shelfId: "etagere_haut_1", cote: "CONTE LAF", tier: "Tablette 3 • Droite", dispo: "DISPONIBLE", emoji: "🦊", color: "#D97706" },
-  { id: 115, isbn: "9782211096317", titre: "Otto, autobiographie d'un ours en peluche", auteur: "Tomi Ungerer", genre: "Album", niveau: "Cycle 3", shelfId: "bac_centre_bas", cote: "ALB UNG", tier: "Bac Central • Compartiment A", dispo: "DISPONIBLE", emoji: "🧸", color: "#6D28D9" },
-  { id: 116, isbn: "9782877670050", titre: "Elmer l'éléphant bariolé", auteur: "David McKee", genre: "Album", niveau: "Cycle 2", shelfId: "bac_centre_bas", cote: "ALB MCK", tier: "Bac Central • Compartiment B", dispo: "DISPONIBLE", emoji: "🐘", color: "#F59E0B" },
-  { id: 117, isbn: "9782211021432", titre: "Chien Bleu", auteur: "Nadja", genre: "Album", niveau: "Cycle 2", shelfId: "bac_centre_bas", cote: "ALB NAD", tier: "Bac Central • Compartiment C", dispo: "DISPONIBLE", emoji: "🐕", color: "#2563EB" },
-  { id: 118, isbn: "9782278078035", titre: "Rouge", auteur: "Jan De Kinder", genre: "Album", niveau: "Cycle 2", shelfId: "bac_centre_gauche", cote: "NOUV KIN", tier: "Bac Nouveautés", dispo: "DISPONIBLE", emoji: "🔴", color: "#DC2626" },
-  { id: 119, isbn: "9782745942364", titre: "1 foi, 2 fois, 3 foi !", auteur: "Petits Formats", genre: "Album", niveau: "Cycle 2", shelfId: "bac_bas_mur", cote: "MINI FOI", tier: "Bac Petits Formats Sud", dispo: "DISPONIBLE", emoji: "📖", color: "#10B981" },
-  { id: 120, isbn: "MAL-047", titre: "Mallette Harcèlement & Vivre ensemble", auteur: "Sélection BCD (15 livres)", genre: "Mallette", niveau: "Tous niveaux", shelfId: "etagere_bas_2", cote: "MAL-047", tier: "Rayon Mallettes Sud-2", dispo: "DISPONIBLE", emoji: "🎒", color: "#EF4444" },
-  { id: 121, isbn: "MAL-048", titre: "Mallette Éducation au Développement Durable", auteur: "Sélection BCD (12 livres)", genre: "Mallette", niveau: "Tous niveaux", shelfId: "etagere_bas_2", cote: "MAL-048", tier: "Rayon Mallettes Sud-2", dispo: "DISPONIBLE", emoji: "🌍", color: "#10B981" }
+  // Mur Nord : Romans Séries / S-Z (Photo 13)
+  { id: 101, isbn: "9782070584628", titre: "Harry Potter à l'école des sorciers", auteur: "J.K. Rowling", genre: "Roman", niveau: "Cycle 3", shelfId: "mur_nord_romans_sz", cote: "ROM ROW", tier: "Tablette 2 • Séries populaires", dispo: "DISPONIBLE", emoji: "⚡", color: "#2563EB" },
+  { id: 102, isbn: "9782070515622", titre: "Le Tour du Monde en 80 Jours", auteur: "Jules Verne", genre: "Roman", niveau: "Cycle 3", shelfId: "mur_nord_romans_sz", cote: "ROM VER", tier: "Tablette 3 • Auteurs V", dispo: "EMPRUNTÉ", emoji: "🌍", color: "#0D9488" },
+  { id: 103, isbn: "9782012021587", titre: "Star Wars : La Menace Fantôme", auteur: "Patricia C. Wrede", genre: "Roman", niveau: "Cycle 3", shelfId: "mur_nord_romans_sz", cote: "ROM STA", tier: "Tablette 1 • Rayon Séries", dispo: "DISPONIBLE", emoji: "⚔️", color: "#1E293B" },
+
+  // Mur Nord : Docs Histoire / Géo / Société (Photo 12)
+  { id: 104, isbn: "9782092557891", titre: "La Seconde Guerre Mondiale racontée aux enfants", auteur: "Collectif Hatier", genre: "Documentaire", niveau: "Cycle 3", shelfId: "mur_nord_docs_hist", cote: "DOC 940 HIS", tier: "Tablette 2 • Histoire", dispo: "DISPONIBLE", emoji: "🏛️", color: "#10B981" },
+  { id: 105, isbn: "9782745995400", titre: "Le harcèlement", auteur: "Sandra Laboucarie", genre: "Documentaire", niveau: "Cycle 3", shelfId: "mur_nord_docs_hist", cote: "DOC 300 LAB", tier: "Tablette 1 • Société", dispo: "DISPONIBLE", emoji: "📕", color: "#EF4444" },
+  { id: 106, isbn: "9782035843210", titre: "Grand Atlas de la France et du Monde", auteur: "Larousse Jeunesse", genre: "Documentaire", niveau: "Cycle 3", shelfId: "mur_nord_docs_hist", cote: "DOC 912 ATL", tier: "Tablette 3 • Atlas", dispo: "DISPONIBLE", emoji: "🗺️", color: "#059669" },
+
+  // Mur Ouest : Bac BD & Caisse bois (Photos 14/15)
+  { id: 107, isbn: "9782864970224", titre: "Astérix le Gaulois", auteur: "René Goscinny", genre: "BD", niveau: "Cycle 3", shelfId: "bac_bd_ouest", cote: "BD AST", tier: "Bac BD • Compartiment A", dispo: "DISPONIBLE", emoji: "🛡️", color: "#F59E0B" },
+  { id: 108, isbn: "9782203001190", titre: "Tintin : Objectif Lune", auteur: "Hergé", genre: "BD", niveau: "Cycle 3", shelfId: "bac_bd_ouest", cote: "BD TIN", tier: "Bac BD • Compartiment T", dispo: "DISPONIBLE", emoji: "🚀", color: "#3B82F6" },
+  { id: 109, isbn: "9782884710121", titre: "Lucky Luke : La Diligence", auteur: "Morris & Goscinny", genre: "BD", niveau: "Cycle 3", shelfId: "caisse_bois_bd", cote: "BD LUC", tier: "Caisse bois • Séries Western", dispo: "DISPONIBLE", emoji: "🤠", color: "#D97706" },
+
+  // Meuble Double Ouest : Romans A-P (Photo 16) & Contes/Poésie (Photo 17)
+  { id: 110, isbn: "9782070612758", titre: "Le Petit Prince", auteur: "Antoine de Saint-Exupéry", genre: "Roman", niveau: "Cycle 3", shelfId: "meuble_double_romans_contes", cote: "ROM SAI", tier: "Face Nord • Tablette 2 (A-P)", dispo: "DISPONIBLE", emoji: "⭐", color: "#2563EB" },
+  { id: 111, isbn: "9782266200234", titre: "L'Œil du Loup", auteur: "Daniel Pennac", genre: "Roman", niveau: "Cycle 3", shelfId: "meuble_double_romans_contes", cote: "ROM PEN", tier: "Face Nord • Tablette 3 (A-P)", dispo: "DISPONIBLE", emoji: "🐺", color: "#475569" },
+  { id: 112, isbn: "9782070628841", titre: "Les Contes de ma mère l'Oye", auteur: "Charles Perrault", genre: "Contes", niveau: "Cycle 3", shelfId: "meuble_double_romans_contes", cote: "C PER", tier: "Face Sud • Tablette 1 (Contes)", dispo: "DISPONIBLE", emoji: "🏰", color: "#8B5CF6" },
+  { id: 113, isbn: "9782070618033", titre: "Fables choisies pour enfants", auteur: "Jean de La Fontaine", genre: "Contes", niveau: "Cycle 3", shelfId: "meuble_double_romans_contes", cote: "C LAF", tier: "Face Sud • Tablette 2 (Fables)", dispo: "DISPONIBLE", emoji: "🦊", color: "#D97706" },
+
+  // Îlot Nord Central : Romans Présentoir & Docs Sciences/Sports (Photos 9/10)
+  { id: 114, isbn: "9782070548842", titre: "Totor l'affreux matou", auteur: "Totor & cie", genre: "Roman", niveau: "Cycle 2", shelfId: "ilot_nord_central", cote: "ROM TOT", tier: "Face Ouest • Présentoir incliné", dispo: "DISPONIBLE", emoji: "🐱", color: "#F59E0B" },
+  { id: 115, isbn: "9782745974016", titre: "Le Grand Livre du Tennis et du Sport", auteur: "Milan Jeunesse", genre: "Documentaire", niveau: "Cycle 3", shelfId: "ilot_nord_central", cote: "DOC 796 TEN", tier: "Face Est • Rayon Sports", dispo: "DISPONIBLE", emoji: "🎾", color: "#10B981" },
+  { id: 116, isbn: "9782092578124", titre: "La Protection de la Forêt et de la Nature", auteur: "Éditions Nathan", genre: "Documentaire", niveau: "Cycle 3", shelfId: "ilot_nord_central", cote: "DOC 577 NAT", tier: "Face Est • Sciences de la Terre", dispo: "DISPONIBLE", emoji: "🌲", color: "#059669" },
+
+  // Îlot Sud Central : Albums A-T & Revues / Magazines (Photos 2/4)
+  { id: 117, isbn: "9782877670050", titre: "Elmer l'éléphant bariolé", auteur: "David McKee", genre: "Album", niveau: "Cycle 2", shelfId: "ilot_sud_central", cote: "ALB MCK", tier: "Face Nord • Bacs Albums A-T", dispo: "DISPONIBLE", emoji: "🐘", color: "#F59E0B" },
+  { id: 118, isbn: "9782211021432", titre: "Chien Bleu", auteur: "Nadja", genre: "Album", niveau: "Cycle 2", shelfId: "ilot_sud_central", cote: "ALB NAD", tier: "Face Nord • Bacs Albums A-T", dispo: "DISPONIBLE", emoji: "🐕", color: "#2563EB" },
+  { id: 119, isbn: "9782211096317", titre: "Otto, autobiographie d'un ours en peluche", auteur: "Tomi Ungerer", genre: "Album", niveau: "Cycle 3", shelfId: "ilot_sud_central", cote: "ALB UNG", tier: "Face Nord • Bacs Albums A-T", dispo: "DISPONIBLE", emoji: "🧸", color: "#6D28D9" },
+  { id: 120, isbn: "REV-AST-450", titre: "Astrapi : Mission Sauvegarde Animale", auteur: "Bayard Jeunesse", genre: "Revue", niveau: "Cycle 3", shelfId: "ilot_sud_central", cote: "REV AST", tier: "Face Sud • Rayon Revues", dispo: "DISPONIBLE", emoji: "📰", color: "#EF4444" },
+  { id: 121, isbn: "REV-WAP-380", titre: "Wapiti : Le Monde Sauvage des Animaux", auteur: "Milan Presse", genre: "Revue", niveau: "Cycle 2", shelfId: "bac_vert_ilot_sud", cote: "REV WAP", tier: "Bac Vert • Dernières parutions", dispo: "DISPONIBLE", emoji: "🦁", color: "#10B981" },
+
+  // Biblio Verte Est : Docs Sciences 500 & Albums (Photos 8/11)
+  { id: 122, isbn: "9782215150824", titre: "L'Espace et le Système Solaire", auteur: "Fleurus Jeunesse", genre: "Documentaire", niveau: "Cycle 3", shelfId: "biblio_verte_est", cote: "DOC 520 ESP", tier: "Face Nord • Rayon 500 Sciences", dispo: "DISPONIBLE", emoji: "🪐", color: "#3B82F6" },
+  { id: 123, isbn: "9782035928123", titre: "Le Corps Humain expliqué aux enfants", auteur: "Larousse", genre: "Documentaire", niveau: "Cycle 3", shelfId: "biblio_verte_est", cote: "DOC 612 COR", tier: "Face Nord • Santé & Corps", dispo: "DISPONIBLE", emoji: "🫀", color: "#EF4444" },
+
+  // Bacs sous Radiateur : 1ères Lectures CP/CE1 (Photos 6/7)
+  { id: 124, isbn: "9782227702288", titre: "Lili est harcelée à l'école", auteur: "Dominique de Saint Mars", genre: "Roman", niveau: "Cycle 2", shelfId: "bacs_sous_radiateur", cote: "ROM-C2 MAR", tier: "Bac sous radiateur • CP/CE1", dispo: "DISPONIBLE", emoji: "📘", color: "#3B82F6" },
+  { id: 125, isbn: "9782017044437", titre: "Sami et Julie apprennent à lire", auteur: "Hachette Jeunesse", genre: "Roman", niveau: "Cycle 2", shelfId: "bacs_sous_radiateur", cote: "ROM-C2 SAM", tier: "Bac sous radiateur • Débutants", dispo: "DISPONIBLE", emoji: "👧", color: "#EC4899" },
+
+  // Bac Spécial CP/CE1 Est (Photo 5)
+  { id: 126, isbn: "9782211048828", titre: "Le loup qui voulait changer de couleur", auteur: "Orianne Lallemand", genre: "Album", niveau: "Cycle 2", shelfId: "bac_cp_ce1_est", cote: "ALB LAL", tier: "Bac CP/CE1 • Séries Loup", dispo: "DISPONIBLE", emoji: "🐺", color: "#06B6D4" },
+  { id: 127, isbn: "9782227702295", titre: "Max se fait insulter à la récré", auteur: "Dominique de Saint Mars", genre: "Roman", niveau: "Cycle 2", shelfId: "bac_cp_ce1_est", cote: "ROM-C2 MAR", tier: "Bac CP/CE1 • Max & Lili", dispo: "DISPONIBLE", emoji: "🗣️", color: "#6366F1" },
+
+  // Meuble Nouveautés & Ouvrages Sur Place (Photos 1 & 3)
+  { id: 128, isbn: "9782278078035", titre: "Rouge", auteur: "Jan De Kinder", genre: "Album", niveau: "Cycle 2", shelfId: "meuble_nouveautes_sur_place", cote: "NOUV KIN", tier: "Face Nord • Coup de cœur rentrée", dispo: "DISPONIBLE", emoji: "🔴", color: "#DC2626" },
+  { id: 129, isbn: "POP-DINO", titre: "Dinosaures Géants en 3D (Grand Pop-Up)", auteur: "Fleurus Collector", genre: "Documentaire", niveau: "Tous niveaux", shelfId: "meuble_nouveautes_sur_place", cote: "SUR-PLACE DIN", tier: "Face Sud • À REGARDER SUR TABLE !", dispo: "DISPONIBLE", emoji: "🦖", color: "#15803D" },
+  { id: 130, isbn: "POP-ESPACE", titre: "L'Espace en relief Pop-Up", auteur: "Gallimard Pop-Up", genre: "Documentaire", niveau: "Tous niveaux", shelfId: "meuble_nouveautes_sur_place", cote: "SUR-PLACE ESP", tier: "Face Sud • À REGARDER SUR TABLE !", dispo: "DISPONIBLE", emoji: "🌌", color: "#4338CA" }
 ];
 
 // État du moteur 3D
@@ -5101,7 +5306,7 @@ let map3dCamera = {
   targetZoom: 1.05
 };
 
-let map3dSelectedId = "etagere_centre_h"; // Sélectionné par défaut
+let map3dSelectedId = "mur_nord_romans_sz";
 let map3dHoveredId = null;
 let map3dShowLabels = true;
 let map3dIsDragging = false;
@@ -5181,7 +5386,6 @@ function setupMap3dCanvasListeners() {
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
-  // Pointer events pour drag rotation
   canvas.addEventListener('pointerdown', (e) => {
     map3dIsDragging = true;
     map3dDragStart = { x: e.clientX, y: e.clientY };
@@ -5212,7 +5416,6 @@ function setupMap3dCanvasListeners() {
     }
   });
 
-  // Clic pour sélectionner un meuble
   canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -5225,7 +5428,6 @@ function setupMap3dCanvasListeners() {
     }
   });
 
-  // Molette pour zoomer
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const factor = e.deltaY < 0 ? 1.08 : 0.92;
@@ -5233,7 +5435,6 @@ function setupMap3dCanvasListeners() {
   }, { passive: false });
 }
 
-// Projection 3D orthographique isométrique exacte
 function project3d(x, y, z, w, h) {
   const dx = x - 50;
   const dy = y - 60;
@@ -5249,7 +5450,7 @@ function project3d(x, y, z, w, h) {
   const y2 = y1 * cosP - dz * sinP;
   const z2 = y1 * sinP + dz * cosP;
 
-  const scale = (Math.min(w, h) / 135) * map3dCamera.zoom;
+  const scale = (Math.min(w, h) / 140) * map3dCamera.zoom;
   const sx = w / 2 + map3dCamera.panX + x1 * scale;
   const sy = h / 2 + map3dCamera.panY + y2 * scale;
 
@@ -5274,7 +5475,6 @@ function shadeColor(hex, percent) {
   return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
 }
 
-// Boucle principale de rendu 60 FPS
 function map3dRenderLoop() {
   map3dAnimFrame = requestAnimationFrame(map3dRenderLoop);
 
@@ -5304,7 +5504,7 @@ function map3dRenderLoop() {
   ctx.clearRect(0, 0, w, h);
 
   drawFloorParquet(ctx, w, h);
-  drawWalls(ctx, w, h);
+  drawArchitectureFeatures(ctx, w, h);
 
   const renderList = [];
   FURNITURE_DATA.forEach(f => {
@@ -5343,10 +5543,10 @@ function updateCompassNeedle() {
   needle.style.transform = `rotate(${deg}deg)`;
 
   const normalizedDeg = (deg % 360 + 360) % 360;
-  if (normalizedDeg >= 315 || normalizedDeg < 45) label.textContent = "Vue Nord";
-  else if (normalizedDeg >= 45 && normalizedDeg < 135) label.textContent = "Vue Ouest";
-  else if (normalizedDeg >= 135 && normalizedDeg < 225) label.textContent = "Vue Sud";
-  else label.textContent = "Vue Est";
+  if (normalizedDeg >= 315 || normalizedDeg < 45) label.textContent = "Vue Nord (Affiches)";
+  else if (normalizedDeg >= 45 && normalizedDeg < 135) label.textContent = "Vue Ouest (Verrière/Porte)";
+  else if (normalizedDeg >= 135 && normalizedDeg < 225) label.textContent = "Vue Sud (Table/Porte bois)";
+  else label.textContent = "Vue Est (Fenêtres/Biblio)";
 }
 
 function drawFloorParquet(ctx, w, h) {
@@ -5388,33 +5588,43 @@ function drawFloorParquet(ctx, w, h) {
     ctx.stroke();
   }
 
-  // Tapis "ENTRÉE BCD"
-  const m0 = project3d(12, 1, 0.2, w, h);
-  const m1 = project3d(24, 1, 0.2, w, h);
-  const m2 = project3d(24, 6, 0.2, w, h);
-  const m3 = project3d(12, 6, 0.2, w, h);
+  // Tapis paillasson "ENTRÉE BLEUE / BLANCHE" (Mur Ouest)
+  const m0 = project3d(1, 64, 0.2, w, h);
+  const m1 = project3d(6, 64, 0.2, w, h);
+  const m2 = project3d(6, 76, 0.2, w, h);
+  const m3 = project3d(1, 76, 0.2, w, h);
   ctx.beginPath();
   ctx.moveTo(m0.sx, m0.sy);
   ctx.lineTo(m1.sx, m1.sy);
   ctx.lineTo(m2.sx, m2.sy);
   ctx.lineTo(m3.sx, m3.sy);
   ctx.closePath();
-  ctx.fillStyle = '#DC2626';
+  ctx.fillStyle = '#2563EB';
   ctx.fill();
-  ctx.strokeStyle = '#FCA5A5';
+  ctx.strokeStyle = '#93C5FD';
   ctx.stroke();
 
   ctx.restore();
 }
 
-function drawWalls(ctx, w, h) {
+function drawArchitectureFeatures(ctx, w, h) {
   const wallH = 10;
 
-  drawBoxSegment(ctx, 0, 0, 0, 12, 2, wallH, '#64748B', '#475569', w, h);
-  drawBoxSegment(ctx, 24, 0, 0, 76, 2, wallH, '#64748B', '#475569', w, h);
-  drawBoxSegment(ctx, 0, 0, 0, 2, 120, wallH, '#475569', '#334155', w, h);
-  drawBoxSegment(ctx, 98, 0, 0, 2, 120, wallH, '#475569', '#334155', w, h);
-  drawBoxSegment(ctx, 0, 118, 0, 100, 2, wallH, '#64748B', '#475569', w, h);
+  // Mur Nord plein avec affiches Star Wars, America, Pinder
+  drawBoxSegment(ctx, 0, 0, 0, 100, 2, wallH, '#64748B', '#475569', w, h);
+
+  // Mur Ouest avec Verrière (découpée) et porte bleue
+  drawBoxSegment(ctx, 0, 0, 0, 2, 64, wallH, '#475569', '#334155', w, h);
+  // Porte d'entrée entre 64 et 76
+  drawBoxSegment(ctx, 0, 76, 0, 2, 44, wallH, '#475569', '#334155', w, h);
+
+  // Mur Est (Fenêtres le long de toute la façade)
+  drawBoxSegment(ctx, 98, 0, 0, 2, 120, 4, '#38BDF8', '#0284C7', w, h);
+
+  // Mur Sud avec Porte en bois (vers 72-84)
+  drawBoxSegment(ctx, 0, 118, 0, 72, 2, wallH, '#64748B', '#475569', w, h);
+  // Porte bois vers 72-84
+  drawBoxSegment(ctx, 84, 118, 0, 16, 2, wallH, '#64748B', '#475569', w, h);
 }
 
 function drawBoxSegment(ctx, x, y, z, bw, bd, bh, topColor, sideColor, cw, ch) {
@@ -5424,7 +5634,7 @@ function drawBoxSegment(ctx, x, y, z, bw, bd, bh, topColor, sideColor, cw, ch) {
   const p011 = project3d(x, y + bd, z + bh, cw, ch);
   const p000 = project3d(x, y, z, cw, ch);
   const p100 = project3d(x + bw, y, z, cw, ch);
-  const p110 = project3d(x + bw, y + bd, z, cw, ch);
+  const p110 = project3d(x + bw, y + bd, z + bh, cw, ch);
   const p010 = project3d(x, y + bd, z, cw, ch);
 
   const faces = [
@@ -5462,12 +5672,16 @@ function drawFurniture3D(ctx, f, cw, ch, isHovered, isSelected) {
     drawBookShelf(ctx, f, z, cw, ch, isHovered, isSelected);
   } else if (f.type === "bac") {
     drawBookBin(ctx, f, z, cw, ch, isHovered, isSelected);
-  } else if (f.id === "bureau_accueil") {
+  } else if (f.id === "placards_bureau_pc") {
     drawReceptionDesk(ctx, f, z, cw, ch, isHovered, isSelected);
-  } else if (f.id === "table_lecture") {
+  } else if (f.id === "table_travail_porte_sud") {
     drawReadingTable(ctx, f, z, cw, ch, isHovered, isSelected);
-  } else if (f.id === "coin_poufs") {
+  } else if (f.id === "canape_vert_nord" || f.id === "fauteuil_vert_ouest") {
+    drawArmchair(ctx, f, z, cw, ch, isHovered, isSelected);
+  } else if (f.id === "coin_poufs_tapis_est") {
     drawPoufs(ctx, f, z, cw, ch, isHovered, isSelected);
+  } else if (f.id === "chariot_blanc_sud_ouest") {
+    drawCart(ctx, f, z, cw, ch, isHovered, isSelected);
   }
 
   ctx.restore();
@@ -5545,17 +5759,17 @@ function drawBookBin(ctx, f, z, cw, ch, isHovered, isSelected) {
   ctx.fillStyle = "#FFFFFF";
   ctx.font = "bold 9px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("🎨 Albums", pMid.sx, pMid.sy);
+  ctx.fillText(f.shortName.slice(0, 14), pMid.sx, pMid.sy);
 }
 
 function drawReceptionDesk(ctx, f, z, cw, ch, isHovered, isSelected) {
   const deskColor = isSelected ? '#3B82F6' : (isHovered ? '#60A5FA' : '#E2E8F0');
   drawBoxSegment(ctx, f.x, f.y, z, f.w, f.d, f.h, '#FFFFFF', deskColor, cw, ch);
 
-  const pcX = f.x + 2, pcY = f.y + 5, pcZ = z + f.h;
-  drawBoxSegment(ctx, pcX, pcY, pcZ, 2, 8, 7, '#38BDF8', '#1E293B', cw, ch);
+  const pcX = f.x + 2, pcY = f.y + 3, pcZ = z + f.h;
+  drawBoxSegment(ctx, pcX, pcY, pcZ, 2, 7, 6, '#38BDF8', '#1E293B', cw, ch);
 
-  const pPc = project3d(pcX + 1, pcY + 4, pcZ + 8, cw, ch);
+  const pPc = project3d(pcX + 1, pcY + 3.5, pcZ + 7, cw, ch);
   ctx.fillStyle = "#38BDF8";
   ctx.font = "bold 9px sans-serif";
   ctx.textAlign = "center";
@@ -5570,15 +5784,46 @@ function drawReadingTable(ctx, f, z, cw, ch, isHovered, isSelected) {
   ctx.fillStyle = "#475569";
   ctx.font = "bold 9px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("📖 8 Places Lecture", pCenter.sx, pCenter.sy);
+  ctx.fillText("📖 8 Places Travail / Pop-ups", pCenter.sx, pCenter.sy);
+}
+
+function drawArmchair(ctx, f, z, cw, ch, isHovered, isSelected) {
+  const col = isSelected ? '#3B82F6' : (isHovered ? '#34D399' : f.color);
+  drawBoxSegment(ctx, f.x, f.y, z, f.w, f.d, f.h, shadeColor(col, 15), col, cw, ch);
+  drawBoxSegment(ctx, f.x, f.y, z + f.h, f.w, 2.5, 6, shadeColor(col, 25), col, cw, ch);
+}
+
+function drawCart(ctx, f, z, cw, ch, isHovered, isSelected) {
+  const col = isSelected ? '#3B82F6' : (isHovered ? '#94A3B8' : '#E2E8F0');
+  drawBoxSegment(ctx, f.x, f.y, z, f.w, f.d, f.h, '#FFFFFF', col, cw, ch);
+  const pMid = project3d(f.x + f.w / 2, f.y + f.d / 2, z + f.h + 2, cw, ch);
+  ctx.fillStyle = "#475569";
+  ctx.font = "bold 9px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("🛒 Retours", pMid.sx, pMid.sy);
 }
 
 function drawPoufs(ctx, f, z, cw, ch, isHovered, isSelected) {
-  const colors = ['#F59E0B', '#3B82F6', '#EC4899'];
+  // Tapis
+  const p0 = project3d(f.x, f.y, z, cw, ch);
+  const p1 = project3d(f.x + f.w, f.y, z, cw, ch);
+  const p2 = project3d(f.x + f.w, f.y + f.d, z, cw, ch);
+  const p3 = project3d(f.x, f.y + f.d, z, cw, ch);
+  ctx.beginPath();
+  ctx.moveTo(p0.sx, p0.sy);
+  ctx.lineTo(p1.sx, p1.sy);
+  ctx.lineTo(p2.sx, p2.sy);
+  ctx.lineTo(p3.sx, p3.sy);
+  ctx.closePath();
+  ctx.fillStyle = '#065F46';
+  ctx.fill();
+
+  // 3 Poufs verts
+  const colors = ['#10B981', '#34D399', '#059669'];
   for (let i = 0; i < 3; i++) {
-    const px = f.x + 2 + i * 3.5;
-    const py = f.y + 4;
-    drawBoxSegment(ctx, px - 1.2, py - 1.2, z, 2.8, 2.8, 5, colors[i], shadeColor(colors[i], -15), cw, ch);
+    const px = f.x + 3;
+    const py = f.y + 2 + i * 5;
+    drawBoxSegment(ctx, px - 1.8, py - 1.8, z + 0.5, 3.6, 3.6, 5, colors[i], shadeColor(colors[i], -15), cw, ch);
   }
 }
 
@@ -5593,7 +5838,7 @@ function drawShelfLabelBadge(ctx, f, cw, ch, isSelected) {
   const bw = textWidth + pad * 2;
   const bh = 18;
 
-  ctx.fillStyle = isSelected ? '#2563EB' : 'rgba(15, 23, 42, 0.85)';
+  ctx.fillStyle = isSelected ? '#2563EB' : 'rgba(15, 23, 42, 0.88)';
   ctx.strokeStyle = isSelected ? '#93C5FD' : 'rgba(255, 255, 255, 0.2)';
   ctx.lineWidth = 1;
 
@@ -5736,7 +5981,7 @@ function renderMap3dSidebar() {
   }
 
   const booksInShelf = MAP3D_EXTENDED_BOOKS.filter(b => b.shelfId === f.id);
-  const bookCount = booksInShelf.length * 6 + 12;
+  const bookCount = booksInShelf.length * 6 + 14;
   const pct = Math.min(100, Math.round((bookCount / f.capacity) * 100));
 
   sidebar.innerHTML = `
@@ -5751,7 +5996,7 @@ function renderMap3dSidebar() {
       
       <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
         <span class="shelf-category-badge" style="background:${f.sketchColor === 'vert' ? '#F0FDF4' : (f.sketchColor === 'rouge' ? '#FEF2F2' : '#F1F5F9')}; color:${f.sketchColor === 'vert' ? '#15803D' : (f.sketchColor === 'rouge' ? '#B91C1C' : '#334155')};">
-          ${f.sketchColor === 'vert' ? '🟩 Vert hachuré' : (f.sketchColor === 'rouge' ? '🟥 Rouge hachuré' : '⬜ Mobilier')}
+          ${f.sketchColor === 'vert' ? '🟩 Étagère / Îlot' : (f.sketchColor === 'rouge' ? '🟥 Bac à livres' : '⬜ Mobilier')}
         </span>
         <span class="shelf-category-badge" style="background:var(--bg-subtle); color:var(--text-sub);">
           Cote : ${f.cotePrefix}
@@ -5762,8 +6007,8 @@ function renderMap3dSidebar() {
 
     <div class="shelf-capacity-gauge">
       <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600;">
-        <span>Capacité de rangement</span>
-        <span>${bookCount} / ${f.capacity} livres (${pct}%)</span>
+        <span>Capacité estimée</span>
+        <span>${bookCount} / ${f.capacity} ouvrages (${pct}%)</span>
       </div>
       <div class="gauge-bar-track">
         <div class="gauge-bar-fill" style="width:${pct}%; background:${pct > 85 ? '#EF4444' : (pct > 65 ? '#F59E0B' : '#10B981')};"></div>
@@ -5790,7 +6035,7 @@ function renderMap3dSidebar() {
 
     <div style="margin-top:6px;">
       <div style="font-size:12.5px; font-weight:700; color:var(--text-main); margin-bottom:8px;">
-        Livres rangés dans ce rayon (${booksInShelf.length}) :
+        Exemples d'ouvrages répertoriés dans ce rayon (${booksInShelf.length}) :
       </div>
 
       <div style="display:flex; flex-direction:column; gap:8px;">
@@ -5810,7 +6055,7 @@ function renderMap3dSidebar() {
 
         ${booksInShelf.length === 0 ? `
           <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:16px;">
-            Aucun livre spécifique affecté pour l'instant. Utilisez le bouton "Ranger un livre ici" pour affecter des ouvrages.
+            Espace de lecture / consultation ou meuble en cours de remplissage.
           </div>
         ` : ''}
       </div>
@@ -5822,11 +6067,11 @@ function renderOverviewSidebar(sidebar) {
   sidebar.innerHTML = `
     <div style="border-bottom:1px solid var(--border-color); padding-bottom:10px;">
       <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-        <h3 style="margin:0; font-size:16px;">Plan de la BCD Albert Camus</h3>
-        <span style="font-size:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:1px 6px; border-radius:9999px; font-weight:700;">PROTOTYPE</span>
+        <h3 style="margin:0; font-size:16px;">Implantation de la BCD Camus Pasteur</h3>
+        <span style="font-size:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:1px 6px; border-radius:9999px; font-weight:700;">18 ZONES</span>
       </div>
       <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
-        Cliquez sur un meuble dans le plan 3D ou ci-dessous pour inspecter les livres rangés.
+        Cliquez sur un meuble dans le plan 3D ou dans la liste pour voir les livres rangés.
       </p>
     </div>
 
@@ -5837,7 +6082,7 @@ function renderOverviewSidebar(sidebar) {
             <span>${f.icon}</span>
             <div>
               <div style="font-size:12.5px; font-weight:600;">${f.shortName}</div>
-              <div style="font-size:11px; color:var(--text-muted);">${f.category}</div>
+              <div style="font-size:11px; color:var(--text-muted);">${f.sketchRef}</div>
             </div>
           </div>
           <span style="font-size:11px; color:var(--primary); font-weight:600;">Voir →</span>
@@ -5899,21 +6144,23 @@ function filterMap3dGenre(genre) {
   });
 
   if (genre === 'all') {
-    selectFurniture("etagere_centre_h");
+    selectFurniture("mur_nord_romans_sz");
   } else if (genre === 'etagere') {
-    selectFurniture("etagere_droite");
+    selectFurniture("mur_nord_romans_sz");
+  } else if (genre === 'ilot') {
+    selectFurniture("ilot_nord_central");
   } else if (genre === 'bac') {
-    selectFurniture("bac_centre_bas");
+    selectFurniture("bac_bd_ouest");
   } else if (genre === 'BD') {
-    selectFurniture("etagere_centre_h");
+    selectFurniture("bac_bd_ouest");
   } else if (genre === 'Roman') {
-    selectFurniture("etagere_bas_1");
+    selectFurniture("mur_nord_romans_sz");
   } else if (genre === 'Album') {
-    selectFurniture("bac_centre_bas");
+    selectFurniture("ilot_sud_central");
   } else if (genre === 'Documentaire') {
-    selectFurniture("etagere_droite");
-  } else if (genre === 'Mallette') {
-    selectFurniture("etagere_bas_2");
+    selectFurniture("mur_nord_docs_hist");
+  } else if (genre === 'Revue') {
+    selectFurniture("ilot_sud_central");
   }
 }
 
@@ -6040,7 +6287,7 @@ function openShelfLabelsModal() {
       <div style="font-weight:700; font-size:13px; color:#0F172A;">${f.shortName}</div>
       <div style="font-size:11px; color:#64748B;">${f.category}</div>
       <div style="font-size:10.5px; background:#F8FAFC; padding:4px 6px; border-radius:4px; color:#334155; margin-top:4px;">
-        Dewey : ${f.dewey}
+        ${f.sketchRef} • Dewey : ${f.dewey}
       </div>
     </div>
   `).join('');
@@ -6068,8 +6315,9 @@ function filterFullInventoryByShelf(id) {
   if (searchInput) {
     if (f.cotePrefix === 'BD') searchInput.value = 'BD';
     else if (f.cotePrefix.startsWith('ROM')) searchInput.value = 'Roman';
-    else if (f.cotePrefix === 'DOC') searchInput.value = 'Documentaire';
-    else if (f.cotePrefix === 'ALB') searchInput.value = 'Album';
+    else if (f.cotePrefix.startsWith('DOC')) searchInput.value = 'Documentaire';
+    else if (f.cotePrefix.startsWith('ALB')) searchInput.value = 'Album';
+    else if (f.cotePrefix.startsWith('REV')) searchInput.value = 'Revue';
     else searchInput.value = f.shortName;
     renderBooksCatalog();
   }
@@ -6082,12 +6330,12 @@ function openAddBookToShelfModal(shelfId) {
   if (selectGenre && f) {
     if (f.cotePrefix === 'BD') selectGenre.value = 'BD';
     else if (f.cotePrefix.startsWith('ROM')) selectGenre.value = 'Roman';
-    else if (f.cotePrefix === 'DOC') selectGenre.value = 'Documentaire';
-    else if (f.cotePrefix === 'ALB') selectGenre.value = 'Album';
+    else if (f.cotePrefix.startsWith('DOC')) selectGenre.value = 'Documentaire';
+    else if (f.cotePrefix.startsWith('ALB')) selectGenre.value = 'Album';
+    else if (f.cotePrefix.startsWith('REV')) selectGenre.value = 'Revue / Magazine';
   }
 }
 
-// Support des liens directs d'ouverture avec ancrage #plan3d
 window.addEventListener('load', () => {
   if (window.location.hash === '#plan3d' || window.location.hash === '#map3d') {
     switchMainTab('tab-map3d');
