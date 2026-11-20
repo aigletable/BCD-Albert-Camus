@@ -34,7 +34,11 @@ CREATE TABLE IF NOT EXISTS livres (
     genre          TEXT DEFAULT '',                             -- BD, Album, Roman, Documentaire, Conte...
     theme          TEXT DEFAULT '',                             -- Guerre & Histoire, Animaux, Aventure...
     niveau         TEXT DEFAULT '',                             -- Maternelle, CP, CE1, CE2, CM1, CM2...
-    description    TEXT DEFAULT ''                              -- Résumé / synopsis
+    description    TEXT DEFAULT '',                             -- Résumé / synopsis
+    dewey          TEXT DEFAULT '',                             -- Indice Dewey (ex: 200, 741.5, 599)
+    page_count     INTEGER DEFAULT 0,                           -- Nombre de pages officiel
+    sujets_api     TEXT DEFAULT '',                             -- Vedettes RAMEAU et sujets API
+    age_api        TEXT DEFAULT ''                              -- Mention d'âge / recommandation de lecture
 );
 
 -- =============================================================================

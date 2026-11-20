@@ -59,8 +59,8 @@ public class LivreDao {
         String theme = fr.ecole.bcd.service.LivreClassificationService.normalizeTheme(rawTheme);
         String niveau = fr.ecole.bcd.service.LivreClassificationService.normalizeNiveau(livre.getNiveau());
 
-        String sql = "INSERT OR IGNORE INTO livres (isbn, titre, auteur, editeur, couverture_url, genre, theme, niveau, description) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT OR IGNORE INTO livres (isbn, titre, auteur, editeur, couverture_url, genre, theme, niveau, description, dewey, page_count, sujets_api, age_api) "
+                   + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = DatabaseManager.getConnection().prepareStatement(sql)) {
             ps.setString(1, livre.getIsbn());
@@ -72,6 +72,10 @@ public class LivreDao {
             ps.setString(7, theme);
             ps.setString(8, niveau);
             ps.setString(9, livre.getDescription());
+            ps.setString(10, livre.getDewey() != null ? livre.getDewey() : "");
+            ps.setInt(11, livre.getPageCount());
+            ps.setString(12, livre.getSujetsApi() != null ? livre.getSujetsApi() : "");
+            ps.setString(13, livre.getAgeApi() != null ? livre.getAgeApi() : "");
             return ps.executeUpdate() > 0;
         }
     }
@@ -451,7 +455,8 @@ public class LivreDao {
         String niveau = fr.ecole.bcd.service.LivreClassificationService.normalizeNiveau(livre.getNiveau());
 
         String sql = "UPDATE livres SET titre = ?, auteur = ?, editeur = ?, couverture_url = ?, "
-                   + "genre = ?, theme = ?, niveau = ?, description = ? "
+                   + "genre = ?, theme = ?, niveau = ?, description = ?, "
+                   + "dewey = ?, page_count = ?, sujets_api = ?, age_api = ? "
                    + "WHERE isbn = ?";
 
         try (PreparedStatement ps = DatabaseManager.getConnection().prepareStatement(sql)) {
@@ -463,7 +468,11 @@ public class LivreDao {
             ps.setString(6, theme);
             ps.setString(7, niveau);
             ps.setString(8, livre.getDescription());
-            ps.setString(9, livre.getIsbn());
+            ps.setString(9, livre.getDewey() != null ? livre.getDewey() : "");
+            ps.setInt(10, livre.getPageCount());
+            ps.setString(11, livre.getSujetsApi() != null ? livre.getSujetsApi() : "");
+            ps.setString(12, livre.getAgeApi() != null ? livre.getAgeApi() : "");
+            ps.setString(13, livre.getIsbn());
             ps.executeUpdate();
         }
     }
@@ -501,8 +510,8 @@ public class LivreDao {
 
             Livre existingTarget = findByIsbn(newIsbn);
             if (existingTarget == null) {
-                String insertSql = "INSERT INTO livres (isbn, titre, auteur, editeur, couverture_url, genre, theme, niveau, description) "
-                                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String insertSql = "INSERT INTO livres (isbn, titre, auteur, editeur, couverture_url, genre, theme, niveau, description, dewey, page_count, sujets_api, age_api) "
+                                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
                     ps.setString(1, newIsbn);
                     ps.setString(2, updatedLivre.getTitre());
@@ -513,11 +522,16 @@ public class LivreDao {
                     ps.setString(7, normTheme);
                     ps.setString(8, normNiveau);
                     ps.setString(9, updatedLivre.getDescription());
+                    ps.setString(10, updatedLivre.getDewey() != null ? updatedLivre.getDewey() : "");
+                    ps.setInt(11, updatedLivre.getPageCount());
+                    ps.setString(12, updatedLivre.getSujetsApi() != null ? updatedLivre.getSujetsApi() : "");
+                    ps.setString(13, updatedLivre.getAgeApi() != null ? updatedLivre.getAgeApi() : "");
                     ps.executeUpdate();
                 }
             } else {
                 String updateSql = "UPDATE livres SET titre = ?, auteur = ?, editeur = ?, couverture_url = ?, "
-                                 + "genre = ?, theme = ?, niveau = ?, description = ? WHERE isbn = ?";
+                                 + "genre = ?, theme = ?, niveau = ?, description = ?, "
+                                 + "dewey = ?, page_count = ?, sujets_api = ?, age_api = ? WHERE isbn = ?";
                 try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                     ps.setString(1, updatedLivre.getTitre());
                     ps.setString(2, updatedLivre.getAuteur());
@@ -527,7 +541,11 @@ public class LivreDao {
                     ps.setString(6, normTheme);
                     ps.setString(7, normNiveau);
                     ps.setString(8, updatedLivre.getDescription());
-                    ps.setString(9, newIsbn);
+                    ps.setString(9, updatedLivre.getDewey() != null ? updatedLivre.getDewey() : "");
+                    ps.setInt(10, updatedLivre.getPageCount());
+                    ps.setString(11, updatedLivre.getSujetsApi() != null ? updatedLivre.getSujetsApi() : "");
+                    ps.setString(12, updatedLivre.getAgeApi() != null ? updatedLivre.getAgeApi() : "");
+                    ps.setString(13, newIsbn);
                     ps.executeUpdate();
                 }
             }
@@ -775,6 +793,29 @@ public class LivreDao {
             l.setDescription(d != null ? d : "");
         } catch (SQLException ignored) {
             l.setDescription("");
+        }
+        try {
+            String dewey = rs.getString("dewey");
+            l.setDewey(dewey != null ? dewey : "");
+        } catch (SQLException ignored) {
+            l.setDewey("");
+        }
+        try {
+            l.setPageCount(rs.getInt("page_count"));
+        } catch (SQLException ignored) {
+            l.setPageCount(0);
+        }
+        try {
+            String sujets = rs.getString("sujets_api");
+            l.setSujetsApi(sujets != null ? sujets : "");
+        } catch (SQLException ignored) {
+            l.setSujetsApi("");
+        }
+        try {
+            String age = rs.getString("age_api");
+            l.setAgeApi(age != null ? age : "");
+        } catch (SQLException ignored) {
+            l.setAgeApi("");
         }
         return l;
     }

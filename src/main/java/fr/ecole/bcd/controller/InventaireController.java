@@ -986,13 +986,7 @@ public class InventaireController {
                             || l.getGenre().isBlank() || l.getTheme().isBlank() || l.getNiveau().isBlank();
                     if (!need) continue;
 
-                    ClassificationResult res = classificationService.classifySimple(
-                            l.getIsbn(),
-                            l.getTitre(),
-                            l.getAuteur(),
-                            l.getEditeur(),
-                            l.getDescription()
-                    );
+                    ClassificationResult res = classificationService.classifyFromLivre(l);
 
                     if (l.getGenre() == null || l.getGenre().isBlank() || reclassifyAll) {
                         l.setGenre(res.getGenre());

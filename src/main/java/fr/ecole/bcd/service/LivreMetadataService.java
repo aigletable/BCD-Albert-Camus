@@ -129,7 +129,9 @@ public class LivreMetadataService {
 
         /** Convertit le résultat en modèle {@link Livre}. */
         public Livre toLivre() {
-            return new Livre(isbn, titre, auteur, editeur, couvertureUrl, genre, theme, niveau, description);
+            String sujetsStr = subjects != null ? String.join(" ; ", subjects) : "";
+            return new Livre(isbn, titre, auteur, editeur, couvertureUrl, genre, theme, niveau, description,
+                    dewey, pageCount, sujetsStr, ageMention);
         }
     }
 

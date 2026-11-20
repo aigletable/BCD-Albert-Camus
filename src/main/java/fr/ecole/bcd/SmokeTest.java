@@ -1052,6 +1052,39 @@ public class SmokeTest {
         check("Règle 5 : LivreDao normalise le genre invalide", fetchedNorm != null && !"Harcèlement & Vivre ensemble".equals(fetchedNorm.getGenre()));
         check("Règle 5 : Thème préservé correctement", fetchedNorm != null && "Harcèlement & Vivre ensemble".equals(fetchedNorm.getTheme()));
 
+        // Règle Laïcité & Religions : 1 "foi", 2 "foi", 3 "foi" !
+        ClassificationResult crFoi = classifier.classifySimple(
+                "9782747025461",
+                "1 \"foi\", 2 \"foi\", 3 \"foi\" !",
+                "Auteur Religions",
+                "Bayard Jeunesse",
+                "Un livre pour sensibiliser les enfants aux différentes religions et diverses croyances avec respect et tolérance."
+        );
+        check("Règle Laïcité/Religions : classé en Vivre ensemble / Citoyenneté", "Harcèlement & Vivre ensemble".equals(crFoi.getTheme()));
+
+        // Règle 4 colonnes techniques persistées : Dewey, pageCount, sujets, age
+        Livre bookWithTechCols = new Livre(
+                "TEST-TECH-COLS-01",
+                "Encyclopédie des animaux",
+                "Zoologue",
+                "Larousse",
+                "",
+                "Documentaire",
+                "Animaux",
+                "Cycle 3",
+                "Grand atlas illustré des animaux du monde.",
+                "599",
+                128,
+                "Animaux ; Zoologie ; Mammifères",
+                "À partir de 8 ans"
+        );
+        dao.insert(bookWithTechCols);
+        Livre fetchedTech = dao.findByIsbn("TEST-TECH-COLS-01");
+        check("Colonnes SQLite : Dewey persisté", fetchedTech != null && "599".equals(fetchedTech.getDewey()));
+        check("Colonnes SQLite : pageCount persisté", fetchedTech != null && fetchedTech.getPageCount() == 128);
+        check("Colonnes SQLite : sujets_api persisté", fetchedTech != null && fetchedTech.getSujetsApi().contains("Zoologie"));
+        check("Colonnes SQLite : age_api persisté", fetchedTech != null && fetchedTech.getAgeApi().contains("8 ans"));
+
         System.out.println();
     }
 

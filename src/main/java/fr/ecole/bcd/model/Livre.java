@@ -41,6 +41,18 @@ public class Livre {
     /** Résumé ou synopsis textuel de l'ouvrage. */
     private String description = "";
 
+    /** Indice Dewey de classification (ex. 200, 599, 741.5, 944). */
+    private String dewey = "";
+
+    /** Nombre de pages officiel (issu des notices BnF ou Google Books). */
+    private int pageCount = 0;
+
+    /** Vedettes RAMEAU officielles BnF et catégories thématiques normalisées. */
+    private String sujetsApi = "";
+
+    /** Recommandation d'âge officielle (zone Unimarc 333$a de la BnF). */
+    private String ageApi = "";
+
     /** Nombre total d'exemplaires physiques rattachés à cette fiche (calculé par requête jointe). */
     private int nbExemplaires = 0;
 
@@ -82,6 +94,16 @@ public class Livre {
     public Livre(String isbn, String titre, String auteur,
                  String editeur, String couvertureUrl,
                  String genre, String theme, String niveau, String description) {
+        this(isbn, titre, auteur, editeur, couvertureUrl, genre, theme, niveau, description, "", 0, "", "");
+    }
+
+    /**
+     * Constructeur complet incluant la classification et les métadonnées techniques de l'API.
+     */
+    public Livre(String isbn, String titre, String auteur,
+                 String editeur, String couvertureUrl,
+                 String genre, String theme, String niveau, String description,
+                 String dewey, int pageCount, String sujetsApi, String ageApi) {
         this.isbn = isbn;
         this.titre = titre;
         this.auteur = auteur;
@@ -91,6 +113,10 @@ public class Livre {
         this.theme = theme != null ? theme : "";
         this.niveau = niveau != null ? niveau : "";
         this.description = description != null ? description : "";
+        this.dewey = dewey != null ? dewey : "";
+        this.pageCount = pageCount;
+        this.sujetsApi = sujetsApi != null ? sujetsApi : "";
+        this.ageApi = ageApi != null ? ageApi : "";
     }
 
     /**
@@ -246,6 +272,18 @@ public class Livre {
      * @param nbDisponibles nombre d'exemplaires disponibles
      */
     public void setNbDisponibles(int nbDisponibles) { this.nbDisponibles = nbDisponibles; }
+
+    public String getDewey() { return dewey; }
+    public void setDewey(String dewey) { this.dewey = dewey != null ? dewey : ""; }
+
+    public int getPageCount() { return pageCount; }
+    public void setPageCount(int pageCount) { this.pageCount = pageCount; }
+
+    public String getSujetsApi() { return sujetsApi; }
+    public void setSujetsApi(String sujetsApi) { this.sujetsApi = sujetsApi != null ? sujetsApi : ""; }
+
+    public String getAgeApi() { return ageApi; }
+    public void setAgeApi(String ageApi) { this.ageApi = ageApi != null ? ageApi : ""; }
 
     /**
      * Retourne une chaîne formatée indiquant la disponibilité sous forme de ratio (ex. {@code 2 / 3 dispo}).

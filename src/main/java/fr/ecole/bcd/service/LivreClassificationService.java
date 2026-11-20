@@ -124,6 +124,33 @@ public class LivreClassificationService {
     }
 
     /**
+     * Analyse complète d'un livre à partir de toutes ses métadonnées persistées en base SQLite
+     * (y compris les 4 colonnes techniques dewey, page_count, sujets_api, age_api).
+     */
+    public ClassificationResult classifyFromLivre(fr.ecole.bcd.model.Livre l) {
+        if (l == null) return new ClassificationResult("Roman", "Vie quotidienne & École", "Cycle 2 (CP-CE2)");
+        List<String> subjects = new ArrayList<>();
+        if (l.getSujetsApi() != null && !l.getSujetsApi().isBlank()) {
+            for (String s : l.getSujetsApi().split("[;,]")) {
+                String trimmed = s.trim();
+                if (!trimmed.isEmpty()) subjects.add(trimmed);
+            }
+        }
+        return classify(
+                l.getIsbn(),
+                l.getTitre(),
+                l.getAuteur(),
+                l.getEditeur(),
+                "",
+                subjects,
+                l.getDewey(),
+                l.getAgeApi(),
+                l.getDescription(),
+                l.getPageCount()
+        );
+    }
+
+    /**
      * Surcharge simplifiée rétrocompatible sans ISBN.
      */
     public ClassificationResult classifySimple(String titre, String auteur, String editeur, String description) {
@@ -206,12 +233,14 @@ public class LivreClassificationService {
                 || (!dewey.isEmpty() && !dewey.startsWith("8") && !dewey.startsWith("741.5"))
                 || col.contains("p'tits docs") || col.contains("ptits docs") || col.contains("grande imagerie")
                 || col.contains("mes premieres decouvertes") || col.contains("petite encyclopedie")
-                || col.contains("decouverte") || col.contains("dokéo") || col.contains("copain")
-                || ed.contains("fleurus") || ed.contains("milan jeunesse doc")
+                || col.contains("decouverte") || col.contains("dokéo") || col.contains("dokeo") || col.contains("copain")
+                || ed.contains("fleurus") || ed.contains("milan jeunesse doc") || ed.contains("larousse")
+                || ed.contains("rustica") || ed.contains("nathan doc")
                 || tit.contains("documentaire") || tit.contains("encyclopédie") || tit.contains("encyclopedie")
+                || tit.contains("dictionnaire") || tit.contains("atlas") || tit.contains("mon premier atlas")
                 || tit.contains("tout savoir sur") || tit.contains("le corps humain") || tit.contains("copain")
-                || tit.contains("mon premier atlas") || tit.contains("guide des ") || tit.contains("atlas")
-                || corpus.contains("documentaire")) {
+                || tit.contains("guide des ") || tit.contains("dinosaure") || tit.contains("dinosaures")
+                || corpus.contains("documentaire") || corpus.contains("encyclopedie") || corpus.contains("dictionnaire")) {
             return "Documentaire";
         }
 
@@ -228,7 +257,7 @@ public class LivreClassificationService {
                 || tit.contains("babar") || tit.contains("chien bleu") || tit.contains("droles de petites betes")
                 || tit.contains("drôles de petites bêtes") || tit.contains("calinours") || tit.contains("arc-en-ciel")
                 || tit.contains("petit-bleu et petit-jaune") || tit.contains("simon le lapin")
-                || (pageCount > 0 && pageCount <= 40 && !tit.contains("roman"))) {
+                || (pageCount > 0 && pageCount <= 44 && !tit.contains("roman"))) {
             return "Album";
         }
 
@@ -257,10 +286,14 @@ public class LivreClassificationService {
     private String detectTheme(String titre, String collection, List<String> subjects,
                                String dewey, String corpus) {
 
-        // Harcèlement & Vivre ensemble
+        // Harcèlement, Citoyenneté, Laïcité & Vivre ensemble
         if (corpusMatches(corpus, "harcelement", "harceler", "intimidation", "moquerie", "bouc emissaire",
                 "vivre ensemble", "difference", "empathie", "rejet", "rumeur", "solidarite",
-                "exclusion", "discrimination", "cyberharcelement", "racket", "seul contre tous", "victime")) {
+                "exclusion", "discrimination", "cyberharcelement", "racket", "seul contre tous", "victime",
+                "religion", "religions", "laicite", "laïcité", "croyance", "croyances", "tolerance", "tolérance",
+                "foi", "dieu", "bible", "coran", "torah", "culte", "eglise", "mosquee", "synagogue",
+                "droits de l'enfant", "citoyennete", "egalite", "paix", "respect")
+                || dewey.startsWith("2") || dewey.startsWith("32")) {
             return "Harcèlement & Vivre ensemble";
         }
 
@@ -562,7 +595,10 @@ public class LivreClassificationService {
             if (std.equalsIgnoreCase(trimmed)) return std;
         }
         String lower = trimmed.toLowerCase();
-        if (lower.contains("harcelement") || lower.contains("vivre ensemble")) return "Harcèlement & Vivre ensemble";
+        if (lower.contains("harcelement") || lower.contains("vivre ensemble")
+                || lower.contains("religion") || lower.contains("laicite") || lower.contains("croyance")) {
+            return "Harcèlement & Vivre ensemble";
+        }
         if (lower.contains("guerre") || lower.contains("histoire")) return "Guerre & Histoire";
         if (lower.contains("animal") || lower.contains("animaux")) return "Animaux";
         if (lower.contains("science") || lower.contains("espace")) return "Sciences & Espace";

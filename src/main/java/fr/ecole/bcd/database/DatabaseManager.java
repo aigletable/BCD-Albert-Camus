@@ -206,6 +206,22 @@ public final class DatabaseManager {
             } catch (SQLException ignored) {}
 
             try {
+                stmt.execute("ALTER TABLE livres ADD COLUMN dewey TEXT DEFAULT '';");
+            } catch (SQLException ignored) {}
+
+            try {
+                stmt.execute("ALTER TABLE livres ADD COLUMN page_count INTEGER DEFAULT 0;");
+            } catch (SQLException ignored) {}
+
+            try {
+                stmt.execute("ALTER TABLE livres ADD COLUMN sujets_api TEXT DEFAULT '';");
+            } catch (SQLException ignored) {}
+
+            try {
+                stmt.execute("ALTER TABLE livres ADD COLUMN age_api TEXT DEFAULT '';");
+            } catch (SQLException ignored) {}
+
+            try {
                 stmt.execute("CREATE TABLE IF NOT EXISTS ressources_pedagogiques ("
                         + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                         + "isbn TEXT DEFAULT NULL, "
