@@ -1144,6 +1144,7 @@ body.dark-mode .book-catalog-card.selected {
   </button>
   <button class="tab-nav-item" data-tab="tab-map3d" onclick="switchMainTab('tab-map3d')">
     🗺️ Plan 3D BCD
+    <span style="font-size:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:1px 6px; border-radius:9999px; font-weight:700; margin-left:4px;">PROTOTYPE / IDÉE</span>
   </button>
 
 </nav>
@@ -1979,16 +1980,21 @@ body.dark-mode .book-catalog-card.selected {
 
   
     <!-- ==========================
-         ONGLET 7 : PLAN 3D DE LA BCD
+         ONGLET 7 : PLAN 3D DE LA BCD (PROTOTYPE / IDÉE)
          ========================== -->
     <div class="tab-content-container" id="tab-map3d" style="display:none; flex-direction:column; gap:16px;">
       
-      <!-- En-tête de l'onglet -->
+      <!-- En-tête de l'onglet avec tag PROTOTYPE -->
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
         <div>
-          <h1 class="screen-title" style="margin-bottom:4px;">🗺️ Plan 3D de la BCD &amp; Rangement des Livres</h1>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
+            <h1 class="screen-title" style="margin:0;">🗺️ Plan 3D de la BCD &amp; Rangement des Livres</h1>
+            <span style="font-size:11px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:2px 8px; border-radius:9999px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;">
+              💡 Prototype / Idée en test
+            </span>
+          </div>
           <p style="font-size:13px; color:var(--text-muted); margin:0;">
-            Modélisation spatiale 3D interactive fidèle au croquis original de l'école Albert Camus • Localisation des rayons et reclassement
+            Maquette exploratoire de repérage spatial 3D fidèle au croquis original de l'école Albert Camus • Localisation des rayons et reclassement
           </p>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -2002,6 +2008,19 @@ body.dark-mode .book-catalog-card.selected {
             🏷️ Imprimer étiquettes de rayon
           </button>
         </div>
+      </div>
+
+      <!-- Bandeau explicatif : Note d'intention Prototype / Idée -->
+      <div style="background:#FFFBEB; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:var(--radius-sm); padding:10px 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12.5px; color:#92400E;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:20px;">💡</span>
+          <div>
+            <strong>Note d'intention (Concept exploratoire) :</strong> Cet onglet est un <strong>prototype pour tester l'idée</strong> d'une carte 3D interactive de la bibliothèque avec chaque étagère identifiée, pour voir où ranger les livres et guider les retours par douchette.
+          </div>
+        </div>
+        <button class="btn-subtle" style="font-size:11.5px; padding:4px 10px; background:#FEF3C7; border:1px solid #FCD34D; color:#92400E; font-weight:600;" onclick="openTeacherFeedbackModal()">
+          💬 Donner votre avis sur cette idée
+        </button>
       </div>
 
       <!-- Barre de recherche rapide & filtres de rayons -->
@@ -2911,12 +2930,15 @@ body.dark-mode .book-catalog-card.selected {
 <div class="modal" id="croquisModal">
   <div class="modal-box" style="max-width:850px; width:95%;">
     <div class="modal-header">
-      <h3 style="margin:0; font-size:17px; font-weight:700;">📄 Croquis Original de la BCD &amp; Correspondance 3D</h3>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <h3 style="margin:0; font-size:17px; font-weight:700;">📄 Croquis Original de la BCD &amp; Correspondance 3D</h3>
+        <span style="font-size:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:1px 6px; border-radius:9999px; font-weight:700;">PROTOTYPE</span>
+      </div>
       <button class="modal-close-btn" onclick="closeCroquisModal()">✕</button>
     </div>
     <div class="modal-body" style="max-height:75vh; overflow-y:auto; display:flex; flex-direction:column; gap:16px;">
       <p style="font-size:13px; color:var(--text-muted); margin:0;">
-        Ce plan a été dessiné à la main pour organiser la BCD de l'école Albert Camus Pasteur. Notre moteur 3D retranscrit fidèlement chacun des 12 éléments tracés :
+        Ce plan a été dessiné à la main pour organiser la BCD de l'école Albert Camus Pasteur. Notre prototype 3D explore l'idée d'une maquette interactive pour retranscrire fidèlement chacun des 12 éléments :
       </p>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;">
@@ -2966,7 +2988,10 @@ body.dark-mode .book-catalog-card.selected {
 <div class="modal" id="shelveAssistantModal">
   <div class="modal-box" style="max-width:540px; width:95%;">
     <div class="modal-header">
-      <h3 style="margin:0; font-size:17px; font-weight:700;">⚡ Assistant Douchette : Bip &amp; Range</h3>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <h3 style="margin:0; font-size:17px; font-weight:700;">⚡ Assistant Douchette : Bip &amp; Range</h3>
+        <span style="font-size:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:1px 6px; border-radius:9999px; font-weight:700;">PROTOTYPE</span>
+      </div>
       <button class="modal-close-btn" onclick="closeShelveAssistantModal()">✕</button>
     </div>
     <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
@@ -4806,7 +4831,7 @@ function hideMalletteMenu() {
 }
 
 
-/* ── 12. MOTEUR 3D ISOMÉTRIQUE & RANGEMENT BCD ───────────────────────── */
+/* ── 12. MOTEUR 3D ISOMÉTRIQUE & RANGEMENT BCD (PROTOTYPE / CONCEPT) ─── */
 
 const FURNITURE_DATA = [
   {
@@ -5081,8 +5106,8 @@ let map3dHoveredId = null;
 let map3dShowLabels = true;
 let map3dIsDragging = false;
 let map3dDragStart = { x: 0, y: 0 };
-let map3dLightAmbiance = "jour"; // "jour" ou "chaud"
-let map3dHighlightedPin = null; // { shelfId: '...', title: '...', cote: '...', author: '...' }
+let map3dLightAmbiance = "jour";
+let map3dHighlightedPin = null;
 let map3dAnimFrame = null;
 let map3dActiveFilter = "all";
 
@@ -5124,7 +5149,6 @@ function initOrRender3DMap() {
 
   setupMap3dCanvasListeners();
 
-  // Assure le dimensionnement haute définition lors de l'affichage
   requestAnimationFrame(() => {
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -5271,26 +5295,18 @@ function map3dRenderLoop() {
   const h = canvas.height;
   if (w <= 0 || h <= 0) return;
 
-  // Lissage d'interpolation caméra
   map3dCamera.yaw += (map3dCamera.targetYaw - map3dCamera.yaw) * 0.15;
   map3dCamera.pitch += (map3dCamera.targetPitch - map3dCamera.pitch) * 0.15;
   map3dCamera.zoom += (map3dCamera.targetZoom - map3dCamera.zoom) * 0.15;
 
-  // Mise à jour de la boussole
   updateCompassNeedle();
 
-  // Nettoyage écran
   ctx.clearRect(0, 0, w, h);
 
-  // 1. Sol parquet en bois de la BCD avec lattes
   drawFloorParquet(ctx, w, h);
-
-  // 2. Murs ajourés (Nord avec entrée, Ouest, Est, Sud)
   drawWalls(ctx, w, h);
 
-  // 3. Meubles triés en profondeur (Painter's algorithm)
   const renderList = [];
-
   FURNITURE_DATA.forEach(f => {
     const center = project3d(f.x + f.w / 2, f.y + f.d / 2, f.z + f.h / 2, w, h);
     renderList.push({
@@ -5307,14 +5323,12 @@ function map3dRenderLoop() {
     drawFurniture3D(ctx, r.item, w, h, r.isHovered, r.isSelected);
   });
 
-  // 4. Badges flottants d'étiquette
   if (map3dShowLabels) {
     renderList.forEach(r => {
       drawShelfLabelBadge(ctx, r.item, w, h, r.isSelected);
     });
   }
 
-  // 5. Pin animé si un livre est localisé
   if (map3dHighlightedPin) {
     drawHighlightedPin(ctx, w, h);
   }
@@ -5396,19 +5410,10 @@ function drawFloorParquet(ctx, w, h) {
 function drawWalls(ctx, w, h) {
   const wallH = 10;
 
-  // Mur Nord segment 1 (avant la porte : x: 0 à 12)
   drawBoxSegment(ctx, 0, 0, 0, 12, 2, wallH, '#64748B', '#475569', w, h);
-  // Porte d'entrée entre x:12 et x:24
-  // Mur Nord segment 2 (après la porte : x: 24 à 100)
   drawBoxSegment(ctx, 24, 0, 0, 76, 2, wallH, '#64748B', '#475569', w, h);
-
-  // Mur Ouest
   drawBoxSegment(ctx, 0, 0, 0, 2, 120, wallH, '#475569', '#334155', w, h);
-
-  // Mur Est
   drawBoxSegment(ctx, 98, 0, 0, 2, 120, wallH, '#475569', '#334155', w, h);
-
-  // Mur Sud
   drawBoxSegment(ctx, 0, 118, 0, 100, 2, wallH, '#64748B', '#475569', w, h);
 }
 
@@ -5751,6 +5756,7 @@ function renderMap3dSidebar() {
         <span class="shelf-category-badge" style="background:var(--bg-subtle); color:var(--text-sub);">
           Cote : ${f.cotePrefix}
         </span>
+        <span style="font-size:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:2px 6px; border-radius:4px; font-weight:700;">PROTOTYPE</span>
       </div>
     </div>
 
@@ -5815,7 +5821,10 @@ function renderMap3dSidebar() {
 function renderOverviewSidebar(sidebar) {
   sidebar.innerHTML = `
     <div style="border-bottom:1px solid var(--border-color); padding-bottom:10px;">
-      <h3 style="margin:0 0 4px 0; font-size:16px;">Plan de la BCD Albert Camus</h3>
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+        <h3 style="margin:0; font-size:16px;">Plan de la BCD Albert Camus</h3>
+        <span style="font-size:10px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; padding:1px 6px; border-radius:9999px; font-weight:700;">PROTOTYPE</span>
+      </div>
       <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
         Cliquez sur un meuble dans le plan 3D ou ci-dessous pour inspecter les livres rangés.
       </p>
