@@ -987,6 +987,7 @@ public class InventaireController {
                     if (!need) continue;
 
                     ClassificationResult res = classificationService.classifySimple(
+                            l.getIsbn(),
                             l.getTitre(),
                             l.getAuteur(),
                             l.getEditeur(),

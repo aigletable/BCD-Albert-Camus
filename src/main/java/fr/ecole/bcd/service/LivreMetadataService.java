@@ -165,6 +165,35 @@ public class LivreMetadataService {
             System.err.println("⚠️ BNF lookup error for " + clean + " : " + e.getMessage());
         }
 
+        // Point 4 : Enrichissement complémentaire si la BNF a trouvé la notice mais avec des manques
+        // (description/résumé absent, nombre de pages manquant ou jaquette de couverture absente)
+        if (result != null && result.isFound()) {
+            boolean missingDesc = result.getDescription() == null || result.getDescription().isBlank();
+            boolean missingPages = result.getPageCount() <= 0;
+            boolean missingCover = result.getCouvertureUrl() == null || result.getCouvertureUrl().isBlank();
+
+            if (missingDesc || missingPages || missingCover) {
+                try {
+                    MetadataResult gRes = fetchFromGoogle(clean);
+                    if (gRes != null && gRes.isFound()) {
+                        String mergedDesc = missingDesc && !gRes.getDescription().isBlank() ? gRes.getDescription() : result.getDescription();
+                        int mergedPages = missingPages && gRes.getPageCount() > 0 ? gRes.getPageCount() : result.getPageCount();
+                        String mergedCover = missingCover && !gRes.getCouvertureUrl().isBlank() ? gRes.getCouvertureUrl() : result.getCouvertureUrl();
+                        String mergedEditeur = (result.getEditeur() == null || result.getEditeur().isBlank()) && !gRes.getEditeur().isBlank() ? gRes.getEditeur() : result.getEditeur();
+                        String mergedDate = (result.getDatePublication() == null || result.getDatePublication().isBlank()) && !gRes.getDatePublication().isBlank() ? gRes.getDatePublication() : result.getDatePublication();
+
+                        result = new MetadataResult(
+                                result.getIsbn(), result.getTitre(), result.getAuteur(), mergedEditeur,
+                                mergedDate, mergedCover, result.getSource() + "+GoogleBooks",
+                                result.getGenre(), result.getTheme(), result.getNiveau(),
+                                mergedDesc, result.getCollection(), result.getSubjects(),
+                                result.getDewey(), result.getAgeMention(), mergedPages
+                        );
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+
         // 2. Si non trouvé à la BNF → Essai Google Books
         if (result == null || !result.isFound()) {
             try {
@@ -208,6 +237,7 @@ public class LivreMetadataService {
         String niveau = result.getNiveau();
         if (genre.isEmpty() || theme.isEmpty() || niveau.isEmpty()) {
             LivreClassificationService.ClassificationResult cr = classifier.classify(
+                    result.getIsbn(),
                     result.getTitre(), result.getAuteur(), result.getEditeur(),
                     result.getCollection(), result.getSubjects(), result.getDewey(),
                     result.getAgeMention(), result.getDescription(), result.getPageCount()
@@ -446,7 +476,7 @@ public class LivreMetadataService {
                 }
 
                 LivreClassificationService.ClassificationResult cr = classifier.classify(
-                        docTitle, docAuthor, docPublisher, "", subjects, "", "", "", 0
+                        foundIsbn, docTitle, docAuthor, docPublisher, "", subjects, "", "", "", 0
                 );
 
                 list.add(new MetadataResult(foundIsbn, docTitle, docAuthor, docPublisher, docYear, coverUrl, "OpenLibrary",
@@ -530,7 +560,7 @@ public class LivreMetadataService {
                 }
 
                 LivreClassificationService.ClassificationResult cr = classifier.classify(
-                        docTitle, docAuthor, docPublisher, "", subjects, "", "", docDesc, pageCount
+                        foundIsbn, docTitle, docAuthor, docPublisher, "", subjects, "", "", docDesc, pageCount
                 );
 
                 list.add(new MetadataResult(foundIsbn, docTitle, docAuthor, docPublisher, docDate, coverUrl, "GoogleBooks",
@@ -637,7 +667,7 @@ public class LivreMetadataService {
                 if (!docTitle.isEmpty()) {
                     String docAuteur = String.join(", ", auteursList);
                     LivreClassificationService.ClassificationResult cr = classifier.classify(
-                            docTitle, docAuteur, docEditeur, collection, subjects, dewey, ageMention, description, pageCount
+                            foundIsbn, docTitle, docAuteur, docEditeur, collection, subjects, dewey, ageMention, description, pageCount
                     );
                     list.add(new MetadataResult(foundIsbn, docTitle, docAuteur, docEditeur, docDate, "", "BNF",
                             cr.getGenre(), cr.getTheme(), cr.getNiveau(), description, collection, subjects, dewey, ageMention, pageCount));
@@ -763,7 +793,7 @@ public class LivreMetadataService {
 
             String auteurs = String.join(", ", auteursList);
             LivreClassificationService.ClassificationResult cr = classifier.classify(
-                    titre, auteurs, editeur, collection, subjects, dewey, ageMention, description, pageCount
+                    cleanIsbn, titre, auteurs, editeur, collection, subjects, dewey, ageMention, description, pageCount
             );
 
             return new MetadataResult(
@@ -838,7 +868,7 @@ public class LivreMetadataService {
             }
 
             LivreClassificationService.ClassificationResult cr = classifier.classify(
-                    titre, auteurs, editeur, "", subjects, "", "", description, 0
+                    cleanIsbn, titre, auteurs, editeur, "", subjects, "", "", description, 0
             );
 
             return new MetadataResult(cleanIsbn, titre, auteurs, editeur, date, "", "BNF",
@@ -906,7 +936,7 @@ public class LivreMetadataService {
             }
 
             LivreClassificationService.ClassificationResult cr = classifier.classify(
-                    titre, auteurs, editeur, "", subjects, "", "", description, pageCount
+                    cleanIsbn, titre, auteurs, editeur, "", subjects, "", "", description, pageCount
             );
 
             return new MetadataResult(cleanIsbn, titre, auteurs, editeur, date, cover, "GoogleBooks",
@@ -991,7 +1021,7 @@ public class LivreMetadataService {
             }
 
             LivreClassificationService.ClassificationResult cr = classifier.classify(
-                    titre, auteurs, editeur, "", subjects, "", "", description, pageCount
+                    cleanIsbn, titre, auteurs, editeur, "", subjects, "", "", description, pageCount
             );
 
             return new MetadataResult(cleanIsbn, titre, auteurs, editeur, date, cover, "OpenLibrary",

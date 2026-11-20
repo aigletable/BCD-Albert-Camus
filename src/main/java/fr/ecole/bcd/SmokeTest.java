@@ -978,6 +978,80 @@ public class SmokeTest {
         check("Filtre Niveau : Tous niveaux match n'importe quel filtre", LivreClassificationService.matchesNiveau("Tous niveaux", "CP"));
         check("Filtre Niveau : Maternelle match Cycle 1", LivreClassificationService.matchesNiveau("Maternelle", "Cycle 1 (Maternelle)"));
 
+        // 9. Nouveaux tests de robustesse (5 points d'amélioration de la logique métier)
+        // Règle 1 : Verrouillage Revue vs Livre ISBN 978
+        ClassificationResult crJaimeLireIsbn = classifier.classifySimple(
+                "9782747030472",
+                "Surtout, n'ouvre pas la porte !",
+                "Christian Lamblin",
+                "Bayard poche",
+                "Collection J'aime lire poche pour enfants de CE1."
+        );
+        check("Règle 1 : Livre ISBN 978 Bayard/J'aime lire n'est JAMAIS une revue", !"Revue / Magazine".equals(crJaimeLireIsbn.getGenre()));
+        check("Règle 1 : Livre ISBN 978 classé Roman", "Roman".equals(crJaimeLireIsbn.getGenre()));
+
+        ClassificationResult crPresse378 = classifier.classifySimple(
+                "3780197304903",
+                "J'aime lire - Le magazine",
+                "Collectif",
+                "Bayard Presse",
+                "Numéro mensuel du magazine jeunesse."
+        );
+        check("Règle 1 : Code presse 378 bien classé Revue / Magazine", "Revue / Magazine".equals(crPresse378.getGenre()));
+
+        // Règle 2 : Auteur exclu du thème & durcissement Guerre & Histoire
+        ClassificationResult crFauxGuerre = classifier.classifySimple(
+                "9782218041112",
+                "Ratus et les lapins",
+                "une histoire de Jeanine et Jean Guion",
+                "Hatier",
+                "Ratus joue avec les petits lapins dans le pré."
+        );
+        check("Règle 2 : 'une histoire de' dans l'auteur ne déclenche PAS Guerre & Histoire", !"Guerre & Histoire".equals(crFauxGuerre.getTheme()));
+        check("Règle 2 : Ratus classé en Animaux", "Animaux".equals(crFauxGuerre.getTheme()));
+
+        ClassificationResult crRoi = classifier.classifySimple(
+                "9782211084772",
+                "Le roi grenouille",
+                "Frères Grimm",
+                "L'école des loisirs",
+                "Le roi et la princesse au bord de la fontaine magique."
+        );
+        check("Règle 2 : 'roi' dans un conte ne déclenche PAS Guerre & Histoire", !"Guerre & Histoire".equals(crRoi.getTheme()));
+        check("Règle 2 : Roi/princesse classé Contes, Mythes & Légendes", "Contes, Mythes & Légendes".equals(crRoi.getTheme()));
+
+        // Règle 3 : Fallback Album pour Maternelle / CP sans pagination
+        ClassificationResult crBabar = classifier.classify(
+                "9782010000010",
+                "Les voyages de Babar",
+                "Jean de Brunhoff",
+                "Hachette",
+                "Babar",
+                List.of(),
+                "",
+                "Pour les tout-petits de maternelle",
+                "Babar et Céleste partent en voyage en montgolfière.",
+                0 // 0 pages
+        );
+        check("Règle 3 : Babar en maternelle sans pagination = Album (pas Roman)", "Album".equals(crBabar.getGenre()));
+
+        // Règle 5 : Protection de LivreDao contre l'injection d'un thème dans le genre
+        Livre bookThemeInGenre = new Livre(
+                "TEST-NORM-GENRE-01",
+                "Guide du respect à l'école",
+                "Auteur Test",
+                "Éditeur Test",
+                "",
+                "Harcèlement & Vivre ensemble", // Thème au lieu du genre !
+                "",
+                "Cycle 3",
+                "Livre de sensibilisation."
+        );
+        dao.insert(bookThemeInGenre);
+        Livre fetchedNorm = dao.findByIsbn("TEST-NORM-GENRE-01");
+        check("Règle 5 : LivreDao normalise le genre invalide", fetchedNorm != null && !"Harcèlement & Vivre ensemble".equals(fetchedNorm.getGenre()));
+        check("Règle 5 : Thème préservé correctement", fetchedNorm != null && "Harcèlement & Vivre ensemble".equals(fetchedNorm.getTheme()));
+
         System.out.println();
     }
 

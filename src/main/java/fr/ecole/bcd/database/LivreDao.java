@@ -48,6 +48,17 @@ public class LivreDao {
      * @throws SQLException en cas de panne de communication avec SQLite
      */
     public boolean insert(Livre livre) throws SQLException {
+        String rawGenre = livre.getGenre();
+        String rawTheme = livre.getTheme();
+        if ((rawTheme == null || rawTheme.isBlank()) && rawGenre != null
+                && fr.ecole.bcd.service.LivreClassificationService.THEMES_STANDARDS.contains(rawGenre.trim())) {
+            rawTheme = rawGenre.trim();
+            rawGenre = "Documentaire";
+        }
+        String genre = fr.ecole.bcd.service.LivreClassificationService.normalizeGenre(rawGenre, livre.getNiveau());
+        String theme = fr.ecole.bcd.service.LivreClassificationService.normalizeTheme(rawTheme);
+        String niveau = fr.ecole.bcd.service.LivreClassificationService.normalizeNiveau(livre.getNiveau());
+
         String sql = "INSERT OR IGNORE INTO livres (isbn, titre, auteur, editeur, couverture_url, genre, theme, niveau, description) "
                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -57,9 +68,9 @@ public class LivreDao {
             ps.setString(3, livre.getAuteur());
             ps.setString(4, livre.getEditeur());
             ps.setString(5, livre.getCouvertureUrl());
-            ps.setString(6, livre.getGenre());
-            ps.setString(7, livre.getTheme());
-            ps.setString(8, livre.getNiveau());
+            ps.setString(6, genre);
+            ps.setString(7, theme);
+            ps.setString(8, niveau);
             ps.setString(9, livre.getDescription());
             return ps.executeUpdate() > 0;
         }
@@ -428,6 +439,17 @@ public class LivreDao {
      * @throws SQLException si la mise à jour échoue au niveau de la base de données
      */
     public void update(Livre livre) throws SQLException {
+        String rawGenre = livre.getGenre();
+        String rawTheme = livre.getTheme();
+        if ((rawTheme == null || rawTheme.isBlank()) && rawGenre != null
+                && fr.ecole.bcd.service.LivreClassificationService.THEMES_STANDARDS.contains(rawGenre.trim())) {
+            rawTheme = rawGenre.trim();
+            rawGenre = "Documentaire";
+        }
+        String genre = fr.ecole.bcd.service.LivreClassificationService.normalizeGenre(rawGenre, livre.getNiveau());
+        String theme = fr.ecole.bcd.service.LivreClassificationService.normalizeTheme(rawTheme);
+        String niveau = fr.ecole.bcd.service.LivreClassificationService.normalizeNiveau(livre.getNiveau());
+
         String sql = "UPDATE livres SET titre = ?, auteur = ?, editeur = ?, couverture_url = ?, "
                    + "genre = ?, theme = ?, niveau = ?, description = ? "
                    + "WHERE isbn = ?";
@@ -437,9 +459,9 @@ public class LivreDao {
             ps.setString(2, livre.getAuteur());
             ps.setString(3, livre.getEditeur());
             ps.setString(4, livre.getCouvertureUrl());
-            ps.setString(5, livre.getGenre());
-            ps.setString(6, livre.getTheme());
-            ps.setString(7, livre.getNiveau());
+            ps.setString(5, genre);
+            ps.setString(6, theme);
+            ps.setString(7, niveau);
             ps.setString(8, livre.getDescription());
             ps.setString(9, livre.getIsbn());
             ps.executeUpdate();
@@ -473,6 +495,10 @@ public class LivreDao {
                 return;
             }
 
+            String normGenre = fr.ecole.bcd.service.LivreClassificationService.normalizeGenre(updatedLivre.getGenre(), updatedLivre.getNiveau());
+            String normTheme = fr.ecole.bcd.service.LivreClassificationService.normalizeTheme(updatedLivre.getTheme());
+            String normNiveau = fr.ecole.bcd.service.LivreClassificationService.normalizeNiveau(updatedLivre.getNiveau());
+
             Livre existingTarget = findByIsbn(newIsbn);
             if (existingTarget == null) {
                 String insertSql = "INSERT INTO livres (isbn, titre, auteur, editeur, couverture_url, genre, theme, niveau, description) "
@@ -483,9 +509,9 @@ public class LivreDao {
                     ps.setString(3, updatedLivre.getAuteur());
                     ps.setString(4, updatedLivre.getEditeur());
                     ps.setString(5, updatedLivre.getCouvertureUrl());
-                    ps.setString(6, updatedLivre.getGenre());
-                    ps.setString(7, updatedLivre.getTheme());
-                    ps.setString(8, updatedLivre.getNiveau());
+                    ps.setString(6, normGenre);
+                    ps.setString(7, normTheme);
+                    ps.setString(8, normNiveau);
                     ps.setString(9, updatedLivre.getDescription());
                     ps.executeUpdate();
                 }
@@ -497,9 +523,9 @@ public class LivreDao {
                     ps.setString(2, updatedLivre.getAuteur());
                     ps.setString(3, updatedLivre.getEditeur());
                     ps.setString(4, updatedLivre.getCouvertureUrl());
-                    ps.setString(5, updatedLivre.getGenre());
-                    ps.setString(6, updatedLivre.getTheme());
-                    ps.setString(7, updatedLivre.getNiveau());
+                    ps.setString(5, normGenre);
+                    ps.setString(6, normTheme);
+                    ps.setString(7, normNiveau);
                     ps.setString(8, updatedLivre.getDescription());
                     ps.setString(9, newIsbn);
                     ps.executeUpdate();

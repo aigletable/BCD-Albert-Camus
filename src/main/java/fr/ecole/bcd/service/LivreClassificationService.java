@@ -2,16 +2,16 @@ package fr.ecole.bcd.service;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
 /**
  * Moteur sémantique d'inférence et d'auto-classification des livres scolaires.
  * <p>
- * Déduit automatiquement au moment du scan ISBN :
+ * Déduit automatiquement au moment du scan ISBN ou de l'import :
  * <ul>
- *   <li><b>Genre</b> : BD, Album, Roman, Documentaire, Conte, Poésie / Théâtre, Manga, Revue...</li>
+ *   <li><b>Genre</b> : BD, Album, Roman, Documentaire, Conte, Poésie / Théâtre, Manga, Revue / Magazine...</li>
  *   <li><b>Thème</b> : Guerre & Histoire, Animaux, Nature & Écologie, Aventure, Imaginaire & Magie...</li>
  *   <li><b>Niveau scolaire</b> : Maternelle, CP, CE1, CE2, CM1, CM2 (ou Cycle 1, Cycle 2, Cycle 3)...</li>
  * </ul>
@@ -83,44 +83,83 @@ public class LivreClassificationService {
         }
     }
 
+    // =====================================================================
+    //  Points d'entrée de classification
+    // =====================================================================
+
     /**
-     * Analyse l'ensemble des données bibliographiques collectées pour classifier l'ouvrage.
+     * Analyse complète avec code ISBN / EAN pour verrouiller la distinction Livre vs Presse.
      */
-    public ClassificationResult classify(String titre, String auteur, String editeur,
+    public ClassificationResult classify(String isbn, String titre, String auteur, String editeur,
                                          String collection, List<String> subjects,
                                          String dewey, String ageMention,
                                          String description, int pageCount) {
 
-        String textCorpus = buildCorpus(titre, auteur, editeur, collection, subjects, description);
+        String generalCorpus = buildCorpus(titre, auteur, editeur, collection, subjects, description);
+        String themeCorpus = buildThemeCorpus(titre, editeur, collection, subjects, description);
 
-        String genre = detectGenre(titre, editeur, collection, subjects, dewey, textCorpus, pageCount);
-        String theme = detectTheme(titre, collection, subjects, dewey, textCorpus);
-        String niveau = detectNiveau(titre, collection, subjects, ageMention, textCorpus, pageCount, genre);
+        // Détection du niveau en premier (influence le fallback Album vs Roman)
+        String niveau = detectNiveau(titre, collection, subjects, ageMention, generalCorpus, pageCount);
+        String genre = detectGenre(isbn, titre, editeur, collection, subjects, dewey, generalCorpus, pageCount, niveau);
+        String theme = detectTheme(titre, collection, subjects, dewey, themeCorpus);
 
         return new ClassificationResult(genre, theme, niveau);
     }
 
     /**
-     * Analyse simplifiée basée uniquement sur les champs de base (titre, auteur, éditeur, description).
+     * Surcharge rétrocompatible sans ISBN.
+     */
+    public ClassificationResult classify(String titre, String auteur, String editeur,
+                                         String collection, List<String> subjects,
+                                         String dewey, String ageMention,
+                                         String description, int pageCount) {
+        return classify("", titre, auteur, editeur, collection, subjects, dewey, ageMention, description, pageCount);
+    }
+
+    /**
+     * Analyse simplifiée avec code ISBN.
+     */
+    public ClassificationResult classifySimple(String isbn, String titre, String auteur, String editeur, String description) {
+        return classify(isbn, titre, auteur, editeur, "", Collections.emptyList(), "", "", description, 0);
+    }
+
+    /**
+     * Surcharge simplifiée rétrocompatible sans ISBN.
      */
     public ClassificationResult classifySimple(String titre, String auteur, String editeur, String description) {
-        return classify(titre, auteur, editeur, "", java.util.Collections.emptyList(), "", "", description, 0);
+        return classifySimple("", titre, auteur, editeur, description);
     }
 
     // =====================================================================
     //  1. Détection du Genre
     // =====================================================================
 
-    private String detectGenre(String titre, String editeur, String collection,
+    private String detectGenre(String isbn, String titre, String editeur, String collection,
                                List<String> subjects, String dewey,
-                               String corpus, int pageCount) {
+                               String corpus, int pageCount, String niveau) {
 
         String ed = normalize(editeur);
         String col = normalize(collection);
         String tit = normalize(titre);
 
-        // 1. Presse / Périodique
-        if (col.contains("j'aime lire") || col.contains("astrapi") || col.contains("wakou")
+        String cleanIsbn = isbn != null ? isbn.replaceAll("[^0-9Xx]", "") : "";
+        boolean isBookIsbn = cleanIsbn.startsWith("978") || cleanIsbn.startsWith("979");
+        boolean isPressCode = cleanIsbn.startsWith("378") || cleanIsbn.startsWith("379") || cleanIsbn.startsWith("977")
+                || cleanIsbn.contains("REVUE") || cleanIsbn.contains("MAGAZINE") || cleanIsbn.contains("ISSN");
+
+        // 1. Règle stricte Presse / Périodique :
+        // Un code commençant par 978 ou 979 est un LIVRE déposé légalement, JAMAIS une revue !
+        if (isBookIsbn) {
+            if (col.contains("j'aime lire")) {
+                return "Roman";
+            }
+            if (col.contains("belles histoires") || col.contains("pomme d'api")) {
+                return "Album";
+            }
+            if (col.contains("astrapi") || col.contains("wakou") || col.contains("youpi") || col.contains("images doc")) {
+                return (pageCount > 0 && pageCount <= 40) ? "Album" : "Documentaire";
+            }
+        } else if (isPressCode || col.contains("j'aime lire") || col.contains("astrapi") || col.contains("wakou")
                 || col.contains("youpi") || col.contains("images doc") || col.contains("pomme d'api")
                 || col.contains("belles histoires") || tit.contains("revue") || tit.contains("magazine")) {
             return "Revue / Magazine";
@@ -176,13 +215,19 @@ public class LivreClassificationService {
             return "Documentaire";
         }
 
-        // 7. Album jeunesse
+        // 7. Album jeunesse (élargi avec éditeurs et collections clés)
         if (hasSubjectMatch(subjects, "albums", "album")
                 || ed.contains("ecole des loisirs") || ed.contains("kaleidoscope")
                 || ed.contains("pastel") || ed.contains("mijade") || ed.contains("didier jeunesse")
-                || ed.contains("pere castor") || col.contains("lutin poche")
+                || ed.contains("pere castor") || ed.contains("giboulees") || ed.contains("nord-sud")
+                || ed.contains("frimousse") || ed.contains("sarbacane") || ed.contains("circonflexe")
+                || ed.contains("mango jeunesse") || ed.contains("albin michel jeunesse")
+                || col.contains("lutin poche") || col.contains("folio benjamin") || col.contains("archimede")
                 || tit.contains("le loup qui ") || tit.contains("les trois brigands")
                 || tit.contains("cornebidouille") || tit.contains("elmer") || tit.contains("chouquette")
+                || tit.contains("babar") || tit.contains("chien bleu") || tit.contains("droles de petites betes")
+                || tit.contains("drôles de petites bêtes") || tit.contains("calinours") || tit.contains("arc-en-ciel")
+                || tit.contains("petit-bleu et petit-jaune") || tit.contains("simon le lapin")
                 || (pageCount > 0 && pageCount <= 40 && !tit.contains("roman"))) {
             return "Album";
         }
@@ -197,11 +242,16 @@ public class LivreClassificationService {
             return "Roman";
         }
 
+        // 9. Fallback intelligent tenant compte du niveau
+        if (niveau != null && (niveau.contains("Maternelle") || niveau.equals("CP") || niveau.contains("Cycle 1"))) {
+            return "Album";
+        }
+
         return "Roman";
     }
 
     // =====================================================================
-    //  2. Détection du Thème
+    //  2. Détection du Thème (sans Auteur dans le corpus & mots durcis)
     // =====================================================================
 
     private String detectTheme(String titre, String collection, List<String> subjects,
@@ -214,20 +264,24 @@ public class LivreClassificationService {
             return "Harcèlement & Vivre ensemble";
         }
 
-        // Guerre & Histoire
+        // Guerre & Histoire (termes non ambigus : exclusion d'histoire, roi, reine)
         if (corpusMatches(corpus, "guerre", "resistance", "1939-1945", "1914-1918", "soldat", "nazi",
-                "seconde guerre", "premiere guerre", "moyen age", "chateau fort", "chevalier",
-                "pharaon", "egypte", "antiquite", "romains", "gaulois", "prehistoire", "roi", "reine",
-                "revolution", "napoleon", "histoire", "empire", "tranchee", "debarquement", "conflit")
+                "nazisme", "seconde guerre", "premiere guerre", "moyen age", "chateau fort", "chevalier",
+                "pharaon", "egypte ancienne", "antiquite", "romains", "gaulois", "prehistoire",
+                "revolution francaise", "napoleon", "empire napoleonien", "tranchee", "debarquement",
+                "conflit armee", "shoah", "deportation", "camps de concentration")
                 || dewey.startsWith("93") || dewey.startsWith("94")) {
             return "Guerre & Histoire";
         }
 
         // Animaux
-        if (corpusMatches(corpus, "animal", "animaux", "chien", "chat", "loup", "renard", "ours",
-                "cheval", "poney", "dinosaure", "oiseau", "poisson", "dauphin", "requin", "baleine",
-                "lion", "tigre", "girafe", "elephant", "singe", "souris", "lapin", "faune", "zoo",
-                "veterinaire", "canard", "insecte", "papillon", "chauve-souris")
+        if (corpusMatches(corpus, "animal", "animaux", "chien", "chiens", "chat", "chats", "loup", "loups",
+                "renard", "renards", "ours", "cheval", "chevaux", "poney", "poneys", "dinosaure", "dinosaures",
+                "oiseau", "oiseaux", "poisson", "poissons", "dauphin", "dauphins", "requin", "requins",
+                "baleine", "baleines", "lion", "lions", "tigre", "tigres", "girafe", "girafes",
+                "elephant", "elephants", "singe", "singes", "souris", "lapin", "lapins", "rat", "rats",
+                "ratus", "faune", "zoo", "veterinaire", "canard", "canards", "insecte", "insectes",
+                "papillon", "papillons", "chauve-souris")
                 || dewey.startsWith("59")) {
             return "Animaux";
         }
@@ -262,10 +316,10 @@ public class LivreClassificationService {
             return "Humour & Bêtises";
         }
 
-        // Contes, Mythes & Légendes
+        // Contes, Mythes & Légendes (avec roi, reine, prince, princesse, royaume)
         if (corpusMatches(corpus, "mythologie", "mythe", "dieu", "deesse", "olympe", "troie",
                 "hercule", "zeus", "ulysse", "minotaure", "legende", "fable", "prince", "princesse",
-                "blanche-neige", "cendrillon", "petit chaperon")) {
+                "roi", "reine", "royaume", "blanche-neige", "cendrillon", "petit chaperon", "barbe bleue")) {
             return "Contes, Mythes & Légendes";
         }
 
@@ -293,16 +347,6 @@ public class LivreClassificationService {
 
     /**
      * Vérifie si le niveau d'un livre correspond au filtre sélectionné par l'utilisateur.
-     * Prend en compte la hiérarchie scolaire française (Cycles et Classes) ainsi que les
-     * différentes manières dont les données peuvent être enregistrées en base :
-     * <ul>
-     *   <li>Cycle 1 = Maternelle (TPS, PS, MS, GS)</li>
-     *   <li>Cycle 2 = CP, CE1, CE2</li>
-     *   <li>Cycle 3 = CM1, CM2 (et 6ème)</li>
-     * </ul>
-     * Un livre classé "Cycle 2 (CP-CE2)" sera donc visible si l'utilisateur filtre par
-     * "Cycle 2", "CP", "CE1" ou "CE2".
-     * Inversement, un filtre "Cycle 2" affichera les livres "CP", "CE1", "CE2" et "Cycle 2 (CP-CE2)".
      */
     public static boolean matchesNiveau(String bookNiveau, String filterNiveau) {
         if (filterNiveau == null || filterNiveau.isBlank()
@@ -319,12 +363,10 @@ public class LivreClassificationService {
         String b = bookNiveau.trim().toLowerCase();
         String f = filterNiveau.trim().toLowerCase();
 
-        // 1. Égalité stricte ou livre universel "Tous niveaux"
         if (b.equalsIgnoreCase(f) || b.equals("tous niveaux") || b.equals("tous") || b.equals("tout niveau")) {
             return true;
         }
 
-        // 2. Détermination de la portée du livre
         boolean bookHasC1 = b.contains("cycle 1") || b.contains("maternelle") || b.contains("ps") || b.contains("ms") || b.contains("gs");
         boolean bookHasC2 = b.contains("cycle 2") || b.contains("cp-ce2") || b.contains("cp - ce2") || b.contains("cp, ce1, ce2");
         boolean bookHasC3 = b.contains("cycle 3") || b.contains("cm1-cm2") || b.contains("cm1 - cm2") || b.contains("cm1, cm2");
@@ -336,8 +378,6 @@ public class LivreClassificationService {
         boolean bookHasCM1 = bookHasC3 || b.contains("cm1");
         boolean bookHasCM2 = bookHasC3 || b.contains("cm2");
 
-        // 3. Détermination du filtre demandé
-        // --- FILTRES DE CYCLES ---
         if (f.contains("cycle 1") || f.equals("maternelle")) {
             return bookHasC1 || b.contains("maternelle");
         }
@@ -348,29 +388,17 @@ public class LivreClassificationService {
             return bookHasC3 || b.contains("cm1") || b.contains("cm2") || b.contains("6e") || b.contains("6ème");
         }
 
-        // --- FILTRES DE CLASSES SPÉCIFIQUES ---
-        if (f.equals("cp")) {
-            return bookHasCP;
-        }
-        if (f.equals("ce1")) {
-            return bookHasCE1;
-        }
-        if (f.equals("ce2")) {
-            return bookHasCE2;
-        }
-        if (f.equals("cm1")) {
-            return bookHasCM1;
-        }
-        if (f.equals("cm2")) {
-            return bookHasCM2;
-        }
+        if (f.equals("cp")) return bookHasCP;
+        if (f.equals("ce1")) return bookHasCE1;
+        if (f.equals("ce2")) return bookHasCE2;
+        if (f.equals("cm1")) return bookHasCM1;
+        if (f.equals("cm2")) return bookHasCM2;
 
-        // Fallback comparaison textuelle
         return b.contains(f) || f.contains(b);
     }
 
     private String detectNiveau(String titre, String collection, List<String> subjects,
-                                String ageMention, String corpus, int pageCount, String genre) {
+                                String ageMention, String corpus, int pageCount) {
 
         String age = normalize(ageMention);
         String col = normalize(collection);
@@ -422,14 +450,16 @@ public class LivreClassificationService {
                 || col.contains("niveau 2") || col.contains("premieres lectures") || col.contains("premières lectures")) {
             return "CE1";
         }
+        if (matchesWord(tit, "maternelle") || matchesWord(col, "maternelle")
+                || tit.contains("petite section") || tit.contains("moyenne section") || tit.contains("grande section")
+                || corpusMatches(corpus, "maternelle", "petite section", "moyenne section", "grande section", "tout-petits")) {
+            return "Maternelle";
+        }
         if (matchesWord(tit, "cp") || matchesWord(col, "cp") || tit.contains("sami et julie cp")
                 || tit.contains("je suis en cp") || col.contains("niveau 1") || col.contains("debut de cp")
-                || col.contains("milieu de cp") || tit.contains("j'apprends a lire") || tit.contains("j'apprends à lire")) {
+                || col.contains("milieu de cp") || tit.contains("j'apprends a lire") || tit.contains("j'apprends à lire")
+                || tit.contains("le loup qui") || corpusMatches(corpus, "enfants de maternelle et cp", "maternelle et cp")) {
             return "CP";
-        }
-        if (matchesWord(tit, "maternelle") || matchesWord(col, "maternelle") || tit.contains("petite section")
-                || tit.contains("moyenne section") || tit.contains("grande section")) {
-            return "Maternelle";
         }
 
         // 3. Collections, séries, auteurs et personnages emblématiques
@@ -438,10 +468,8 @@ public class LivreClassificationService {
                 || tit.contains("droles de petites betes") || tit.contains("drôles de petites bêtes")
                 || corpus.contains("antoon krings") || corpus.contains("beatrix potter")
                 || tit.contains("tout-petits") || tit.contains("imagerie des tout-petits")
-                || tit.contains("pere noel") || tit.contains("père noël") || tit.contains("boucle d'or")
-                || tit.contains("tetine de nina") || tit.contains("tétine de nina") || tit.contains("bebe qui crie")
-                || tit.contains("bébé qui crie") || tit.contains("calinours") || tit.contains("dora")
-                || tit.contains("papa ours") || tit.contains("petit chat") || tit.contains("taupe sous la neige")) {
+                || tit.contains("boucle d'or") || tit.contains("tetine de nina") || tit.contains("tétine de nina")
+                || tit.contains("calinours") || tit.contains("dora") || tit.contains("petit chat") || tit.contains("taupe sous la neige")) {
             return "Maternelle";
         }
 
@@ -474,32 +502,99 @@ public class LivreClassificationService {
         if (col.contains("p'tits docs") || col.contains("ptits docs") || col.contains("mes p'tits docs")
                 || tit.contains("les trois brigands") || tit.contains("mimi cracra") || tit.contains("une figue de reve")
                 || tit.contains("chemin de l'ecole") || tit.contains("quand je saurai lire")
-                || tit.contains("pierre et le loup") || tit.contains("pierre et le loup")
-                || tit.contains("zoe est jalouse") || tit.contains("surprise pour la maitresse") || tit.contains("dingo et max")) {
+                || tit.contains("pierre et le loup") || tit.contains("zoe est jalouse")
+                || tit.contains("surprise pour la maitresse") || tit.contains("dingo et max")) {
             return "CP";
         }
 
-        // 4. Spécificités par genre et pagination
-        if ("Manga".equals(genre)) {
-            return "CM2";
-        }
-        if ("BD".equals(genre)) {
-            if (tit.contains("enfants de la resistance") || tit.contains("tintin") || tit.contains("asterix")) {
-                return "CM1";
-            }
-            return "CE2"; // Niveau médian idéal pour les BDs jeunesse
-        }
-        if ("Album".equals(genre)) {
-            if (pageCount > 0 && pageCount <= 28) return "Maternelle";
-            return "CP";
-        }
-
-        // 5. Par défaut selon volume
+        // 4. Par défaut selon volume
         if (pageCount > 150) return "CM2";
         if (pageCount > 90) return "CM1";
         if (pageCount > 50) return "CE2";
         if (pageCount > 0 && pageCount <= 36) return "CP";
 
+        return "Cycle 2 (CP-CE2)";
+    }
+
+    // =====================================================================
+    //  4. Normalisation et Verrouillage des Valeurs (Enum-like)
+    // =====================================================================
+
+    public static boolean isValidGenre(String g) {
+        return g != null && GENRES_STANDARDS.contains(g.trim());
+    }
+
+    public static boolean isValidTheme(String t) {
+        return t != null && THEMES_STANDARDS.contains(t.trim());
+    }
+
+    public static boolean isValidNiveau(String n) {
+        return n != null && NIVEAUX_STANDARDS.contains(n.trim());
+    }
+
+    public static String normalizeGenre(String g, String niveauFallback) {
+        if (g == null || g.isBlank()) {
+            return (niveauFallback != null && (niveauFallback.contains("Maternelle") || niveauFallback.contains("CP"))) ? "Album" : "Roman";
+        }
+        String trimmed = g.trim();
+        if (GENRES_STANDARDS.contains(trimmed)) {
+            return trimmed;
+        }
+        // Sécurité : si un thème s'est retrouvé dans le genre (ex: "Harcèlement & Vivre ensemble")
+        if (THEMES_STANDARDS.contains(trimmed)) {
+            return "Documentaire";
+        }
+        for (String std : GENRES_STANDARDS) {
+            if (std.equalsIgnoreCase(trimmed)) return std;
+        }
+        return (niveauFallback != null && (niveauFallback.contains("Maternelle") || niveauFallback.contains("CP"))) ? "Album" : "Roman";
+    }
+
+    public static String normalizeTheme(String t) {
+        if (t == null || t.isBlank()) {
+            return "Vie quotidienne & École";
+        }
+        String trimmed = t.trim();
+        if (THEMES_STANDARDS.contains(trimmed)) {
+            return trimmed;
+        }
+        for (String std : THEMES_STANDARDS) {
+            if (std.equalsIgnoreCase(trimmed)) return std;
+        }
+        String lower = trimmed.toLowerCase();
+        if (lower.contains("harcelement") || lower.contains("vivre ensemble")) return "Harcèlement & Vivre ensemble";
+        if (lower.contains("guerre") || lower.contains("histoire")) return "Guerre & Histoire";
+        if (lower.contains("animal") || lower.contains("animaux")) return "Animaux";
+        if (lower.contains("science") || lower.contains("espace")) return "Sciences & Espace";
+        if (lower.contains("nature") || lower.contains("ecologie")) return "Nature & Écologie";
+        if (lower.contains("magie") || lower.contains("imaginaire")) return "Imaginaire & Magie";
+        if (lower.contains("humour")) return "Humour & Bêtises";
+        if (lower.contains("conte") || lower.contains("mythe")) return "Contes, Mythes & Légendes";
+        if (lower.contains("art") || lower.contains("sport") || lower.contains("musique")) return "Arts, Musique & Sports";
+        if (lower.contains("aventure")) return "Aventure & Exploration";
+        return "Vie quotidienne & École";
+    }
+
+    public static String normalizeNiveau(String n) {
+        if (n == null || n.isBlank()) {
+            return "Cycle 2 (CP-CE2)";
+        }
+        String trimmed = n.trim();
+        if (NIVEAUX_STANDARDS.contains(trimmed)) {
+            return trimmed;
+        }
+        for (String std : NIVEAUX_STANDARDS) {
+            if (std.equalsIgnoreCase(trimmed)) return std;
+        }
+        String lower = trimmed.toLowerCase();
+        if (lower.contains("mat") || lower.contains("cycle 1")) return "Maternelle";
+        if (lower.equals("cp")) return "CP";
+        if (lower.equals("ce1")) return "CE1";
+        if (lower.equals("ce2")) return "CE2";
+        if (lower.equals("cm1")) return "CM1";
+        if (lower.equals("cm2")) return "CM2";
+        if (lower.contains("cycle 2")) return "Cycle 2 (CP-CE2)";
+        if (lower.contains("cycle 3")) return "Cycle 3 (CM1-CM2)";
         return "Cycle 2 (CP-CE2)";
     }
 
@@ -512,6 +607,25 @@ public class LivreClassificationService {
         StringBuilder sb = new StringBuilder();
         if (titre != null) sb.append(titre).append(" ");
         if (auteur != null) sb.append(auteur).append(" ");
+        if (editeur != null) sb.append(editeur).append(" ");
+        if (collection != null) sb.append(collection).append(" ");
+        if (description != null) sb.append(description).append(" ");
+        if (subjects != null) {
+            for (String s : subjects) {
+                if (s != null) sb.append(s).append(" ");
+            }
+        }
+        return normalize(sb.toString());
+    }
+
+    /**
+     * Construit le corpus pour l'analyse thématique sans le champ auteur,
+     * évitant les faux positifs causés par les mentions BnF "une histoire racontée par...".
+     */
+    private String buildThemeCorpus(String titre, String editeur,
+                                    String collection, List<String> subjects, String description) {
+        StringBuilder sb = new StringBuilder();
+        if (titre != null) sb.append(titre).append(" ");
         if (editeur != null) sb.append(editeur).append(" ");
         if (collection != null) sb.append(collection).append(" ");
         if (description != null) sb.append(description).append(" ");
@@ -544,7 +658,6 @@ public class LivreClassificationService {
 
     private boolean matchesWord(String text, String keyword) {
         if (text == null || keyword == null || keyword.isEmpty()) return false;
-        // Si le mot clé contient des espaces (ex: "corps humain", "1939-1945")
         if (keyword.contains(" ") || keyword.contains("-")) {
             return text.contains(keyword);
         }
