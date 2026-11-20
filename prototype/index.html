@@ -760,6 +760,333 @@ body.dark-mode .book-catalog-card.selected {
   #printModalContainer, #printModalContainer * { visibility: visible; }
   #printModalContainer { position: absolute; left: 0; top: 0; width: 100%; }
 }
+
+/* ── 🗺️ PLAN 3D & RANGEMENT BCD STYLES ──────────────────────────────── */
+.map3d-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.map3d-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  flex: 1;
+  min-width: 280px;
+  max-width: 480px;
+  position: relative;
+}
+
+.map3d-search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  color: var(--text-main);
+  width: 100%;
+}
+
+.map3d-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.map3d-pill {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.map3d-pill:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.map3d-pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.map3d-pill.pill-green.active {
+  background: #10B981;
+  border-color: #10B981;
+  color: white;
+}
+
+.map3d-pill.pill-red.active {
+  background: #EF4444;
+  border-color: #EF4444;
+  color: white;
+}
+
+.map3d-main-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .map3d-main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.map3d-viewport-wrapper {
+  position: relative;
+  background: radial-gradient(circle at 50% 35%, #1E293B 0%, #0F172A 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid #334155;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  height: 620px;
+  display: flex;
+  flex-direction: column;
+}
+
+#map3dCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+#map3dCanvas:active {
+  cursor: grabbing;
+}
+
+.map3d-canvas-toolbar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.map3d-btn-tool {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #F8FAFC;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.map3d-btn-tool:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.map3d-compass-box {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  color: #94A3B8;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.map3d-compass-dial {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map3d-compass-needle {
+  width: 3px;
+  height: 16px;
+  position: absolute;
+  border-radius: 2px;
+  transition: transform 0.05s linear;
+}
+
+.map3d-canvas-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  color: #CBD5E1;
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.map3d-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map3d-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.map3d-tooltip {
+  position: absolute;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+  color: white;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 50;
+  display: none;
+  max-width: 280px;
+  transform: translate(-50%, -120%);
+}
+
+.map3d-sidebar-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 620px;
+  overflow-y: auto;
+}
+
+.shelf-detail-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+}
+
+.shelf-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.shelf-category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.shelf-capacity-gauge {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+
+.gauge-bar-track {
+  height: 7px;
+  background: #E2E8F0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.gauge-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.shelf-book-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.shelf-book-card:hover {
+  background: var(--bg-card);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.shelf-book-emoji {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
 </style>
 </head>
 <body>
@@ -815,6 +1142,10 @@ body.dark-mode .book-catalog-card.selected {
   <button class="tab-nav-item" data-tab="tab-mallettes" onclick="switchMainTab('tab-mallettes')">
     🎒 Mallettes Thématiques
   </button>
+  <button class="tab-nav-item" data-tab="tab-map3d" onclick="switchMainTab('tab-map3d')">
+    🗺️ Plan 3D BCD
+  </button>
+
 </nav>
 
 <!-- ── 3. CONTENUS DES 6 ONGLETS MÉTIER ─────────────────────────────────── -->
@@ -1646,7 +1977,125 @@ body.dark-mode .book-catalog-card.selected {
       </div>
     </div>
 
-  </main>
+  
+    <!-- ==========================
+         ONGLET 7 : PLAN 3D DE LA BCD
+         ========================== -->
+    <div class="tab-content-container" id="tab-map3d" style="display:none; flex-direction:column; gap:16px;">
+      
+      <!-- En-tête de l'onglet -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h1 class="screen-title" style="margin-bottom:4px;">🗺️ Plan 3D de la BCD &amp; Rangement des Livres</h1>
+          <p style="font-size:13px; color:var(--text-muted); margin:0;">
+            Modélisation spatiale 3D interactive fidèle au croquis original de l'école Albert Camus • Localisation des rayons et reclassement
+          </p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-outline" onclick="openCroquisModal()">
+            📄 Voir le croquis d'origine
+          </button>
+          <button class="btn-blue" style="background:#6366F1;" onclick="openShelveAssistantModal()">
+            ⚡ Assistant Douchette (Bip &amp; Range)
+          </button>
+          <button class="btn-outline" onclick="openShelfLabelsModal()">
+            🏷️ Imprimer étiquettes de rayon
+          </button>
+        </div>
+      </div>
+
+      <!-- Barre de recherche rapide & filtres de rayons -->
+      <div class="map3d-topbar">
+        <div class="map3d-search-box">
+          <span style="font-size:16px;">🔍</span>
+          <input type="text" id="map3dSearchInput" placeholder="Où est rangé ce livre ? (ex: Petit Prince, Astérix, Harcèlement, Roman...)" oninput="handleMap3dSearch(this.value)" autocomplete="off">
+          <button id="map3dClearSearchBtn" onclick="clearMap3dSearch()" style="display:none; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px;">✕</button>
+        </div>
+
+        <div class="map3d-filter-pills" id="map3dFilterPills">
+          <button class="map3d-pill active" data-filter="all" onclick="filterMap3dGenre('all')">Tous les meubles (12)</button>
+          <button class="map3d-pill pill-green" data-filter="etagere" onclick="filterMap3dGenre('etagere')">🟩 Étagères (6)</button>
+          <button class="map3d-pill pill-red" data-filter="bac" onclick="filterMap3dGenre('bac')">🟥 Bacs à livres (3)</button>
+          <button class="map3d-pill" data-filter="BD" onclick="filterMap3dGenre('BD')">💬 BD &amp; Mangas</button>
+          <button class="map3d-pill" data-filter="Roman" onclick="filterMap3dGenre('Roman')">📚 Romans (C2/C3)</button>
+          <button class="map3d-pill" data-filter="Album" onclick="filterMap3dGenre('Album')">🎨 Albums</button>
+          <button class="map3d-pill" data-filter="Documentaire" onclick="filterMap3dGenre('Documentaire')">🔬 Documentaires</button>
+          <button class="map3d-pill" data-filter="Mallette" onclick="filterMap3dGenre('Mallette')">🎒 Mallettes</button>
+        </div>
+      </div>
+
+      <!-- Zone principale : Canvas 3D + Panneau latéral -->
+      <div class="map3d-main-layout">
+        
+        <!-- Viewport 3D Canvas -->
+        <div class="map3d-viewport-wrapper">
+          <canvas id="map3dCanvas"></canvas>
+
+          <!-- Barre d'outils flottante sur le Canvas -->
+          <div class="map3d-canvas-toolbar">
+            <button class="map3d-btn-tool" onclick="resetMap3dCamera()" title="Vue Isométrique par défaut">
+              🔄 Vue Isométrique
+            </button>
+            <button class="map3d-btn-tool" onclick="setTopDownCamera()" title="Vue du dessus 2D (Plan)">
+              📐 Vue Dessus (2D)
+            </button>
+            <button class="map3d-btn-tool" onclick="zoomMap3d(1.2)" title="Zoom avant">
+              🔍+
+            </button>
+            <button class="map3d-btn-tool" onclick="zoomMap3d(0.8)" title="Zoom arrière">
+              🔍-
+            </button>
+            <button class="map3d-btn-tool" id="btnToggleLabels" onclick="toggleMap3dLabels()" title="Afficher/Masquer les étiquettes">
+              🏷️ Étiquettes : OUI
+            </button>
+            <button class="map3d-btn-tool" id="btnToggleAmbiance" onclick="toggleMap3dLighting()" title="Basculer ambiance d'éclairage">
+              💡 Jour
+            </button>
+          </div>
+
+          <!-- Boussole d'orientation interactive -->
+          <div class="map3d-compass-box">
+            <div class="map3d-compass-dial">
+              <div class="map3d-compass-needle" id="map3dCompassNeedle" style="background:linear-gradient(to bottom, #EF4444 50%, #94A3B8 50%); transform:rotate(45deg);"></div>
+            </div>
+            <span id="map3dOrientationLabel">Nord / Est</span>
+          </div>
+
+          <!-- Info-bulle flottante au survol -->
+          <div class="map3d-tooltip" id="map3dTooltip"></div>
+
+          <!-- Légende en bas de canvas -->
+          <div class="map3d-canvas-hint">
+            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+              <div class="map3d-legend-item">
+                <span class="map3d-swatch" style="background:#10B981;"></span>
+                <span>Vert hachuré : Étagères thématiques (6)</span>
+              </div>
+              <div class="map3d-legend-item">
+                <span class="map3d-swatch" style="background:#EF4444;"></span>
+                <span>Rouge hachuré : Bacs à albums &amp; nouveautés (3)</span>
+              </div>
+              <div class="map3d-legend-item">
+                <span class="map3d-swatch" style="background:#64748B;"></span>
+                <span>Gris / Bleu : Accueil &amp; Ateliers lecture (3)</span>
+              </div>
+            </div>
+            <div style="color:#94A3B8; font-size:11px;">
+              🖱️ Glisser = pivoter (360°) • Molette = zoomer • Clic = inspecter
+            </div>
+          </div>
+        </div>
+
+        <!-- Panneau latéral : Détails du meuble / Recherche -->
+        <div class="map3d-sidebar-card" id="map3dSidebar">
+          <!-- Injecté dynamiquement par JavaScript -->
+        </div>
+
+      </div>
+
+    </div>
+
+</main>
 </div>
 
 <!-- ── TIROIR INSPECTEUR PAS-À-PAS DU LIVRE (Mallettes) ────────────────── -->
@@ -2457,6 +2906,130 @@ body.dark-mode .book-catalog-card.selected {
 <!-- ====================================================================== -->
 <!-- JAVASCRIPT : Logique 100% interactive synchronisée avec SQLite BCD    -->
 <!-- ====================================================================== -->
+
+<!-- ── MODAL CROQUIS ORIGINAL BCD ──────────────────────────────────────── -->
+<div class="modal" id="croquisModal">
+  <div class="modal-box" style="max-width:850px; width:95%;">
+    <div class="modal-header">
+      <h3 style="margin:0; font-size:17px; font-weight:700;">📄 Croquis Original de la BCD &amp; Correspondance 3D</h3>
+      <button class="modal-close-btn" onclick="closeCroquisModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:75vh; overflow-y:auto; display:flex; flex-direction:column; gap:16px;">
+      <p style="font-size:13px; color:var(--text-muted); margin:0;">
+        Ce plan a été dessiné à la main pour organiser la BCD de l'école Albert Camus Pasteur. Notre moteur 3D retranscrit fidèlement chacun des 12 éléments tracés :
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;">
+        <div style="border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; background:#000; text-align:center;">
+          <img src="IMG_0A6C7317F65B-1.jpeg" onerror="this.src='../docs/IMG_0A6C7317F65B-1.jpeg'" alt="Croquis original BCD" style="max-width:100%; height:auto; max-height:420px; object-fit:contain; display:block; margin:0 auto;">
+          <div style="padding:6px; font-size:11px; color:#94A3B8; background:#1e293b;">Image originale docs/IMG_0A6C7317F65B-1.jpeg</div>
+        </div>
+
+        <div style="font-size:12.5px; display:flex; flex-direction:column; gap:10px;">
+          <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:var(--radius-sm); padding:10px;">
+            <div style="font-weight:700; color:#15803D; margin-bottom:4px;">🟩 Vert Hachuré = 6 Étagères de Livres</div>
+            <ul style="margin:0; padding-left:18px; color:#166534; font-size:12px; line-height:1.5;">
+              <li><strong>Étagère Est</strong> : Grande murale droite (Documentaires)</li>
+              <li><strong>Étagère Centrale</strong> : Double-face horizontale (BD &amp; Mangas)</li>
+              <li><strong>Étagères Nord 1 &amp; 2</strong> : Verticales haut (Contes &amp; Cycle 2)</li>
+              <li><strong>Étagères Sud 1 &amp; 2</strong> : Verticales bas (Cycle 3 &amp; Mallettes)</li>
+            </ul>
+          </div>
+
+          <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:var(--radius-sm); padding:10px;">
+            <div style="font-weight:700; color:#B91C1C; margin-bottom:4px;">🟥 Rouge Hachuré = 3 Bacs à Albums &amp; Livres</div>
+            <ul style="margin:0; padding-left:18px; color:#991B1B; font-size:12px; line-height:1.5;">
+              <li><strong>Bac Centre-Gauche</strong> : Nouveautés &amp; Coups de cœur</li>
+              <li><strong>Grand Bac Centre-Bas</strong> : Albums illustrés CP/Maternelle</li>
+              <li><strong>Petit Bac Sud Mur</strong> : Tout-carton &amp; Premières notions</li>
+            </ul>
+          </div>
+
+          <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:var(--radius-sm); padding:10px;">
+            <div style="font-weight:700; color:#334155; margin-bottom:4px;">⬜ Mobilier &amp; Espaces</div>
+            <ul style="margin:0; padding-left:18px; color:#475569; font-size:12px; line-height:1.5;">
+              <li><strong>Bureau Ouest</strong> : Accueil &amp; Borne informatique douchette</li>
+              <li><strong>Table Sud-Ouest</strong> : Grande table ateliers &amp; lecture sur place</li>
+              <li><strong>Zone Nord-Ouest</strong> : 3 Poufs lecture calme près de la porte</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:flex-end;">
+      <button class="btn-blue" onclick="closeCroquisModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL ASSISTANT DOUCHETTE BIP & RANGE ──────────────────────────── -->
+<div class="modal" id="shelveAssistantModal">
+  <div class="modal-box" style="max-width:540px; width:95%;">
+    <div class="modal-header">
+      <h3 style="margin:0; font-size:17px; font-weight:700;">⚡ Assistant Douchette : Bip &amp; Range</h3>
+      <button class="modal-close-btn" onclick="closeShelveAssistantModal()">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
+      <p style="font-size:13px; color:var(--text-muted); margin:0;">
+        Scannez le code-barres d'un livre retourné ou sélectionnez-le dans la liste. L'application bipe et indique instantanément sur quelle étagère le remettre !
+      </p>
+
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="shelveBarcodeScanInput" placeholder="Scannez ici (ou tapez un ISBN / titre)..." class="form-input" style="flex:1;" onkeydown="if(event.key==='Enter') executeShelveScan(this.value)">
+        <button class="btn-blue" onclick="executeShelveScan(document.getElementById('shelveBarcodeScanInput').value)">
+          Bip !
+        </button>
+      </div>
+
+      <div style="font-size:12px; color:var(--text-muted);">
+        <strong>Tests rapides en un clic :</strong>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782070612758')">⭐ Le Petit Prince</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782864970224')">🛡️ Astérix le Gaulois</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782227702288')">📘 Lili est harcelée</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782745995400')">📕 Le harcèlement</button>
+          <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="executeShelveScan('9782211096317')">🧸 Otto</button>
+        </div>
+      </div>
+
+      <div id="shelveResultBox" style="display:none; border-radius:var(--radius-md); padding:14px; background:#F0FDF4; border:1px solid #BBF7D0;">
+        <!-- Résultat du scan injecté par JS -->
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between;">
+      <button class="btn-outline" onclick="closeShelveAssistantModal()">Fermer</button>
+      <button class="btn-blue" id="btnGoTo3DMapResult" style="display:none;" onclick="showShelveResultIn3D()">
+        📍 Voir l'étagère en 3D
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL IMPRESSION ÉTIQUETTES DE RAYONNAGE ───────────────────────── -->
+<div class="modal" id="shelfLabelsModal">
+  <div class="modal-box" style="max-width:720px; width:95%;">
+    <div class="modal-header">
+      <h3 style="margin:0; font-size:17px; font-weight:700;">🏷️ Signalétique &amp; Étiquettes de Rayonnage</h3>
+      <button class="modal-close-btn" onclick="closeShelfLabelsModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:70vh; overflow-y:auto; display:flex; flex-direction:column; gap:14px;">
+      <p style="font-size:13px; color:var(--text-muted); margin:0;">
+        Générez et imprimez des étiquettes de meubles claires et colorées pour baliser physiquement la BCD d'après le plan.
+      </p>
+
+      <div id="shelfLabelsPreviewContainer" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <!-- Fiches d'étiquettes générées par JS -->
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between;">
+      <button class="btn-outline" onclick="closeShelfLabelsModal()">Fermer</button>
+      <button class="btn-blue" onclick="printShelfLabelsSheet()">
+        🖨️ Imprimer la planche de signalétique
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ── 1. Données réelles SQLite miroir ─────────────────────────────────── */
 let DB_BOOKS = [
@@ -2668,6 +3241,7 @@ function switchMainTab(tabId) {
   if (tabId === 'tab-recolement') renderRecoTable();
   if (tabId === 'tab-utilisateurs') renderUsersTable();
   if (tabId === 'tab-mallettes') renderMallettes();
+  if (tabId === 'tab-map3d') initOrRender3DMap();
 }
 
 /* ── 3. Onglet 1 : Prêts & Retours ───────────────────────────────────── */
@@ -4231,6 +4805,1286 @@ function hideMalletteMenu() {
   document.getElementById('mallette-actions-menu').style.display = 'none';
 }
 
+
+/* ── 12. MOTEUR 3D ISOMÉTRIQUE & RANGEMENT BCD ───────────────────────── */
+
+const FURNITURE_DATA = [
+  {
+    id: "etagere_droite",
+    name: "Étagère Est : Documentaires & Sciences",
+    shortName: "Étagère Est (Documentaires)",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#10B981",
+    altColor: "#059669",
+    category: "Documentaires, Sciences, Nature & Histoire",
+    cotePrefix: "DOC",
+    coteExemple: "DOC 500 SCI",
+    description: "Grande étagère murale le long du mur Est. Classement décimal Dewey simplifié pour l'école primaire.",
+    capacity: 120,
+    x: 88, y: 16, z: 0, w: 7, d: 84, h: 22,
+    icon: "🔬",
+    dewey: "000-999 (Sciences, Animaux, Histoire, Dictionnaires)",
+    sketchRef: "Grande bande verte hachurée le long du mur droit",
+    orientation: "vertical"
+  },
+  {
+    id: "etagere_centre_h",
+    name: "Étagère Centrale : BD & Mangas",
+    shortName: "Étagère Centrale (BD)",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#059669",
+    altColor: "#047857",
+    category: "Bandes Dessinées, Mangas & Romans Graphiques",
+    cotePrefix: "BD",
+    coteExemple: "BD AST",
+    description: "Étagère double-face centrale horizontale. Bac rouge attenant à son extrémité gauche.",
+    capacity: 110,
+    x: 32, y: 44, z: 0, w: 44, d: 8, h: 18,
+    icon: "💬",
+    dewey: "BD [3 lettres auteur ou série] (ex: BD AST, BD TIN)",
+    sketchRef: "Longue étagère verte hachurée horizontale au centre",
+    orientation: "horizontal"
+  },
+  {
+    id: "etagere_haut_1",
+    name: "Étagère Nord-1 : Contes, Poésie & Théâtre",
+    shortName: "Étagère Nord-1 (Contes)",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#10B981",
+    altColor: "#059669",
+    category: "Contes de fées, Poésie, Théâtre & Fables",
+    cotePrefix: "CONTE",
+    coteExemple: "CONTE PER",
+    description: "Étagère verticale située dans la partie Nord-Ouest de la salle.",
+    capacity: 75,
+    x: 43, y: 10, z: 0, w: 7, d: 24, h: 20,
+    icon: "✨",
+    dewey: "C [Auteur] pour les Contes, P [Auteur] pour la Poésie",
+    sketchRef: "Étagère verte hachurée verticale Nord (gauche)",
+    orientation: "vertical"
+  },
+  {
+    id: "etagere_haut_2",
+    name: "Étagère Nord-2 : Premières Lectures (Cycle 2)",
+    shortName: "Étagère Nord-2 (Cycle 2)",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#10B981",
+    altColor: "#059669",
+    category: "Romans Premières Lectures (CP-CE1, Max & Lili)",
+    cotePrefix: "ROM-C2",
+    coteExemple: "ROM MAR",
+    description: "Étagère verticale Nord-Centre. Adaptée à la hauteur des élèves de CP-CE1.",
+    capacity: 80,
+    x: 58, y: 10, z: 0, w: 7, d: 24, h: 20,
+    icon: "🌱",
+    dewey: "R (pastille bleue Cycle 2) + 3 lettres auteur",
+    sketchRef: "Étagère verte hachurée verticale Nord (droite)",
+    orientation: "vertical"
+  },
+  {
+    id: "etagere_bas_1",
+    name: "Étagère Sud-1 : Romans Jeunesse (Cycle 3)",
+    shortName: "Étagère Sud-1 (Cycle 3)",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#10B981",
+    altColor: "#059669",
+    category: "Romans Jeunesse, Séries & Classiques (CE2-CM2)",
+    cotePrefix: "ROM-C3",
+    coteExemple: "ROM SAI",
+    description: "Étagère verticale Sud-Ouest. Grands classiques et romans d'aventure.",
+    capacity: 90,
+    x: 34, y: 68, z: 0, w: 7, d: 28, h: 20,
+    icon: "📖",
+    dewey: "R (pastille rouge Cycle 3) + 3 lettres auteur",
+    sketchRef: "Étagère verte hachurée verticale Sud (gauche)",
+    orientation: "vertical"
+  },
+  {
+    id: "etagere_bas_2",
+    name: "Étagère Sud-2 : Mallettes Thématiques & Séries",
+    shortName: "Étagère Sud-2 (Mallettes)",
+    type: "etagere",
+    sketchColor: "vert",
+    color: "#10B981",
+    altColor: "#059669",
+    category: "Mallettes Pédagogiques & Séries complètes de classe",
+    cotePrefix: "MAL",
+    coteExemple: "MAL-047",
+    description: "Étagère verticale Sud-Est. Réservée aux enseignants et mallettes de prêt.",
+    capacity: 70,
+    x: 68, y: 68, z: 0, w: 7, d: 28, h: 20,
+    icon: "🎒",
+    dewey: "MAL-XXX (Identifiant unique de mallette)",
+    sketchRef: "Étagère verte hachurée verticale Sud (droite)",
+    orientation: "vertical"
+  },
+  {
+    id: "bac_centre_gauche",
+    name: "Bac Rouge : Nouveautés & Coups de Cœur",
+    shortName: "Bac Nouveautés",
+    type: "bac",
+    sketchColor: "rouge",
+    color: "#EF4444",
+    altColor: "#DC2626",
+    category: "Nouveaux arrivages & Coups de cœur du Service Civique",
+    cotePrefix: "NOUV",
+    coteExemple: "NOUV KIN",
+    description: "Bac rouge à bacs frontaux situé à l'extrémité gauche de l'étagère centrale.",
+    capacity: 35,
+    x: 24, y: 44, z: 0, w: 6, d: 8, h: 10,
+    icon: "⭐",
+    dewey: "Livres présentés face visible pour susciter la curiosité",
+    sketchRef: "Petit rectangle rouge hachuré collé à gauche de l'étagère centrale",
+    orientation: "horizontal"
+  },
+  {
+    id: "bac_centre_bas",
+    name: "Grand Bac : Albums Illustrés (Maternelle - CP)",
+    shortName: "Grand Bac Albums",
+    type: "bac",
+    sketchColor: "rouge",
+    color: "#DC2626",
+    altColor: "#B91C1C",
+    category: "Grands Albums Illustrés & Livres d'images",
+    cotePrefix: "ALB",
+    coteExemple: "ALB UNG",
+    description: "Grand bac vertical rouge au centre de la zone Sud. Facile d'accès aux petits.",
+    capacity: 65,
+    x: 49, y: 72, z: 0, w: 8, d: 20, h: 10,
+    icon: "🎨",
+    dewey: "A [3 lettres auteur] (Albums grand format)",
+    sketchRef: "Grand bac vertical rouge hachuré entre les deux étagères Sud",
+    orientation: "vertical"
+  },
+  {
+    id: "bac_bas_mur",
+    name: "Petit Bac : Petits Formats & Tout-Carton",
+    shortName: "Bac Petits Formats",
+    type: "bac",
+    sketchColor: "rouge",
+    color: "#DC2626",
+    altColor: "#B91C1C",
+    category: "Livres cartonnés, imagiers & petites mains",
+    cotePrefix: "MINI",
+    coteExemple: "MINI FOI",
+    description: "Bac rouge bas adossé au mur Sud.",
+    capacity: 30,
+    x: 58, y: 104, z: 0, w: 8, d: 7, h: 8,
+    icon: "🧸",
+    dewey: "Livres robustes et d'éveil pour les TPS/PS/MS",
+    sketchRef: "Petit rectangle rouge hachuré contre le mur Sud",
+    orientation: "horizontal"
+  },
+  {
+    id: "bureau_accueil",
+    name: "Poste d'Accueil & Borne Douchette BCD",
+    shortName: "Bureau d'accueil",
+    type: "mobilier",
+    sketchColor: "blanc",
+    color: "#3B82F6",
+    altColor: "#2563EB",
+    category: "Poste informatique, prêts/retours et douchette",
+    cotePrefix: "ACC",
+    coteExemple: "ACC-RETOUR",
+    description: "Bureau de gestion à l'entrée de la BCD avec PC et lecteur code-barres.",
+    capacity: 25,
+    x: 12, y: 38, z: 0, w: 8, d: 18, h: 12,
+    icon: "💻",
+    dewey: "Zone de transit des retours avant reclassement",
+    sketchRef: "Rectangle blanc le long du mur Ouest (milieu)",
+    orientation: "vertical"
+  },
+  {
+    id: "table_lecture",
+    name: "Grande Table de Lecture & Ateliers",
+    shortName: "Table Ateliers",
+    type: "mobilier",
+    sketchColor: "blanc",
+    color: "#64748B",
+    altColor: "#475569",
+    category: "Espace de travail en groupe, dessin et lecture silencieuse",
+    cotePrefix: "ESPACE",
+    coteExemple: "ESP-TAB",
+    description: "Grande table avec 8 chaises pour les séances de BCD en classe entière.",
+    capacity: 8,
+    x: 12, y: 80, z: 0, w: 14, d: 26, h: 11,
+    icon: "🪑",
+    dewey: "Espace convivial de consultation sur place",
+    sketchRef: "Grand rectangle blanc en bas à gauche (Sud-Ouest)",
+    orientation: "vertical"
+  },
+  {
+    id: "coin_poufs",
+    name: "Coin Détente & Poufs Moelleux",
+    shortName: "Coin Poufs",
+    type: "mobilier",
+    sketchColor: "blanc",
+    color: "#F59E0B",
+    altColor: "#D97706",
+    category: "Coin lecture libre et coussins pour les élèves",
+    cotePrefix: "COIN",
+    coteExemple: "COIN-POUF",
+    description: "3 poufs colorés près de la porte d'entrée pour une lecture décontractée.",
+    capacity: 3,
+    x: 26, y: 12, z: 0, w: 12, d: 8, h: 6,
+    icon: "🛋️",
+    dewey: "Zone calme 'Plaisir de lire'",
+    sketchRef: "Zone de détente en haut à gauche le long du mur Nord",
+    orientation: "horizontal"
+  }
+];
+
+// Enrichissement du catalogue pour peupler fidèlement chaque meuble
+const MAP3D_EXTENDED_BOOKS = [
+  { id: 101, isbn: "9782070612758", titre: "Le Petit Prince", auteur: "Antoine de Saint-Exupéry", genre: "Roman", niveau: "Cycle 3", shelfId: "etagere_bas_1", cote: "ROM-C3 SAI", tier: "Tablette 2 • Milieu", dispo: "DISPONIBLE", emoji: "⭐", color: "#2563EB" },
+  { id: 102, isbn: "9782070515622", titre: "Le Tour du Monde en 80 Jours", auteur: "Jules Verne", genre: "Roman", niveau: "Cycle 3", shelfId: "etagere_bas_1", cote: "ROM-C3 VER", tier: "Tablette 3 • Droite", dispo: "EMPRUNTÉ", emoji: "🌍", color: "#0D9488" },
+  { id: 103, isbn: "9782266200234", titre: "L'Œil du Loup", auteur: "Daniel Pennac", genre: "Roman", niveau: "Cycle 3", shelfId: "etagere_bas_1", cote: "ROM-C3 PEN", tier: "Tablette 1 • Gauche", dispo: "DISPONIBLE", emoji: "🐺", color: "#475569" },
+  { id: 104, isbn: "9782070584628", titre: "Harry Potter à l'école des sorciers", auteur: "J.K. Rowling", genre: "Roman", niveau: "Cycle 3", shelfId: "etagere_bas_1", cote: "ROM-C3 ROW", tier: "Tablette 4 • Milieu", dispo: "DISPONIBLE", emoji: "⚡", color: "#DC2626" },
+  { id: 105, isbn: "9782864970224", titre: "Astérix le Gaulois", auteur: "René Goscinny", genre: "BD", niveau: "Cycle 3", shelfId: "etagere_centre_h", cote: "BD AST", tier: "Face Nord • Tablette 1", dispo: "DISPONIBLE", emoji: "🛡️", color: "#F59E0B" },
+  { id: 106, isbn: "9782203001190", titre: "Tintin au Tibet", auteur: "Hergé", genre: "BD", niveau: "Cycle 3", shelfId: "etagere_centre_h", cote: "BD TIN", tier: "Face Nord • Tablette 2", dispo: "DISPONIBLE", emoji: "🏔️", color: "#3B82F6" },
+  { id: 107, isbn: "9782848657004", titre: "Mortelle Adèle : Tout ça finira mal", auteur: "Mr Tan", genre: "BD", niveau: "Cycle 2", shelfId: "etagere_centre_h", cote: "BD ADE", tier: "Face Sud • Tablette 1", dispo: "DISPONIBLE", emoji: "💥", color: "#EC4899" },
+  { id: 108, isbn: "9782227702288", titre: "Lili est harcelée à l'école", auteur: "Dominique de Saint Mars", genre: "Roman", niveau: "Cycle 2", shelfId: "etagere_haut_2", cote: "ROM-C2 MAR", tier: "Tablette 1 • Centre", dispo: "DISPONIBLE", emoji: "📘", color: "#3B82F6" },
+  { id: 109, isbn: "9782227702295", titre: "Max se fait insulter à la récré", auteur: "Dominique de Saint Mars", genre: "Roman", niveau: "Cycle 2", shelfId: "etagere_haut_2", cote: "ROM-C2 MAR", tier: "Tablette 1 • Droite", dispo: "DISPONIBLE", emoji: "🗣️", color: "#6366F1" },
+  { id: 110, isbn: "9782745995400", titre: "Le harcèlement", auteur: "Sandra Laboucarie", genre: "Documentaire", niveau: "Cycle 3", shelfId: "etagere_droite", cote: "DOC 300 LAB", tier: "Tablette 2 • Gauche", dispo: "DISPONIBLE", emoji: "📕", color: "#EF4444" },
+  { id: 111, isbn: "9782092557891", titre: "La planète en danger (EDD)", auteur: "Collectif Milan", genre: "Documentaire", niveau: "Cycle 3", shelfId: "etagere_droite", cote: "DOC 570 ECO", tier: "Tablette 3 • Milieu", dispo: "DISPONIBLE", emoji: "🌱", color: "#10B981" },
+  { id: 112, isbn: "9782215150824", titre: "L'Espace et le Système Solaire", auteur: "Fleurus Jeunesse", genre: "Documentaire", niveau: "Cycle 3", shelfId: "etagere_droite", cote: "DOC 520 ESP", tier: "Tablette 4 • Droite", dispo: "DISPONIBLE", emoji: "🚀", color: "#06B6D4" },
+  { id: 113, isbn: "9782070628841", titre: "Les Contes de ma mère l'Oye", auteur: "Charles Perrault", genre: "Contes", niveau: "Cycle 3", shelfId: "etagere_haut_1", cote: "CONTE PER", tier: "Tablette 2 • Milieu", dispo: "DISPONIBLE", emoji: "🏰", color: "#8B5CF6" },
+  { id: 114, isbn: "9782070618033", titre: "Fables de La Fontaine", auteur: "Jean de La Fontaine", genre: "Contes", niveau: "Cycle 3", shelfId: "etagere_haut_1", cote: "CONTE LAF", tier: "Tablette 3 • Droite", dispo: "DISPONIBLE", emoji: "🦊", color: "#D97706" },
+  { id: 115, isbn: "9782211096317", titre: "Otto, autobiographie d'un ours en peluche", auteur: "Tomi Ungerer", genre: "Album", niveau: "Cycle 3", shelfId: "bac_centre_bas", cote: "ALB UNG", tier: "Bac Central • Compartiment A", dispo: "DISPONIBLE", emoji: "🧸", color: "#6D28D9" },
+  { id: 116, isbn: "9782877670050", titre: "Elmer l'éléphant bariolé", auteur: "David McKee", genre: "Album", niveau: "Cycle 2", shelfId: "bac_centre_bas", cote: "ALB MCK", tier: "Bac Central • Compartiment B", dispo: "DISPONIBLE", emoji: "🐘", color: "#F59E0B" },
+  { id: 117, isbn: "9782211021432", titre: "Chien Bleu", auteur: "Nadja", genre: "Album", niveau: "Cycle 2", shelfId: "bac_centre_bas", cote: "ALB NAD", tier: "Bac Central • Compartiment C", dispo: "DISPONIBLE", emoji: "🐕", color: "#2563EB" },
+  { id: 118, isbn: "9782278078035", titre: "Rouge", auteur: "Jan De Kinder", genre: "Album", niveau: "Cycle 2", shelfId: "bac_centre_gauche", cote: "NOUV KIN", tier: "Bac Nouveautés", dispo: "DISPONIBLE", emoji: "🔴", color: "#DC2626" },
+  { id: 119, isbn: "9782745942364", titre: "1 foi, 2 fois, 3 foi !", auteur: "Petits Formats", genre: "Album", niveau: "Cycle 2", shelfId: "bac_bas_mur", cote: "MINI FOI", tier: "Bac Petits Formats Sud", dispo: "DISPONIBLE", emoji: "📖", color: "#10B981" },
+  { id: 120, isbn: "MAL-047", titre: "Mallette Harcèlement & Vivre ensemble", auteur: "Sélection BCD (15 livres)", genre: "Mallette", niveau: "Tous niveaux", shelfId: "etagere_bas_2", cote: "MAL-047", tier: "Rayon Mallettes Sud-2", dispo: "DISPONIBLE", emoji: "🎒", color: "#EF4444" },
+  { id: 121, isbn: "MAL-048", titre: "Mallette Éducation au Développement Durable", auteur: "Sélection BCD (12 livres)", genre: "Mallette", niveau: "Tous niveaux", shelfId: "etagere_bas_2", cote: "MAL-048", tier: "Rayon Mallettes Sud-2", dispo: "DISPONIBLE", emoji: "🌍", color: "#10B981" }
+];
+
+// État du moteur 3D
+let map3dCamera = {
+  yaw: -Math.PI / 4,
+  pitch: Math.PI / 5.2,
+  zoom: 1.05,
+  panX: 0,
+  panY: 0,
+  targetYaw: -Math.PI / 4,
+  targetPitch: Math.PI / 5.2,
+  targetZoom: 1.05
+};
+
+let map3dSelectedId = "etagere_centre_h"; // Sélectionné par défaut
+let map3dHoveredId = null;
+let map3dShowLabels = true;
+let map3dIsDragging = false;
+let map3dDragStart = { x: 0, y: 0 };
+let map3dLightAmbiance = "jour"; // "jour" ou "chaud"
+let map3dHighlightedPin = null; // { shelfId: '...', title: '...', cote: '...', author: '...' }
+let map3dAnimFrame = null;
+let map3dActiveFilter = "all";
+
+let map3dAudioCtx = null;
+function playMap3dBeep(freq = 880, duration = 0.08, type = 'sine') {
+  try {
+    if (!map3dAudioCtx) {
+      map3dAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (map3dAudioCtx.state === 'suspended') {
+      map3dAudioCtx.resume();
+    }
+    const osc = map3dAudioCtx.createOscillator();
+    const gain = map3dAudioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, map3dAudioCtx.currentTime);
+    gain.gain.setValueAtTime(0.12, map3dAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, map3dAudioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(map3dAudioCtx.destination);
+    osc.start();
+    osc.stop(map3dAudioCtx.currentTime + duration);
+  } catch (e) {
+    // Silencieux si audio non disponible
+  }
+}
+
+function safeRoundRect(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, w, h, r);
+  } else {
+    ctx.rect(x, y, w, h);
+  }
+}
+
+function initOrRender3DMap() {
+  const canvas = document.getElementById('map3dCanvas');
+  if (!canvas) return;
+
+  setupMap3dCanvasListeners();
+
+  // Assure le dimensionnement haute définition lors de l'affichage
+  requestAnimationFrame(() => {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    if (rect.width > 0 && rect.height > 0) {
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+    }
+  });
+
+  renderMap3dSidebar();
+  
+  if (!map3dAnimFrame) {
+    map3dRenderLoop();
+  }
+}
+
+function setupMap3dCanvasListeners() {
+  const canvas = document.getElementById('map3dCanvas');
+  if (!canvas || canvas._listenersAttached) return;
+  canvas._listenersAttached = true;
+
+  const resizeCanvas = () => {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    if (rect.width > 0 && rect.height > 0) {
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+    }
+  };
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // Pointer events pour drag rotation
+  canvas.addEventListener('pointerdown', (e) => {
+    map3dIsDragging = true;
+    map3dDragStart = { x: e.clientX, y: e.clientY };
+    canvas.setPointerCapture(e.pointerId);
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const mx = (e.clientX - rect.left) * dpr;
+    const my = (e.clientY - rect.top) * dpr;
+
+    if (map3dIsDragging) {
+      const dx = e.clientX - map3dDragStart.x;
+      const dy = e.clientY - map3dDragStart.y;
+      map3dCamera.targetYaw += dx * 0.008;
+      map3dCamera.targetPitch = Math.max(0.15, Math.min(Math.PI / 2.2, map3dCamera.targetPitch + dy * 0.006));
+      map3dDragStart = { x: e.clientX, y: e.clientY };
+    } else {
+      checkMap3dHover(mx, my, rect.width * dpr, rect.height * dpr, e.clientX - rect.left, e.clientY - rect.top);
+    }
+  });
+
+  canvas.addEventListener('pointerup', (e) => {
+    if (map3dIsDragging) {
+      map3dIsDragging = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
+    }
+  });
+
+  // Clic pour sélectionner un meuble
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const mx = (e.clientX - rect.left) * dpr;
+    const my = (e.clientY - rect.top) * dpr;
+    const hitId = pickMap3dObject(mx, my, rect.width * dpr, rect.height * dpr);
+    if (hitId) {
+      selectFurniture(hitId);
+      playMap3dBeep(520, 0.05, 'triangle');
+    }
+  });
+
+  // Molette pour zoomer
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.08 : 0.92;
+    map3dCamera.targetZoom = Math.max(0.55, Math.min(2.4, map3dCamera.targetZoom * factor));
+  }, { passive: false });
+}
+
+// Projection 3D orthographique isométrique exacte
+function project3d(x, y, z, w, h) {
+  const dx = x - 50;
+  const dy = y - 60;
+  const dz = z;
+
+  const cosY = Math.cos(map3dCamera.yaw);
+  const sinY = Math.sin(map3dCamera.yaw);
+  const x1 = dx * cosY - dy * sinY;
+  const y1 = dx * sinY + dy * cosY;
+
+  const cosP = Math.cos(map3dCamera.pitch);
+  const sinP = Math.sin(map3dCamera.pitch);
+  const y2 = y1 * cosP - dz * sinP;
+  const z2 = y1 * sinP + dz * cosP;
+
+  const scale = (Math.min(w, h) / 135) * map3dCamera.zoom;
+  const sx = w / 2 + map3dCamera.panX + x1 * scale;
+  const sy = h / 2 + map3dCamera.panY + y2 * scale;
+
+  return { sx, sy, depth: z2 };
+}
+
+function getPolygonSignedArea(pts) {
+  let area = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i + 1) % pts.length;
+    area += pts[i].sx * pts[j].sy - pts[j].sx * pts[i].sy;
+  }
+  return area / 2;
+}
+
+function shadeColor(hex, percent) {
+  let num = parseInt(hex.replace("#", ""), 16),
+      amt = Math.round(2.55 * percent),
+      R = (num >> 16) + amt,
+      G = (num >> 8 & 0x00FF) + amt,
+      B = (num & 0x0000FF) + amt;
+  return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+}
+
+// Boucle principale de rendu 60 FPS
+function map3dRenderLoop() {
+  map3dAnimFrame = requestAnimationFrame(map3dRenderLoop);
+
+  const canvas = document.getElementById('map3dCanvas');
+  if (!canvas || canvas.offsetParent === null) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+    if (rect.width > 0 && rect.height > 0) {
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+    }
+  }
+
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  if (w <= 0 || h <= 0) return;
+
+  // Lissage d'interpolation caméra
+  map3dCamera.yaw += (map3dCamera.targetYaw - map3dCamera.yaw) * 0.15;
+  map3dCamera.pitch += (map3dCamera.targetPitch - map3dCamera.pitch) * 0.15;
+  map3dCamera.zoom += (map3dCamera.targetZoom - map3dCamera.zoom) * 0.15;
+
+  // Mise à jour de la boussole
+  updateCompassNeedle();
+
+  // Nettoyage écran
+  ctx.clearRect(0, 0, w, h);
+
+  // 1. Sol parquet en bois de la BCD avec lattes
+  drawFloorParquet(ctx, w, h);
+
+  // 2. Murs ajourés (Nord avec entrée, Ouest, Est, Sud)
+  drawWalls(ctx, w, h);
+
+  // 3. Meubles triés en profondeur (Painter's algorithm)
+  const renderList = [];
+
+  FURNITURE_DATA.forEach(f => {
+    const center = project3d(f.x + f.w / 2, f.y + f.d / 2, f.z + f.h / 2, w, h);
+    renderList.push({
+      item: f,
+      depth: center.depth,
+      isHovered: (f.id === map3dHoveredId),
+      isSelected: (f.id === map3dSelectedId)
+    });
+  });
+
+  renderList.sort((a, b) => a.depth - b.depth);
+
+  renderList.forEach(r => {
+    drawFurniture3D(ctx, r.item, w, h, r.isHovered, r.isSelected);
+  });
+
+  // 4. Badges flottants d'étiquette
+  if (map3dShowLabels) {
+    renderList.forEach(r => {
+      drawShelfLabelBadge(ctx, r.item, w, h, r.isSelected);
+    });
+  }
+
+  // 5. Pin animé si un livre est localisé
+  if (map3dHighlightedPin) {
+    drawHighlightedPin(ctx, w, h);
+  }
+}
+
+function updateCompassNeedle() {
+  const needle = document.getElementById('map3dCompassNeedle');
+  const label = document.getElementById('map3dOrientationLabel');
+  if (!needle) return;
+
+  const deg = (map3dCamera.yaw * 180 / Math.PI) + 45;
+  needle.style.transform = `rotate(${deg}deg)`;
+
+  const normalizedDeg = (deg % 360 + 360) % 360;
+  if (normalizedDeg >= 315 || normalizedDeg < 45) label.textContent = "Vue Nord";
+  else if (normalizedDeg >= 45 && normalizedDeg < 135) label.textContent = "Vue Ouest";
+  else if (normalizedDeg >= 135 && normalizedDeg < 225) label.textContent = "Vue Sud";
+  else label.textContent = "Vue Est";
+}
+
+function drawFloorParquet(ctx, w, h) {
+  const p0 = project3d(0, 0, 0, w, h);
+  const p1 = project3d(100, 0, 0, w, h);
+  const p2 = project3d(100, 120, 0, w, h);
+  const p3 = project3d(0, 120, 0, w, h);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(p0.sx, p0.sy);
+  ctx.lineTo(p1.sx, p1.sy);
+  ctx.lineTo(p2.sx, p2.sy);
+  ctx.lineTo(p3.sx, p3.sy);
+  ctx.closePath();
+
+  ctx.fillStyle = (map3dLightAmbiance === 'chaud') ? '#D97706' : '#2A374A';
+  ctx.fill();
+  ctx.strokeStyle = '#475569';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.strokeStyle = (map3dLightAmbiance === 'chaud') ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let x = 10; x < 100; x += 10) {
+    const a = project3d(x, 0, 0, w, h);
+    const b = project3d(x, 120, 0, w, h);
+    ctx.beginPath();
+    ctx.moveTo(a.sx, a.sy);
+    ctx.lineTo(b.sx, b.sy);
+    ctx.stroke();
+  }
+  for (let y = 10; y < 120; y += 10) {
+    const a = project3d(0, y, 0, w, h);
+    const b = project3d(100, y, 0, w, h);
+    ctx.beginPath();
+    ctx.moveTo(a.sx, a.sy);
+    ctx.lineTo(b.sx, b.sy);
+    ctx.stroke();
+  }
+
+  // Tapis "ENTRÉE BCD"
+  const m0 = project3d(12, 1, 0.2, w, h);
+  const m1 = project3d(24, 1, 0.2, w, h);
+  const m2 = project3d(24, 6, 0.2, w, h);
+  const m3 = project3d(12, 6, 0.2, w, h);
+  ctx.beginPath();
+  ctx.moveTo(m0.sx, m0.sy);
+  ctx.lineTo(m1.sx, m1.sy);
+  ctx.lineTo(m2.sx, m2.sy);
+  ctx.lineTo(m3.sx, m3.sy);
+  ctx.closePath();
+  ctx.fillStyle = '#DC2626';
+  ctx.fill();
+  ctx.strokeStyle = '#FCA5A5';
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawWalls(ctx, w, h) {
+  const wallH = 10;
+
+  // Mur Nord segment 1 (avant la porte : x: 0 à 12)
+  drawBoxSegment(ctx, 0, 0, 0, 12, 2, wallH, '#64748B', '#475569', w, h);
+  // Porte d'entrée entre x:12 et x:24
+  // Mur Nord segment 2 (après la porte : x: 24 à 100)
+  drawBoxSegment(ctx, 24, 0, 0, 76, 2, wallH, '#64748B', '#475569', w, h);
+
+  // Mur Ouest
+  drawBoxSegment(ctx, 0, 0, 0, 2, 120, wallH, '#475569', '#334155', w, h);
+
+  // Mur Est
+  drawBoxSegment(ctx, 98, 0, 0, 2, 120, wallH, '#475569', '#334155', w, h);
+
+  // Mur Sud
+  drawBoxSegment(ctx, 0, 118, 0, 100, 2, wallH, '#64748B', '#475569', w, h);
+}
+
+function drawBoxSegment(ctx, x, y, z, bw, bd, bh, topColor, sideColor, cw, ch) {
+  const p001 = project3d(x, y, z + bh, cw, ch);
+  const p101 = project3d(x + bw, y, z + bh, cw, ch);
+  const p111 = project3d(x + bw, y + bd, z + bh, cw, ch);
+  const p011 = project3d(x, y + bd, z + bh, cw, ch);
+  const p000 = project3d(x, y, z, cw, ch);
+  const p100 = project3d(x + bw, y, z, cw, ch);
+  const p110 = project3d(x + bw, y + bd, z, cw, ch);
+  const p010 = project3d(x, y + bd, z, cw, ch);
+
+  const faces = [
+    { pts: [p001, p101, p111, p011], col: topColor, name: 'top' },
+    { pts: [p010, p011, p111, p110], col: sideColor, name: 'front' },
+    { pts: [p100, p101, p001, p000], col: shadeColor(sideColor, -20), name: 'back' },
+    { pts: [p110, p111, p101, p100], col: shadeColor(sideColor, 10), name: 'right' },
+    { pts: [p000, p001, p011, p010], col: shadeColor(sideColor, -10), name: 'left' }
+  ];
+
+  faces.forEach(f => {
+    if (getPolygonSignedArea(f.pts) > 0) {
+      ctx.beginPath();
+      ctx.moveTo(f.pts[0].sx, f.pts[0].sy);
+      for (let i = 1; i < f.pts.length; i++) ctx.lineTo(f.pts[i].sx, f.pts[i].sy);
+      ctx.closePath();
+      ctx.fillStyle = f.col;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.stroke();
+    }
+  });
+}
+
+function drawFurniture3D(ctx, f, cw, ch, isHovered, isSelected) {
+  ctx.save();
+  const lift = isHovered ? 2.5 : 0;
+  const z = f.z + lift;
+
+  if (isSelected) {
+    drawSelectionHalo(ctx, f, cw, ch);
+  }
+
+  if (f.type === "etagere") {
+    drawBookShelf(ctx, f, z, cw, ch, isHovered, isSelected);
+  } else if (f.type === "bac") {
+    drawBookBin(ctx, f, z, cw, ch, isHovered, isSelected);
+  } else if (f.id === "bureau_accueil") {
+    drawReceptionDesk(ctx, f, z, cw, ch, isHovered, isSelected);
+  } else if (f.id === "table_lecture") {
+    drawReadingTable(ctx, f, z, cw, ch, isHovered, isSelected);
+  } else if (f.id === "coin_poufs") {
+    drawPoufs(ctx, f, z, cw, ch, isHovered, isSelected);
+  }
+
+  ctx.restore();
+}
+
+function drawSelectionHalo(ctx, f, cw, ch) {
+  const pad = 2.5;
+  const p0 = project3d(f.x - pad, f.y - pad, 0.1, cw, ch);
+  const p1 = project3d(f.x + f.w + pad, f.y - pad, 0.1, cw, ch);
+  const p2 = project3d(f.x + f.w + pad, f.y + f.d + pad, 0.1, cw, ch);
+  const p3 = project3d(f.x - pad, f.y + f.d + pad, 0.1, cw, ch);
+
+  ctx.beginPath();
+  ctx.moveTo(p0.sx, p0.sy);
+  ctx.lineTo(p1.sx, p1.sy);
+  ctx.lineTo(p2.sx, p2.sy);
+  ctx.lineTo(p3.sx, p3.sy);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(59, 130, 246, 0.35)";
+  ctx.fill();
+  ctx.strokeStyle = "#60A5FA";
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawBookShelf(ctx, f, z, cw, ch, isHovered, isSelected) {
+  const baseColor = isSelected ? '#3B82F6' : (isHovered ? '#34D399' : f.color);
+  const topColor = shadeColor(baseColor, 18);
+  const sideColor = baseColor;
+
+  drawBoxSegment(ctx, f.x, f.y, z, f.w, f.d, f.h, topColor, sideColor, cw, ch);
+  drawBooksOnShelf(ctx, f, z, cw, ch);
+}
+
+function drawBooksOnShelf(ctx, f, z, cw, ch) {
+  const shelfCount = 3;
+  const bookColors = ['#EF4444', '#3B82F6', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
+
+  if (f.orientation === "horizontal") {
+    const stepX = f.w / 10;
+    for (let s = 1; s <= shelfCount; s++) {
+      const shelfZ = z + (f.h / (shelfCount + 1)) * s;
+      for (let i = 0; i < 9; i++) {
+        const bx = f.x + 1 + i * stepX;
+        const col = bookColors[(i * 3 + s) % bookColors.length];
+        const pA = project3d(bx, f.y + f.d + 0.1, shelfZ, cw, ch);
+        const pB = project3d(bx + stepX * 0.75, f.y + f.d + 0.1, shelfZ + (f.h * 0.18), cw, ch);
+        ctx.fillStyle = col;
+        ctx.fillRect(Math.min(pA.sx, pB.sx), Math.min(pA.sy, pB.sy), Math.abs(pB.sx - pA.sx) || 4, Math.abs(pB.sy - pA.sy) || 8);
+      }
+    }
+  } else {
+    const stepY = f.d / 12;
+    for (let s = 1; s <= shelfCount; s++) {
+      const shelfZ = z + (f.h / (shelfCount + 1)) * s;
+      for (let i = 0; i < 11; i++) {
+        const by = f.y + 1 + i * stepY;
+        const col = bookColors[(i * 2 + s) % bookColors.length];
+        const pA = project3d(f.x + f.w + 0.1, by, shelfZ, cw, ch);
+        const pB = project3d(f.x + f.w + 0.1, by + stepY * 0.75, shelfZ + (f.h * 0.18), cw, ch);
+        ctx.fillStyle = col;
+        ctx.fillRect(Math.min(pA.sx, pB.sx), Math.min(pA.sy, pB.sy), Math.abs(pB.sx - pA.sx) || 4, Math.abs(pB.sy - pA.sy) || 8);
+      }
+    }
+  }
+}
+
+function drawBookBin(ctx, f, z, cw, ch, isHovered, isSelected) {
+  const baseColor = isSelected ? '#3B82F6' : (isHovered ? '#F87171' : f.color);
+  drawBoxSegment(ctx, f.x, f.y, z, f.w, f.d, f.h, shadeColor(baseColor, 15), baseColor, cw, ch);
+
+  const pMid = project3d(f.x + f.w / 2, f.y + f.d / 2, z + f.h + 2, cw, ch);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "bold 9px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("🎨 Albums", pMid.sx, pMid.sy);
+}
+
+function drawReceptionDesk(ctx, f, z, cw, ch, isHovered, isSelected) {
+  const deskColor = isSelected ? '#3B82F6' : (isHovered ? '#60A5FA' : '#E2E8F0');
+  drawBoxSegment(ctx, f.x, f.y, z, f.w, f.d, f.h, '#FFFFFF', deskColor, cw, ch);
+
+  const pcX = f.x + 2, pcY = f.y + 5, pcZ = z + f.h;
+  drawBoxSegment(ctx, pcX, pcY, pcZ, 2, 8, 7, '#38BDF8', '#1E293B', cw, ch);
+
+  const pPc = project3d(pcX + 1, pcY + 4, pcZ + 8, cw, ch);
+  ctx.fillStyle = "#38BDF8";
+  ctx.font = "bold 9px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("💻 BCD Express", pPc.sx, pPc.sy);
+}
+
+function drawReadingTable(ctx, f, z, cw, ch, isHovered, isSelected) {
+  const tableColor = isSelected ? '#3B82F6' : (isHovered ? '#94A3B8' : '#CBD5E1');
+  drawBoxSegment(ctx, f.x, f.y, z, f.w, f.d, f.h, '#F1F5F9', tableColor, cw, ch);
+
+  const pCenter = project3d(f.x + f.w / 2, f.y + f.d / 2, z + f.h + 1, cw, ch);
+  ctx.fillStyle = "#475569";
+  ctx.font = "bold 9px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("📖 8 Places Lecture", pCenter.sx, pCenter.sy);
+}
+
+function drawPoufs(ctx, f, z, cw, ch, isHovered, isSelected) {
+  const colors = ['#F59E0B', '#3B82F6', '#EC4899'];
+  for (let i = 0; i < 3; i++) {
+    const px = f.x + 2 + i * 3.5;
+    const py = f.y + 4;
+    drawBoxSegment(ctx, px - 1.2, py - 1.2, z, 2.8, 2.8, 5, colors[i], shadeColor(colors[i], -15), cw, ch);
+  }
+}
+
+function drawShelfLabelBadge(ctx, f, cw, ch, isSelected) {
+  const pTop = project3d(f.x + f.w / 2, f.y + f.d / 2, f.z + f.h + 6, cw, ch);
+
+  ctx.save();
+  ctx.font = "bold 10px -apple-system, BlinkMacSystemFont, sans-serif";
+  const labelText = `${f.icon} ${f.shortName}`;
+  const textWidth = ctx.measureText(labelText).width;
+  const pad = 6;
+  const bw = textWidth + pad * 2;
+  const bh = 18;
+
+  ctx.fillStyle = isSelected ? '#2563EB' : 'rgba(15, 23, 42, 0.85)';
+  ctx.strokeStyle = isSelected ? '#93C5FD' : 'rgba(255, 255, 255, 0.2)';
+  ctx.lineWidth = 1;
+
+  ctx.beginPath();
+  safeRoundRect(ctx, pTop.sx - bw / 2, pTop.sy - bh / 2, bw, bh, 4);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(labelText, pTop.sx, pTop.sy);
+  ctx.restore();
+}
+
+function drawHighlightedPin(ctx, w, h) {
+  const pin = map3dHighlightedPin;
+  const f = FURNITURE_DATA.find(item => item.id === pin.shelfId);
+  if (!f) return;
+
+  const now = Date.now();
+  const bounce = Math.sin(now * 0.006) * 4;
+  const pinZ = f.z + f.h + 14 + bounce;
+
+  const radius = 10 + (Math.sin(now * 0.004) + 1) * 8;
+  const pFloor = project3d(f.x + f.w / 2, f.y + f.d / 2, 0.2, w, h);
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(pFloor.sx, pFloor.sy, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(239, 68, 68, 0.6)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  const pPin = project3d(f.x + f.w / 2, f.y + f.d / 2, pinZ, w, h);
+
+  ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, sans-serif";
+  const titleText = `📍 ${pin.title}`;
+  const subText = `Rangé ici : ${f.shortName} • Cote : ${pin.cote}`;
+  const tw = Math.max(ctx.measureText(titleText).width, ctx.measureText(subText).width) + 16;
+  const th = 36;
+
+  ctx.fillStyle = "rgba(220, 38, 38, 0.95)";
+  ctx.strokeStyle = "#FECA57";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  safeRoundRect(ctx, pPin.sx - tw / 2, pPin.sy - th - 10, tw, th, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(pPin.sx - 6, pPin.sy - 10);
+  ctx.lineTo(pPin.sx + 6, pPin.sy - 10);
+  ctx.lineTo(pPin.sx, pPin.sy);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(220, 38, 38, 0.95)";
+  ctx.fill();
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "center";
+  ctx.fillText(titleText, pPin.sx, pPin.sy - th + 4);
+  ctx.font = "10px sans-serif";
+  ctx.fillStyle = "#FEF08A";
+  ctx.fillText(subText, pPin.sx, pPin.sy - 14);
+
+  ctx.restore();
+}
+
+function pickMap3dObject(mx, my, cw, ch) {
+  for (let i = FURNITURE_DATA.length - 1; i >= 0; i--) {
+    const f = FURNITURE_DATA[i];
+    const pts = [
+      project3d(f.x, f.y, f.z, cw, ch),
+      project3d(f.x + f.w, f.y, f.z, cw, ch),
+      project3d(f.x + f.w, f.y + f.d, f.z, cw, ch),
+      project3d(f.x, f.y + f.d, f.z, cw, ch),
+      project3d(f.x, f.y, f.z + f.h, cw, ch),
+      project3d(f.x + f.w, f.y, f.z + f.h, cw, ch),
+      project3d(f.x + f.w, f.y + f.d, f.z + f.h, cw, ch),
+      project3d(f.x, f.y + f.d, f.z + f.h, cw, ch)
+    ];
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    pts.forEach(p => {
+      if (p.sx < minX) minX = p.sx;
+      if (p.sx > maxX) maxX = p.sx;
+      if (p.sy < minY) minY = p.sy;
+      if (p.sy > maxY) maxY = p.sy;
+    });
+
+    if (mx >= minX && mx <= maxX && my >= minY && my <= maxY) {
+      return f.id;
+    }
+  }
+  return null;
+}
+
+function checkMap3dHover(mx, my, cw, ch, clientX, clientY) {
+  const hitId = pickMap3dObject(mx, my, cw, ch);
+  const tooltip = document.getElementById('map3dTooltip');
+
+  if (hitId !== map3dHoveredId) {
+    map3dHoveredId = hitId;
+    if (hitId) {
+      const f = FURNITURE_DATA.find(x => x.id === hitId);
+      if (f && tooltip) {
+        tooltip.innerHTML = `
+          <div style="font-weight:700; font-size:12.5px; margin-bottom:2px;">${f.icon} ${f.name}</div>
+          <div style="font-size:11px; color:#94A3B8;">${f.category}</div>
+          <div style="font-size:11px; color:#38BDF8; margin-top:3px;">Capacité : ${f.capacity} livres • Clic pour ouvrir</div>
+        `;
+        tooltip.style.display = 'block';
+      }
+    } else {
+      if (tooltip) tooltip.style.display = 'none';
+    }
+  }
+
+  if (tooltip && map3dHoveredId) {
+    tooltip.style.left = `${clientX}px`;
+    tooltip.style.top = `${clientY}px`;
+  }
+}
+
+function selectFurniture(id) {
+  map3dSelectedId = id;
+  const f = FURNITURE_DATA.find(x => x.id === id);
+  if (!f) return;
+
+  renderMap3dSidebar();
+}
+
+function renderMap3dSidebar() {
+  const sidebar = document.getElementById('map3dSidebar');
+  if (!sidebar) return;
+
+  const f = FURNITURE_DATA.find(x => x.id === map3dSelectedId);
+  if (!f) {
+    renderOverviewSidebar(sidebar);
+    return;
+  }
+
+  const booksInShelf = MAP3D_EXTENDED_BOOKS.filter(b => b.shelfId === f.id);
+  const bookCount = booksInShelf.length * 6 + 12;
+  const pct = Math.min(100, Math.round((bookCount / f.capacity) * 100));
+
+  sidebar.innerHTML = `
+    <div class="shelf-detail-header">
+      <div class="shelf-title-row">
+        <span style="font-size:28px;">${f.icon}</span>
+        <div>
+          <div style="font-size:15px; font-weight:700; color:var(--text-main);">${f.name}</div>
+          <div style="font-size:12px; color:var(--text-muted);">${f.sketchRef}</div>
+        </div>
+      </div>
+      
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+        <span class="shelf-category-badge" style="background:${f.sketchColor === 'vert' ? '#F0FDF4' : (f.sketchColor === 'rouge' ? '#FEF2F2' : '#F1F5F9')}; color:${f.sketchColor === 'vert' ? '#15803D' : (f.sketchColor === 'rouge' ? '#B91C1C' : '#334155')};">
+          ${f.sketchColor === 'vert' ? '🟩 Vert hachuré' : (f.sketchColor === 'rouge' ? '🟥 Rouge hachuré' : '⬜ Mobilier')}
+        </span>
+        <span class="shelf-category-badge" style="background:var(--bg-subtle); color:var(--text-sub);">
+          Cote : ${f.cotePrefix}
+        </span>
+      </div>
+    </div>
+
+    <div class="shelf-capacity-gauge">
+      <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600;">
+        <span>Capacité de rangement</span>
+        <span>${bookCount} / ${f.capacity} livres (${pct}%)</span>
+      </div>
+      <div class="gauge-bar-track">
+        <div class="gauge-bar-fill" style="width:${pct}%; background:${pct > 85 ? '#EF4444' : (pct > 65 ? '#F59E0B' : '#10B981')};"></div>
+      </div>
+    </div>
+
+    <div style="font-size:12px; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:10px;">
+      <div style="font-weight:700; color:var(--text-main); margin-bottom:2px;">🏷️ Système de Cote &amp; Rangement :</div>
+      <div style="color:var(--text-sub);">${f.dewey}</div>
+      <div style="color:var(--text-muted); font-size:11px; margin-top:4px;">Exemple : <code>${f.coteExemple}</code></div>
+    </div>
+
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <button class="btn-subtle" style="font-size:11.5px; padding:6px 10px;" onclick="openAddBookToShelfModal('${f.id}')">
+        ➕ Ranger un livre ici
+      </button>
+      <button class="btn-subtle" style="font-size:11.5px; padding:6px 10px;" onclick="printSingleShelfLabel('${f.id}')">
+        🏷️ Imprimer étiquette meuble
+      </button>
+      <button class="btn-subtle" style="font-size:11.5px; padding:6px 10px;" onclick="filterFullInventoryByShelf('${f.id}')">
+        📚 Ouvrir dans l'inventaire
+      </button>
+    </div>
+
+    <div style="margin-top:6px;">
+      <div style="font-size:12.5px; font-weight:700; color:var(--text-main); margin-bottom:8px;">
+        Livres rangés dans ce rayon (${booksInShelf.length}) :
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        ${booksInShelf.map(b => `
+          <div class="shelf-book-card">
+            <div class="shelf-book-emoji" style="background:${b.color}20; color:${b.color};">${b.emoji}</div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:13px; font-weight:600; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${b.titre}</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">${b.auteur} • <code>${b.cote}</code></div>
+              <div style="font-size:10.5px; color:#10B981; margin-top:2px;">📍 ${b.tier}</div>
+            </div>
+            <button class="btn-subtle" style="font-size:11px; padding:4px 8px;" onclick="highlightBookIn3D('${b.shelfId}', '${b.titre.replace(/'/g, "\\'")}', '${b.cote}', '${b.auteur.replace(/'/g, "\\'")}')">
+              Localiser
+            </button>
+          </div>
+        `).join('')}
+
+        ${booksInShelf.length === 0 ? `
+          <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:16px;">
+            Aucun livre spécifique affecté pour l'instant. Utilisez le bouton "Ranger un livre ici" pour affecter des ouvrages.
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderOverviewSidebar(sidebar) {
+  sidebar.innerHTML = `
+    <div style="border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+      <h3 style="margin:0 0 4px 0; font-size:16px;">Plan de la BCD Albert Camus</h3>
+      <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
+        Cliquez sur un meuble dans le plan 3D ou ci-dessous pour inspecter les livres rangés.
+      </p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      ${FURNITURE_DATA.map(f => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer;" onclick="selectFurniture('${f.id}')">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>${f.icon}</span>
+            <div>
+              <div style="font-size:12.5px; font-weight:600;">${f.shortName}</div>
+              <div style="font-size:11px; color:var(--text-muted);">${f.category}</div>
+            </div>
+          </div>
+          <span style="font-size:11px; color:var(--primary); font-weight:600;">Voir →</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function highlightBookIn3D(shelfId, title, cote, author) {
+  map3dSelectedId = shelfId;
+  map3dHighlightedPin = { shelfId, title, cote, author };
+  playMap3dBeep(880, 0.08, 'sine');
+  renderMap3dSidebar();
+}
+
+function locateBookOn3DMap(title) {
+  switchMainTab('tab-map3d');
+  const input = document.getElementById('map3dSearchInput');
+  if (input) input.value = title;
+  handleMap3dSearch(title);
+}
+
+function handleMap3dSearch(query) {
+  const clearBtn = document.getElementById('map3dClearSearchBtn');
+  if (clearBtn) clearBtn.style.display = query.trim() ? 'block' : 'none';
+
+  if (!query || query.trim().length < 2) {
+    map3dHighlightedPin = null;
+    return;
+  }
+
+  const q = query.toLowerCase().trim();
+  const match = MAP3D_EXTENDED_BOOKS.find(b => 
+    b.titre.toLowerCase().includes(q) ||
+    b.auteur.toLowerCase().includes(q) ||
+    b.genre.toLowerCase().includes(q) ||
+    b.cote.toLowerCase().includes(q) ||
+    b.isbn.includes(q)
+  );
+
+  if (match) {
+    highlightBookIn3D(match.shelfId, match.titre, match.cote, match.auteur);
+  }
+}
+
+function clearMap3dSearch() {
+  const input = document.getElementById('map3dSearchInput');
+  if (input) input.value = '';
+  map3dHighlightedPin = null;
+  const clearBtn = document.getElementById('map3dClearSearchBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+}
+
+function filterMap3dGenre(genre) {
+  map3dActiveFilter = genre;
+  document.querySelectorAll('#map3dFilterPills .map3d-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-filter') === genre);
+  });
+
+  if (genre === 'all') {
+    selectFurniture("etagere_centre_h");
+  } else if (genre === 'etagere') {
+    selectFurniture("etagere_droite");
+  } else if (genre === 'bac') {
+    selectFurniture("bac_centre_bas");
+  } else if (genre === 'BD') {
+    selectFurniture("etagere_centre_h");
+  } else if (genre === 'Roman') {
+    selectFurniture("etagere_bas_1");
+  } else if (genre === 'Album') {
+    selectFurniture("bac_centre_bas");
+  } else if (genre === 'Documentaire') {
+    selectFurniture("etagere_droite");
+  } else if (genre === 'Mallette') {
+    selectFurniture("etagere_bas_2");
+  }
+}
+
+function resetMap3dCamera() {
+  map3dCamera.targetYaw = -Math.PI / 4;
+  map3dCamera.targetPitch = Math.PI / 5.2;
+  map3dCamera.targetZoom = 1.05;
+}
+
+function setTopDownCamera() {
+  map3dCamera.targetYaw = 0;
+  map3dCamera.targetPitch = Math.PI / 2.05;
+  map3dCamera.targetZoom = 1.0;
+}
+
+function zoomMap3d(factor) {
+  map3dCamera.targetZoom = Math.max(0.55, Math.min(2.4, map3dCamera.targetZoom * factor));
+}
+
+function toggleMap3dLabels() {
+  map3dShowLabels = !map3dShowLabels;
+  const btn = document.getElementById('btnToggleLabels');
+  if (btn) btn.textContent = `🏷️ Étiquettes : ${map3dShowLabels ? 'OUI' : 'NON'}`;
+}
+
+function toggleMap3dLighting() {
+  map3dLightAmbiance = (map3dLightAmbiance === 'jour') ? 'chaud' : 'jour';
+  const btn = document.getElementById('btnToggleAmbiance');
+  if (btn) btn.textContent = (map3dLightAmbiance === 'jour') ? '💡 Jour' : '🕯️ Chaud';
+}
+
+function openCroquisModal() {
+  document.getElementById('croquisModal').classList.add('active');
+}
+function closeCroquisModal() {
+  document.getElementById('croquisModal').classList.remove('active');
+}
+
+let lastShelvedBook = null;
+function openShelveAssistantModal() {
+  document.getElementById('shelveAssistantModal').classList.add('active');
+  const input = document.getElementById('shelveBarcodeScanInput');
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 150);
+  }
+}
+function closeShelveAssistantModal() {
+  document.getElementById('shelveAssistantModal').classList.remove('active');
+}
+
+function executeShelveScan(val) {
+  if (!val || !val.trim()) return;
+  const q = val.trim().toLowerCase();
+
+  const book = MAP3D_EXTENDED_BOOKS.find(b => 
+    b.isbn === q || 
+    b.titre.toLowerCase().includes(q) || 
+    b.cote.toLowerCase().includes(q)
+  );
+
+  const resBox = document.getElementById('shelveResultBox');
+  const btn3D = document.getElementById('btnGoTo3DMapResult');
+  playMap3dBeep(880, 0.08, 'sine');
+
+  if (book) {
+    lastShelvedBook = book;
+    const f = FURNITURE_DATA.find(x => x.id === book.shelfId);
+    resBox.style.display = 'block';
+    resBox.style.background = '#F0FDF4';
+    resBox.style.borderColor = '#BBF7D0';
+    resBox.innerHTML = `
+      <div style="font-weight:700; color:#15803D; font-size:14px; margin-bottom:4px;">
+        🔊 BIP ! Livre identifié : ${book.titre}
+      </div>
+      <div style="font-size:12.5px; color:#166534; margin-bottom:6px;">
+        Auteur : <strong>${book.auteur}</strong> • Genre : ${book.genre} (${book.niveau})
+      </div>
+      <div style="padding:10px; background:#FFFFFF; border:1px solid #BBF7D0; border-radius:var(--radius-sm); font-size:13px;">
+        🎯 <strong>Destination de rangement :</strong><br>
+        ➔ <strong style="color:#15803D; font-size:14px;">${f.name}</strong><br>
+        🏷️ <strong>Cote Dewey :</strong> <code>${book.cote}</code><br>
+        📍 <strong>Emplacement exact :</strong> ${book.tier}
+      </div>
+    `;
+    if (btn3D) btn3D.style.display = 'inline-block';
+  } else {
+    lastShelvedBook = null;
+    resBox.style.display = 'block';
+    resBox.style.background = '#FEF2F2';
+    resBox.style.borderColor = '#FECACA';
+    resBox.innerHTML = `
+      <div style="font-weight:700; color:#B91C1C; font-size:13px;">
+        ⚠️ Code-barres ou titre non trouvé dans la base BCD
+      </div>
+      <div style="font-size:12px; color:#991B1B; margin-top:4px;">
+        Vous pouvez déposer ce livre dans le bac de retour du <strong>Bureau d'accueil</strong> pour catalogage.
+      </div>
+    `;
+    if (btn3D) btn3D.style.display = 'none';
+  }
+}
+
+function showShelveResultIn3D() {
+  if (!lastShelvedBook) return;
+  closeShelveAssistantModal();
+  switchMainTab('tab-map3d');
+  highlightBookIn3D(lastShelvedBook.shelfId, lastShelvedBook.titre, lastShelvedBook.cote, lastShelvedBook.auteur);
+}
+
+function openShelfLabelsModal() {
+  document.getElementById('shelfLabelsModal').classList.add('active');
+  const container = document.getElementById('shelfLabelsPreviewContainer');
+  if (!container) return;
+
+  container.innerHTML = FURNITURE_DATA.map(f => `
+    <div style="border:2px solid ${f.color}; border-radius:var(--radius-md); padding:12px; background:#FFFFFF; display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:20px;">${f.icon}</span>
+        <span style="font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; background:${f.color}20; color:${f.color};">
+          ${f.cotePrefix}
+        </span>
+      </div>
+      <div style="font-weight:700; font-size:13px; color:#0F172A;">${f.shortName}</div>
+      <div style="font-size:11px; color:#64748B;">${f.category}</div>
+      <div style="font-size:10.5px; background:#F8FAFC; padding:4px 6px; border-radius:4px; color:#334155; margin-top:4px;">
+        Dewey : ${f.dewey}
+      </div>
+    </div>
+  `).join('');
+}
+
+function closeShelfLabelsModal() {
+  document.getElementById('shelfLabelsModal').classList.remove('active');
+}
+
+function printShelfLabelsSheet() {
+  window.print();
+}
+
+function printSingleShelfLabel(id) {
+  const f = FURNITURE_DATA.find(x => x.id === id);
+  if (!f) return;
+  alert(`Impression de la signalétique pour : ${f.name}\nFormat A4 paysage avec cote ${f.cotePrefix}`);
+}
+
+function filterFullInventoryByShelf(id) {
+  const f = FURNITURE_DATA.find(x => x.id === id);
+  if (!f) return;
+  switchMainTab('tab-inventaire');
+  const searchInput = document.getElementById('bookSearchInput');
+  if (searchInput) {
+    if (f.cotePrefix === 'BD') searchInput.value = 'BD';
+    else if (f.cotePrefix.startsWith('ROM')) searchInput.value = 'Roman';
+    else if (f.cotePrefix === 'DOC') searchInput.value = 'Documentaire';
+    else if (f.cotePrefix === 'ALB') searchInput.value = 'Album';
+    else searchInput.value = f.shortName;
+    renderBooksCatalog();
+  }
+}
+
+function openAddBookToShelfModal(shelfId) {
+  const f = FURNITURE_DATA.find(x => x.id === shelfId);
+  openAddBookModal();
+  const selectGenre = document.getElementById('addBookGenre');
+  if (selectGenre && f) {
+    if (f.cotePrefix === 'BD') selectGenre.value = 'BD';
+    else if (f.cotePrefix.startsWith('ROM')) selectGenre.value = 'Roman';
+    else if (f.cotePrefix === 'DOC') selectGenre.value = 'Documentaire';
+    else if (f.cotePrefix === 'ALB') selectGenre.value = 'Album';
+  }
+}
+
+// Support des liens directs d'ouverture avec ancrage #plan3d
+window.addEventListener('load', () => {
+  if (window.location.hash === '#plan3d' || window.location.hash === '#map3d') {
+    switchMainTab('tab-map3d');
+  }
+});
+
 window.onclick = function() {
   hideOutilsMenu();
   hideMalletteMenu();
@@ -4243,6 +6097,7 @@ renderLabelsTable();
 renderRecoTable();
 renderUsersTable();
 renderMallettes();
+initOrRender3DMap();
 </script>
 
 </body>

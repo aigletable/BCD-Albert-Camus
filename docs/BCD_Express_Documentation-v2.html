@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BCD Express — Présentation, Architecture & Perspectives d'Évolution</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #1e3a5f;
+      --primary-light: #2563eb;
+      --primary-soft: #eff6ff;
+      --emerald: #047857;
+      --emerald-soft: #ecfdf5;
+      --emerald-border: #a7f3d0;
+      --amber: #b45309;
+      --amber-soft: #fffbeb;
+      --amber-border: #fde68a;
+      --ink: #0f172a;
+      --text: #334155;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg-page: #f1f5f9;
+      --bg-card: #f8fafc;
+      --white: #ffffff;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 15px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text);
+      background-color: var(--bg-page);
+      line-height: 1.68;
+      -webkit-font-smoothing: antialiased;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    /* Floating Print Toolbar (hidden when printing) */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(10px);
+      color: var(--white);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .toolbar-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.9rem;
+    }
+
+    .toolbar-badge {
+      background: var(--primary-light);
+      color: white;
+      font-weight: 600;
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.03em;
+    }
+
+    .toolbar-tip {
+      color: #cbd5e1;
+      font-size: 0.82rem;
+    }
+
+    .btn-print {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-print:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
+    }
+
+    /* Main Document Sheet */
+    .document-wrapper {
+      max-width: 900px;
+      margin: 32px auto 64px auto;
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+
+    /* Cover Page */
+    .cover-page {
+      min-height: 1020px;
+      padding: 64px 64px 56px 64px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cover-accent-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 8px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 65%, #0ea5e9 100%);
+    }
+
+    .cover-top-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 48px;
+    }
+
+    .school-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid #bfdbfe;
+    }
+
+    .doc-type-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .cover-hero {
+      margin: 24px 0 40px 0;
+    }
+
+    .cover-eyebrow {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--primary-light);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+
+    .cover-title {
+      font-size: 3.1rem;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+
+    .cover-subtitle {
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 660px;
+    }
+
+    .cover-toc {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin: 28px 0 36px 0;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+    }
+
+    .cover-toc-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .toc-list {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .toc-item {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      font-size: 0.96rem;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .toc-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--primary-light);
+      background: var(--primary-soft);
+      padding: 2px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .toc-desc {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 0.88rem;
+    }
+
+    .cover-footer-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px 28px;
+      padding-top: 24px;
+      border-top: 2px solid var(--border);
+    }
+
+    .meta-block-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .meta-block-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    /* Main Content Container */
+    .content {
+      padding: 52px 64px 64px 64px;
+    }
+
+    section {
+      margin-bottom: 48px;
+    }
+
+    section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--primary-soft);
+    }
+
+    .section-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: var(--white);
+      font-weight: 800;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    h2 {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+    }
+
+    h3 {
+      font-size: 1.14rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-top: 26px;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    h4 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin-bottom: 14px;
+      text-align: justify;
+      hyphens: auto;
+    }
+
+    strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84em;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 5px;
+      border: 1px solid #e2e8f0;
+    }
+
+    a {
+      color: var(--primary-light);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* KPI Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin: 24px 0 12px 0;
+      break-inside: avoid;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--primary-light);
+      border-radius: var(--radius-sm);
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .kpi-card.kpi-emerald {
+      border-top-color: var(--emerald);
+    }
+
+    .kpi-value {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.15;
+      margin-bottom: 4px;
+    }
+
+    .kpi-label {
+      font-size: 0.76rem;
+      color: var(--muted);
+      line-height: 1.3;
+      font-weight: 500;
+    }
+
+    /* Callouts & Boxes */
+    .callout {
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      margin: 22px 0;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      break-inside: avoid;
+    }
+
+    .callout p:last-child {
+      margin-bottom: 0;
+    }
+
+    .callout-info {
+      background: var(--primary-soft);
+      border-color: #bfdbfe;
+      border-left: 4px solid var(--primary-light);
+    }
+
+    .callout-note {
+      background: var(--amber-soft);
+      border-color: var(--amber-border);
+      border-left: 4px solid var(--amber);
+      font-size: 0.93rem;
+      color: #78350f;
+    }
+
+    .callout-rgpd {
+      background: var(--emerald-soft);
+      border: 1px solid var(--emerald-border);
+      border-left: 5px solid var(--emerald);
+      padding: 22px 26px;
+    }
+
+    .callout-rgpd-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: var(--emerald);
+      margin-bottom: 12px;
+    }
+
+    /* Styled Lists */
+    ul.styled-list {
+      margin: 12px 0 18px 0;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    ul.styled-list li {
+      position: relative;
+      padding-left: 22px;
+      margin-bottom: 10px;
+      text-align: justify;
+    }
+
+    ul.styled-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 9px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary-light);
+    }
+
+    /* MLD Compact Box */
+    .mld-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px 22px;
+      margin: 18px 0;
+      font-size: 0.84rem;
+      line-height: 1.65;
+      break-inside: avoid;
+    }
+
+    .mld-box h4 {
+      margin-top: 0;
+    }
+
+    .mld-box ul {
+      list-style: none;
+      display: grid;
+      gap: 6px;
+    }
+
+    .mld-table-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .mld-pk {
+      text-decoration: underline;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .mld-fk {
+      font-style: italic;
+      color: var(--primary-light);
+    }
+
+    /* Diagram Container */
+    .diagram-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 18px;
+      margin: 22px 0 26px 0;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+      break-inside: avoid;
+    }
+
+    .diagram-caption {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    .mermaid svg {
+      max-width: 100%;
+      height: auto !important;
+    }
+
+    /* Tables */
+    .table-wrap {
+      margin: 20px 0 24px 0;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      break-inside: avoid;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    thead {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 14px;
+      font-weight: 600;
+      font-size: 0.84rem;
+      letter-spacing: 0.02em;
+    }
+
+    td {
+      padding: 11px 14px;
+      border-top: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .badge-ok {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      font-weight: 600;
+      font-size: 0.78rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .badge-lock {
+      display: inline-block;
+      background: #fee2e2;
+      color: #991b1b;
+      font-weight: 600;
+      font-size: 0.78rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    /* Prototype QR Box */
+    .prototype-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+      color: var(--white);
+      border-radius: var(--radius);
+      padding: 26px 30px;
+      margin: 26px 0;
+      break-inside: avoid;
+    }
+
+    .prototype-text h3 {
+      color: var(--white);
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 1.2rem;
+    }
+
+    .prototype-text p {
+      color: #dbeafe;
+      font-size: 0.92rem;
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .prototype-link-pill {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.16);
+      color: var(--white);
+      border: 1px solid rgba(255, 255, 255, 0.32);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84rem;
+      word-break: break-all;
+    }
+
+    .prototype-link-pill:hover {
+      background: rgba(255, 255, 255, 0.25);
+      text-decoration: none;
+    }
+
+    .qr-wrapper {
+      background: var(--white);
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    }
+
+    #qrcode {
+      width: 116px;
+      height: 116px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-caption {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 6px;
+    }
+
+    /* Next Steps Cards */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+      break-inside: avoid;
+    }
+
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px 16px;
+    }
+
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      color: var(--primary-light);
+      font-weight: 800;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+    }
+
+    .step-title {
+      font-weight: 700;
+      color: var(--ink);
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .step-desc {
+      font-size: 0.86rem;
+      color: var(--muted);
+      line-height: 1.5;
+      text-align: left;
+      margin-bottom: 0;
+    }
+
+    /* Document Footer */
+    .doc-footer {
+      margin-top: 44px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* Page Breaks & Print Rules */
+    .page-break {
+      page-break-before: always;
+      break-before: page;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 15mm 14mm 16mm 14mm;
+    }
+
+    @media print {
+      body {
+        background: var(--white);
+        font-size: 13.5px;
+      }
+
+      .toolbar {
+        display: none !important;
+      }
+
+      .document-wrapper {
+        max-width: 100%;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .cover-page {
+        min-height: 262mm;
+        padding: 18mm 12mm 14mm 12mm;
+        border-bottom: none;
+        page-break-after: always;
+        break-after: page;
+      }
+
+      .content {
+        padding: 4mm 6mm 6mm 6mm;
+      }
+
+      section {
+        margin-bottom: 28px;
+      }
+
+      .diagram-card {
+        box-shadow: none;
+        padding: 14px 12px;
+      }
+    }
+
+    @media (max-width: 720px) {
+
+      .cover-page,
+      .content {
+        padding: 32px 24px;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .steps-grid,
+      .cover-footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .prototype-card {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .prototype-text p {
+        text-align: center;
+      }
+
+      .toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Barre flottante d'export PDF -->
+  <div class="toolbar no-print">
+    <div class="toolbar-info">
+      <span class="toolbar-badge">PRÊT POUR PDF</span>
+      <span class="toolbar-tip">Cliquez sur « Enregistrer en PDF » puis activez l'option <strong>Graphiques
+          d'arrière-plan</strong> dans la fenêtre d'impression.</span>
+    </div>
+    <button class="btn-print" onclick="window.print()">
+      🖨️ Enregistrer en PDF / Imprimer
+    </button>
+  </div>
+
+  <div class="document-wrapper">
+
+    <!-- ==================== PAGE DE GARDE ==================== -->
+    <header class="cover-page">
+      <div class="cover-accent-bar"></div>
+
+      <div>
+        <div class="cover-top-meta">
+          <span class="school-pill">🏫 École élémentaire Albert Camus Pasteur — Meudon</span>
+          <span class="doc-type-label">Dossier Projet &amp; Spécifications</span>
+        </div>
+
+        <div class="cover-hero">
+          <div class="cover-eyebrow">Bibliothèque Centre Documentaire (BCD)</div>
+          <h1 class="cover-title">BCD Express</h1>
+          <p class="cover-subtitle">
+            Présentation fonctionnelle de l'application, architecture technique et proposition d'évolution vers une
+            version Web &amp; Mobile respectueuse du RGPD.
+          </p>
+        </div>
+
+        <div class="cover-toc">
+          <div class="cover-toc-title">Sommaire du document</div>
+          <ul class="toc-list">
+            <li class="toc-item">
+              <span class="toc-num">01</span>
+              <span>Présentation du projet <span class="toc-desc">— Enjeux, contexte et chiffres clés</span></span>
+            </li>
+            <li class="toc-item">
+              <span class="toc-num">02</span>
+              <span>Découverte de l'application <span class="toc-desc">— Les six modules au service du
+                  quotidien</span></span>
+            </li>
+            <li class="toc-item">
+              <span class="toc-num">03</span>
+              <span>Architecture technique &amp; données <span class="toc-desc">— MVC, UML, base SQLite (9 tables) et
+                  pérennité</span></span>
+            </li>
+            <li class="toc-item">
+              <span class="toc-num">04</span>
+              <span>Proposition d'évolution Web &amp; Mobile <span class="toc-desc">— Catalogue en ligne, douchette
+                  smartphone et RGPD</span></span>
+            </li>
+            <li class="toc-item">
+              <span class="toc-num">05</span>
+              <span>Conclusion et prochaines étapes <span class="toc-desc">— Test du prototype et
+                  perspectives</span></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cover-footer-grid">
+        <div>
+          <div class="meta-block-label">Réalisé par</div>
+          <div class="meta-block-value">Jean-Christophe Artinian</div>
+        </div>
+        <div>
+          <div class="meta-block-label">Cadre du projet</div>
+          <div class="meta-block-value">Mission de Service Civique (DSDEN 92)</div>
+        </div>
+        <div>
+          <div class="meta-block-label">Destinataires</div>
+          <div class="meta-block-value">Direction et Équipe Enseignante</div>
+        </div>
+        <div>
+          <div class="meta-block-label">Date</div>
+          <div class="meta-block-value">Novembre 2026</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==================== CORPS DU DOCUMENT ==================== -->
+    <main class="content">
+
+      <!-- SECTION 1 -->
+      <section id="section-1">
+        <div class="section-header">
+          <span class="section-number">1</span>
+          <h2>Présentation du projet : moderniser la BCD</h2>
+        </div>
+
+        <p>
+          <strong>BCD Express</strong> est une application de bureau développée dans le cadre d'une mission de
+          <strong>Service Civique</strong> à l'école élémentaire <strong>Albert Camus Pasteur (Meudon)</strong> pour
+          gérer la Bibliothèque Centre Documentaire au quotidien.
+        </p>
+        <p>
+          L'école avait besoin d'un outil rapide, simple à prendre en main et gratuit pour remplacer les suivis manuels
+          et les tableurs fragiles, sans alourdir le travail de l'équipe enseignante ni des bénévoles. L'application
+          automatise les tâches répétitives (recherche des fiches de livres, classement par niveau, suivi des retards,
+          gestion des mallettes thématiques et impression d'étiquettes), ce qui libère du temps pour accompagner les
+          élèves dans la lecture.
+        </p>
+        <p>
+          Ce dossier détaille les fonctionnalités utilisées au quotidien, l'architecture technique qui assure la
+          fiabilité et la continuité du logiciel après la fin du Service Civique, puis une piste d'évolution vers une
+          version Web et Mobile conforme au RGPD.
+        </p>
+
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-emerald">
+            <div class="kpi-value">0 €</div>
+            <div class="kpi-label">Coût d'achat, licence ou serveur</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-value">6</div>
+            <div class="kpi-label">Modules complets de gestion BCD</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-value">3 API</div>
+            <div class="kpi-label">BNF, Google Books &amp; OpenLibrary</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-value">286</div>
+            <div class="kpi-label">Tests automatisés validés (100 %)</div>
+          </div>
+          <div class="kpi-card kpi-emerald">
+            <div class="kpi-value">100 %</div>
+            <div class="kpi-label">Local &amp; conforme RGPD (CNIL)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2 -->
+      <section id="section-2">
+        <div class="section-header">
+          <span class="section-number">2</span>
+          <h2>Découverte de BCD Express : un outil pensé pour le quotidien</h2>
+        </div>
+
+        <p>
+          L'interface se prend en main en quelques minutes, sans formation informatique. Six espaces couvrent toute
+          l'activité de la bibliothèque, du passage d'une classe jusqu'au bilan de fin d'année.
+        </p>
+
+        <div class="callout callout-info">
+          <p>
+            <strong>Démo interactive en ligne</strong> — Une maquette fonctionnelle est accessible sur ordinateur et
+            smartphone à l'adresse <a href="https://aigletable.github.io/BCD-Albert-Camus/" target="_blank"
+              rel="noopener">https://aigletable.github.io/BCD-Albert-Camus/</a> (QR Code en section 4) pour tester
+            l'ergonomie de ces six onglets.
+          </p>
+        </div>
+
+        <h3>Prêts, retours et suivi de classe : la fluidité avant tout</h3>
+        <p>
+          L'onglet <strong>Prêts &amp; Retours</strong> absorbe le rythme d'un créneau BCD. Quand une classe entière
+          arrive, une boucle de prêt continu enchaîne les 30 élèves en moins de trois minutes : l'utilisateur tape les
+          premières lettres du prénom, bipe le livre à la douchette et entend une confirmation sonore immédiate. Le
+          logiciel applique les règles de la bibliothèque sans intervention manuelle, puisqu'il limite les emprunts à
+          trois par élève et cinq par enseignant, bloque le prêt en cas de retard et n'autorise qu'une seule
+          prolongation.
+        </p>
+        <p>
+          Un scan du code-barres au dos du livre, ou de son numéro d'exemplaire, clôture le retour. Si des ouvrages sont
+          en retard, un bouton exporte la liste au format tableur pour la remettre aux enseignants. Un mode
+          <strong>Panier Enseignant</strong> facilite aussi le prêt groupé d'une série de livres pour une classe, sur 4
+          ou 6 semaines, et génère une fiche récapitulative A4 à glisser dans le bac.
+        </p>
+
+        <h3>Catalogue et Mode Douchette : enrichir le fonds sans saisie manuelle</h3>
+        <p>
+          L'onglet <strong>Inventaire &amp; Livres</strong> rassemble le fonds de la BCD sous forme de fiches illustrées
+          avec couverture, résumé et badges de couleur (genre, thème et niveau scolaire, de la Maternelle au CM2). Les
+          filtres multicritères trouvent aussitôt tous les albums sur l'écologie pour le Cycle 2 ou les romans
+          d'aventure pour les CM1.
+        </p>
+        <p>
+          L'ajout de nouveaux ouvrages passe par le <strong>Mode Douchette en rafale</strong>. Les livres sont bipés à
+          la chaîne pendant que l'application récupère les titres, les auteurs, les couvertures et les classifications,
+          tout en incrémentant le nombre d'exemplaires physiques sans couper le rythme de scan, y compris pour les
+          revues comme <em>J'aime lire</em> ou <em>Astrapi</em>. Pour les livres anciens sans code-barres, une recherche
+          par titre et auteur crée un identifiant interne unique (<code>CAMUS-XXXX</code>) prêt à être étiqueté. Les
+          fiches incomplètes s'affichent en rouge pour rester visibles.
+        </p>
+
+        <h3>Mallettes thématiques et ressources pédagogiques</h3>
+        <p>
+          Pour les projets de classe (harcèlement scolaire, mythologie, écologie, histoire...), l'onglet
+          <strong>Mallettes thématiques</strong> sert à composer des caisses de livres en mêlant titres uniques et
+          séries complètes en plusieurs exemplaires. Chaque mallette apparaît sous forme de carte avec son code, son
+          cycle cible et sa disponibilité, et se prête à une classe en un clic.
+        </p>
+        <p>
+          Chaque livre ou mallette peut recevoir des ressources pédagogiques prêtes à l'emploi : liens vers des fiches
+          Éduscol, questionnaires de lecture ou fichiers PDF stockés en local. Toutes ces pistes pédagogiques
+          s'impriment automatiquement sur la fiche d'inventaire A4 de la mallette remise à l'enseignant.
+        </p>
+
+        <h3>Étiquettes A4, inventaire annuel (Récolement) et gestion des utilisateurs</h3>
+        <p>
+          Trois modules complémentaires prennent en charge la logistique de fond :
+        </p>
+        <ul class="styled-list">
+          <li>
+            <strong>Impression d'étiquettes codes-barres :</strong> l'utilisateur coche les livres à étiqueter, choisit
+            le nombre d'exemplaires et génère en un clic des planches A4 prêtes à imprimer (formats 24, 21 ou 65
+            étiquettes). Un réglage de décalage (<em>offset</em>) réutilise les planches déjà entamées sans perte.
+          </li>
+          <li>
+            <strong>Récolement physique (inventaire des étagères) :</strong> pendant l'inventaire annuel, les rayons
+            sont bipés à la douchette. Une jauge en direct distingue les livres présents, ceux en prêt chez les élèves
+            et les manquants, avant d'exporter le bilan d'inventaire complet.
+          </li>
+          <li>
+            <strong>Utilisateurs, passage d'année et bilan BCD :</strong> les listes d'élèves s'importent en quelques
+            secondes depuis un fichier CSV compatible avec les exports ONDE, et le passage à l'année scolaire suivante
+            fait monter les classes automatiquement tout en archivant les CM2. Un tableau de bord <strong>Bilan &amp;
+              Palmarès</strong> édite une fiche de synthèse imprimable (livres les plus lus, classes les plus lectrices)
+            utilisable en Conseil d'école.
+          </li>
+        </ul>
+      </section>
+
+      <!-- SECTION 3 -->
+      <section id="section-3" class="page-break">
+        <div class="section-header">
+          <span class="section-number">3</span>
+          <h2>Architecture technique, données et fonctionnement interne</h2>
+        </div>
+
+        <p>
+          L'interface reste volontairement sobre, mais repose sur une architecture logicielle modulaire. Ce choix assure
+          la fiabilité au quotidien et permet à un autre développeur ou bénévole de reprendre le code sans difficulté.
+        </p>
+
+        <h3>Le principe MVC appliqué à BCD Express</h3>
+        <p>
+          L'application suit le modèle <strong>MVC (Modèle — Vue — Contrôleur)</strong>, un standard du génie logiciel
+          qui sépare trois responsabilités pour qu'une modification visuelle ne fragilise pas les données :
+        </p>
+        <ul class="styled-list">
+          <li>
+            <strong>La Vue (ce qui s'affiche à l'écran)</strong> regroupe les écrans de l'application
+            (<code>prets.fxml</code>, <code>inventaire.fxml</code>, <code>mallettes.fxml</code>,
+            <code>etiquettes.fxml</code>, <code>utilisateurs.fxml</code>) et les boîtes de dialogue modulaires
+            (douchette, sauvegarde, impression). Elle ne gère que l'affichage, sans aucune règle de calcul.
+          </li>
+          <li>
+            <strong>Le Contrôleur (le chef d'orchestre)</strong> associe un contrôleur à chaque onglet
+            (<code>PretsController</code>, <code>InventaireController</code>, <code>MallettesController</code>,
+            <code>EtiquettesController</code>, <code>UtilisateursController</code>, <code>RecolementController</code>).
+            Quand un enseignant scanne un code-barres ou clique sur « Prêter », le contrôleur capte l'action et appelle
+            la couche métier (<code>EmpruntService</code>, <code>LivreMetadataService</code>,
+            <code>CsvImportService</code>) qui vérifie les règles de la bibliothèque : quotas de 3 livres par élève et 5
+            par enseignant, blocage en cas de retard et renouvellement unique.
+          </li>
+          <li>
+            <strong>Le Modèle et l'accès aux données (la mémoire)</strong> réunissent les entités métier
+            (<code>Livre</code>, <code>Exemplaire</code>, <code>Utilisateur</code>, <code>Emprunt</code>,
+            <code>Mallette</code>) et la couche DAO (<em>Data Access Object</em>). Un gestionnaire unique
+            (<code>DatabaseManager</code>, basé sur le patron Singleton) centralise la connexion vers la base SQLite.
+            Chaque table a son propre DAO qui utilise uniquement des requêtes SQL préparées
+            (<code>PreparedStatement</code>) et des transactions atomiques pour préserver l'intégrité des opérations.
+          </li>
+        </ul>
+
+        <div class="diagram-card">
+          <div class="diagram-caption">
+            <span>Diagramme de classes UML — Architecture DAO, Modèles &amp; Métier</span>
+            <span>Java 21 / SQLite</span>
+          </div>
+          <div class="mermaid">
+            classDiagram
+            direction TB
+
+            class DatabaseManager {
+            -DatabaseManager instance$
+            -Connection connection
+            -DatabaseManager()
+            +getInstance()$ DatabaseManager
+            +getConnection() Connection
+            +initSchema() void
+            }
+
+            class UtilisateurDao {
+            -Connection conn
+            +trouverParNumero(String num) Utilisateur
+            +rechercher(String terme, String classe) List~Utilisateur~
+            +inserer(Utilisateur u) boolean
+            +mettreAJour(Utilisateur u) boolean
+            +supprimer(String num) boolean
+            +listerClasses() List~String~
+            }
+
+            class LivreDao {
+            -Connection conn
+            +trouverParIsbn(String isbn) Livre
+            +rechercher(String q, String genre, String theme) List~Livre~
+            +inserer(Livre l) boolean
+            +mettreAJour(Livre l) boolean
+            +supprimer(String isbn) boolean
+            +deleteBatch(List~String~ isbns) boolean
+            +compterTous() int
+            }
+
+            class ExemplaireDao {
+            -Connection conn
+            +trouverParId(int id) Exemplaire
+            +listerParIsbn(String isbn) List~Exemplaire~
+            +inserer(Exemplaire ex) int
+            +changerStatut(int id, StatutExemplaire s) boolean
+            +mettreAJourRemarque(int id, String rem) boolean
+            +supprimer(int id) boolean
+            +compterDisponibles(String isbn) int
+            }
+
+            class EmpruntDao {
+            -Connection conn
+            +creerEmprunt(String num, int exId, int dureeJours) int
+            +enregistrerRetour(int empruntId) boolean
+            +renouveler(int empruntId, int nbJours) boolean
+            +listerEnCours() List~Emprunt~
+            +listerRetards() List~Emprunt~
+            +listerParUtilisateur(String num) List~Emprunt~
+            +trouverEmpruntActifParExemplaire(int exId) Emprunt
+            }
+
+            class MalletteDao {
+            -Connection conn
+            +trouverParId(int id) Mallette
+            +listerToutes() List~Mallette~
+            +preter(int malletteId, String profNum, LocalDate dateRetour) boolean
+            +enregistrerRetour(int malletteId) boolean
+            +ajouterItem(int malletteId, int exemplaireId) boolean
+            +retirerItem(int malletteId, int exemplaireId) boolean
+            +listerExemplaires(int malletteId) List~Exemplaire~
+            }
+
+            class Utilisateur {
+            -String numero
+            -String nom
+            -String prenom
+            -TypeCompte typeCompte
+            -String classe
+            +getNumero() String
+            +getNomComplet() String
+            +isEnseignant() boolean
+            }
+
+            class Livre {
+            -String isbn
+            -String titre
+            -String auteur
+            -String editeur
+            -String couvertureUrl
+            -String genre
+            -String theme
+            -String niveau
+            -int totalExemplaires
+            -int exemplairesDisponibles
+            +isDisponible() boolean
+            +getCote() String
+            }
+
+            class Exemplaire {
+            -int id
+            -String isbn
+            -StatutExemplaire statut
+            -String dateAjout
+            -String remarque
+            +isDisponible() boolean
+            +setStatut(StatutExemplaire s) void
+            }
+
+            class Emprunt {
+            -int id
+            -String utilisateurNumero
+            -int exemplaireId
+            -LocalDate dateEmprunt
+            -LocalDate dateLimite
+            -LocalDate dateRendu
+            -boolean estRenouvele
+            +isEnCours() boolean
+            +isEnRetard() boolean
+            +getJoursRetard() long
+            }
+
+            class Mallette {
+            -int id
+            -String code
+            -String titre
+            -String theme
+            -String niveau
+            -StatutMallette statut
+            -String emprunteurNumero
+            -LocalDate dateRetourPrevue
+            +isDisponible() boolean
+            +isEnPret() boolean
+            }
+
+            class EmpruntService {
+            -EmpruntDao empruntDao
+            -ExemplaireDao exemplaireDao
+            -UtilisateurDao utilisateurDao
+            +preterLivre(String num, int exId) Emprunt
+            +retournerParExemplaire(int exId) boolean
+            +retournerParIsbn(String isbn) boolean
+            +renouvelerPret(int empruntId) boolean
+            +verifierEligibilite(String num) void
+            }
+
+            DatabaseManager ..> UtilisateurDao : injecte Connection
+            DatabaseManager ..> LivreDao : injecte Connection
+            DatabaseManager ..> ExemplaireDao : injecte Connection
+            DatabaseManager ..> EmpruntDao : injecte Connection
+            DatabaseManager ..> MalletteDao : injecte Connection
+
+            UtilisateurDao ..> Utilisateur : persiste
+            LivreDao ..> Livre : persiste
+            ExemplaireDao ..> Exemplaire : persiste
+            EmpruntDao ..> Emprunt : persiste
+            MalletteDao ..> Mallette : persiste
+
+            Livre "1" *-- "0..*" Exemplaire : possede
+            Utilisateur "1" o-- "0..*" Emprunt : effectue
+            Exemplaire "1" o-- "0..*" Emprunt : concerne
+            Mallette "1" o-- "0..*" Exemplaire : contient
+
+            EmpruntService --> EmpruntDao : requetes
+            EmpruntService --> ExemplaireDao : statuts
+            EmpruntService --> UtilisateurDao : quotas
+          </div>
+        </div>
+
+        <h3 class="page-break">Modélisation de la base de données (9 tables SQLite)</h3>
+        <p>
+          Toutes les données de la bibliothèque tiennent dans un seul fichier local (<code>bcd.db</code>) piloté par
+          SQLite, sans fichiers Excel dispersés ni serveur distant, et l'intégrité référentielle y reste activée en
+          permanence (<code>PRAGMA foreign_keys = ON</code>).
+        </p>
+        <p>
+          La base compte 9 tables reliées entre elles. Son principe central sépare la fiche bibliographique
+          (<code>LIVRES</code>) de la copie physique (<code>EXEMPLAIRES</code>) : une série de 4 albums identiques ne
+          crée qu'une fiche livre, reliée à 4 exemplaires distincts qui ont chacun leur numéro d'inventaire, leur statut
+          (<code>DISPONIBLE</code> ou <code>EMPRUNTE</code>) et leur état matériel. Les campagnes d'inventaire annuel
+          (<code>SESSIONS_INVENTAIRE</code> et <code>INVENTAIRE_LIGNES</code>), les séries thématiques
+          (<code>MALLETTES</code> et <code>MALLETTE_ITEMS</code>) et les fiches d'activités
+          (<code>RESSOURCES_PEDAGOGIQUES</code>) ont aussi leurs propres tables.
+        </p>
+
+        <div class="diagram-card">
+          <div class="diagram-caption">
+            <span>Schéma Relationnel (SR / MLD) — Base de données bcd.db</span>
+            <span>9 tables SQLite</span>
+          </div>
+          <div class="mermaid">
+            erDiagram
+            UTILISATEURS ||--o{ EMPRUNTS : "effectue (1:N)"
+            UTILISATEURS ||--o{ MALLETTES : "emprunte (1:N)"
+            LIVRES ||--|{ EXEMPLAIRES : "possede (1:N)"
+            LIVRES ||--o{ RESSOURCES_PEDAGOGIQUES : "associe (1:N)"
+            EXEMPLAIRES ||--o{ EMPRUNTS : "concerne (1:N)"
+            EXEMPLAIRES ||--o{ MALLETTE_ITEMS : "inclus dans (1:N)"
+            MALLETTES ||--o{ MALLETTE_ITEMS : "regroupe (1:N)"
+            MALLETTES ||--o{ RESSOURCES_PEDAGOGIQUES : "dispose de (1:N)"
+            SESSIONS_INVENTAIRE ||--o{ INVENTAIRE_LIGNES : "comprend (1:N)"
+
+            UTILISATEURS {
+            TEXT numero PK "ex: EL-004, ENS-001"
+            TEXT nom "Nom de famille"
+            TEXT prenom "Prenom"
+            TEXT type_compte "ELEVE ou ENSEIGNANT"
+            TEXT classe "CP, CE1, CM2-B..."
+            }
+
+            LIVRES {
+            TEXT isbn PK "EAN-13 ou CAMUS-XXXX"
+            TEXT titre "Titre de l'ouvrage"
+            TEXT auteur "Auteur(s)"
+            TEXT editeur "Editeur jeunesse"
+            TEXT couverture_url "URL jaquette HD"
+            TEXT genre "Roman, Album, BD, Doc..."
+            TEXT theme "Histoire, Ecologie..."
+            TEXT niveau "Cycle 1, Cycle 2, Cycle 3"
+            TEXT description "Resume du livre"
+            }
+
+            EXEMPLAIRES {
+            INTEGER id PK "N physique d'inventaire"
+            TEXT isbn FK "Reference au livre"
+            TEXT statut "DISPONIBLE ou EMPRUNTE"
+            TEXT date_ajout "Date creation (ISO)"
+            TEXT remarque "Etat, cote, rayon"
+            }
+
+            EMPRUNTS {
+            INTEGER id PK "Identifiant unique"
+            TEXT utilisateur_numero FK "Reference utilisateur"
+            INTEGER exemplaire_id FK "Reference exemplaire"
+            TEXT date_emprunt "Date de sortie"
+            TEXT date_limite "Echeance retour"
+            TEXT date_rendu "NULL si en cours"
+            INTEGER est_renouvele "0 ou 1"
+            }
+
+            MALLETTES {
+            INTEGER id PK "ID technique"
+            TEXT code UK "ex: MAL-004"
+            TEXT titre "Titre de la mallette"
+            TEXT theme "Theme pedagogique"
+            TEXT niveau "Tous niveaux, Cycle 3..."
+            TEXT description "Objectifs du projet"
+            TEXT statut "DISPONIBLE ou EMPRUNTE"
+            TEXT date_creation "Date ISO"
+            TEXT emprunteur_numero FK "Enseignant emprunteur"
+            TEXT date_emprunt "Date pret"
+            TEXT date_retour_prevue "Echeance"
+            }
+
+            MALLETTE_ITEMS {
+            INTEGER id PK "Identifiant de liaison"
+            INTEGER mallette_id FK "Mallette parente"
+            INTEGER exemplaire_id FK "Exemplaire physique"
+            TEXT date_ajout "Date d'integration"
+            }
+
+            RESSOURCES_PEDAGOGIQUES {
+            INTEGER id PK "Identifiant"
+            TEXT isbn FK "Livre associe"
+            INTEGER mallette_id FK "Mallette associee"
+            TEXT titre "Titre de la fiche"
+            TEXT type "LIEN_WEB ou PDF ou DOC"
+            TEXT url_ou_chemin "Lien Eduscol ou fichier"
+            TEXT description "Pistes pedagogiques"
+            TEXT date_ajout "Date ISO"
+            }
+
+            SESSIONS_INVENTAIRE {
+            INTEGER id PK "Numero de campagne"
+            TEXT date_debut "Date de lancement"
+            TEXT date_fin "Date de cloture"
+            TEXT perimetre_type "GLOBAL ou RAYON"
+            TEXT statut "ACTIVE ou CLOTUREE"
+            INTEGER total_attendus "Nombre de livres"
+            INTEGER total_presents "Presents scannes"
+            INTEGER total_prets "En pret justifie"
+            INTEGER total_manquants "Ecarts constates"
+            }
+
+            INVENTAIRE_LIGNES {
+            INTEGER id PK "Ligne de pointage"
+            INTEGER session_id FK "Campagne parente"
+            INTEGER exemplaire_id "Exemplaire bipe"
+            TEXT statut_pointage "PRESENT ou MANQUANT"
+            TEXT motif_ecart "Justification"
+            TEXT date_scan "Horodatage scan"
+            }
+          </div>
+        </div>
+
+        <div class="mld-box">
+          <h4>Modèle Logique de Données (Notation textuelle normalisée)</h4>
+          <ul>
+            <li><span class="mld-table-name">UTILISATEURS</span> (<span class="mld-pk">numero</span>, nom, prenom,
+              type_compte, classe)</li>
+            <li><span class="mld-table-name">LIVRES</span> (<span class="mld-pk">isbn</span>, titre, auteur, editeur,
+              couverture_url, genre, theme, niveau, description)</li>
+            <li><span class="mld-table-name">EXEMPLAIRES</span> (<span class="mld-pk">id</span>, <span
+                class="mld-fk">#isbn</span>, statut, date_ajout, remarque)</li>
+            <li><span class="mld-table-name">EMPRUNTS</span> (<span class="mld-pk">id</span>, <span
+                class="mld-fk">#utilisateur_numero</span>, <span class="mld-fk">#exemplaire_id</span>, date_emprunt,
+              date_limite, date_rendu, est_renouvele)</li>
+            <li><span class="mld-table-name">MALLETTES</span> (<span class="mld-pk">id</span>, code, titre, theme,
+              niveau, description, statut, date_creation, <span class="mld-fk">#emprunteur_numero</span>, date_emprunt,
+              date_retour_prevue)</li>
+            <li><span class="mld-table-name">MALLETTE_ITEMS</span> (<span class="mld-pk">id</span>, <span
+                class="mld-fk">#mallette_id</span>, <span class="mld-fk">#exemplaire_id</span>, date_ajout)</li>
+            <li><span class="mld-table-name">RESSOURCES_PEDAGOGIQUES</span> (<span class="mld-pk">id</span>, <span
+                class="mld-fk">#isbn</span>, <span class="mld-fk">#mallette_id</span>, titre, type, url_ou_chemin,
+              description, date_ajout)</li>
+            <li><span class="mld-table-name">SESSIONS_INVENTAIRE</span> (<span class="mld-pk">id</span>, date_debut,
+              date_fin, perimetre_type, statut, total_attendus, total_presents, total_prets, total_manquants)</li>
+            <li><span class="mld-table-name">INVENTAIRE_LIGNES</span> (<span class="mld-pk">id</span>, <span
+                class="mld-fk">#session_id</span>, exemplaire_id, statut_pointage, motif_ecart, date_scan)</li>
+          </ul>
+        </div>
+
+        <h3>Fonctionnement des moteurs internes</h3>
+        <p>
+          Plusieurs moteurs automatisent les tâches longues. Dès qu'un code-barres est scanné,
+          <code>LivreMetadataService</code> nettoie l'ISBN puis interroge en cascade trois sources bibliographiques
+          publiques via leurs <strong>API</strong> : la <strong>Bibliothèque Nationale de France (BNF)</strong> en
+          priorité (notices XML Unimarc et Dublin Core), puis <strong>Google Books</strong> (API REST JSON) et
+          <strong>OpenLibrary</strong>. En parallèle, un filtre vérifie la qualité des couvertures (en écartant les
+          images vides de moins de 2 Ko sur Amazon CDN, Epagine et OpenLibrary HD) et génère une couverture vectorielle
+          stylisée si aucune image n'est trouvée. À partir des notices récupérées (indices Dewey, vedettes RAMEAU,
+          tranches d'âge), le logiciel classe chaque ouvrage par <strong>genre</strong>, <strong>thème</strong> et
+          <strong>niveau scolaire</strong> sans saisie manuelle.
+        </p>
+        <p>
+          Le module d'étiquetage produit quant à lui des codes-barres vectoriels au standard <strong>Code 39</strong>,
+          calibrés au millimètre pour les planches A4 du commerce (24, 21 ou 65 étiquettes), avec gestion du décalage
+          (<em>offset</em>) pour finir les planches entamées.
+        </p>
+
+        <h3>Fiabilité, maintenance et pérennité après le Service Civique</h3>
+        <p>
+          BCD Express fonctionne sans budget récurrent et reste simple à maintenir. Une suite de <strong>286 tests
+            fonctionnels automatisés</strong> (<code>SmokeTest.java</code>, validés à 100 %) vérifie les règles métier,
+          les transactions SQL, les imports CSV et la gestion des mallettes à chaque modification du code.
+        </p>
+        <p>
+          Le logiciel tourne hors-ligne, sans abonnement ni mise à jour obligatoire, sur <strong>Windows</strong> comme
+          sur <strong>macOS</strong> (coût : 0 €). Un bouton de sauvegarde en un clic copie le fichier
+          <code>bcd.db</code> sur une clé USB avant chaque période de vacances scolaires. Si le poste de la BCD tombe en
+          panne, recopier ce fichier sur un autre ordinateur restaure toute la bibliothèque en trente secondes.
+        </p>
+
+        <h4>Fiche d'identité technique du logiciel</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Composant</th>
+                <th>Technologie / Norme</th>
+                <th>Version</th>
+                <th>Rôle dans l'application</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Langage</strong></td>
+                <td>Java (LTS)</td>
+                <td><code>21 LTS</code></td>
+                <td>Cœur applicatif et stabilité long terme</td>
+              </tr>
+              <tr>
+                <td><strong>Interface graphique</strong></td>
+                <td>JavaFX &amp; AtlantaFX</td>
+                <td><code>21.0.5 / 2.0.1</code></td>
+                <td>UI moderne (Cupertino / Primer), multiplateforme</td>
+              </tr>
+              <tr>
+                <td><strong>Base de données</strong></td>
+                <td>SQLite (JDBC Xerial)</td>
+                <td><code>3.47.1.0</code></td>
+                <td>Stockage relationnel local (9 tables), zéro serveur</td>
+              </tr>
+              <tr>
+                <td><strong>APIs bibliographiques</strong></td>
+                <td>BNF, Google Books, OpenLibrary</td>
+                <td><code>REST / XML / JSON</code></td>
+                <td>Enrichissement automatique par ISBN et couvertures</td>
+              </tr>
+              <tr>
+                <td><strong>Assemblage</strong></td>
+                <td>Apache Maven + Shade Plugin</td>
+                <td><code>Fat JAR (~22 Mo)</code></td>
+                <td>Exécutable autonome sans serveur à administrer</td>
+              </tr>
+              <tr>
+                <td><strong>Qualité logicielle</strong></td>
+                <td>Suite <code>SmokeTest</code></td>
+                <td><span class="badge-ok">286 tests ✔</span></td>
+                <td>Validation fonctionnelle et non-régression</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 4 -->
+      <section id="section-4" class="page-break">
+        <div class="section-header">
+          <span class="section-number">4</span>
+          <h2>Proposition d'évolution : Vers une version Web &amp; Mobile</h2>
+        </div>
+
+        <div class="callout callout-note">
+          <p>
+            <strong>Note de cadrage</strong> — Cette partie présente une piste d'évolution encore en cours de réflexion.
+            Elle n'est pas figée techniquement et a avant tout pour but de recueillir l'avis et les besoins de la
+            direction et de l'équipe enseignante.
+          </p>
+        </div>
+
+        <h3>Prolonger BCD Express au-delà du bureau de la bibliothèque</h3>
+        <p>
+          Aujourd'hui, BCD Express fonctionne de façon autonome sur l'ordinateur de la BCD, mais son accès reste limité
+          à ce poste unique. L'évolution envisagée ajoute une interface en ligne, accessible depuis un ordinateur de
+          classe, une tablette ou un smartphone, tout en gardant le niveau de sécurité actuel.
+        </p>
+        <p>
+          Cette ouverture reposerait sur deux niveaux d'accès. Un espace public en lecture seule permettrait aux
+          enseignants, aux élèves et aux familles de consulter le catalogue, de parcourir les mallettes thématiques et
+          de vérifier la disponibilité d'un livre. Quand un ouvrage est emprunté, seule sa date de retour prévue
+          s'afficherait, jamais le nom de l'emprunteur. Cet espace présenterait aussi des statistiques collectives
+          (nombre total de livres lus dans l'année, palmarès des classes les plus lectrices) pour encourager la lecture
+          dans l'école. En parallèle, un espace protégé par mot de passe serait réservé à l'équipe enseignante pour les
+          actions de gestion : ajouter un livre, préparer une mallette ou utiliser le scanner mobile.
+        </p>
+
+        <h3>Transformer le smartphone en douchette sans fil, à coût zéro</h3>
+        <p>
+          L'appareil photo d'un smartphone pourrait servir de douchette optique sans fil. Un enseignant ou un bénévole
+          scannerait les livres directement devant les étagères pour enregistrer un retour, ajouter un titre ou faire
+          l'inventaire annuel, sans acheter de matériel ni déplacer des piles d'ouvrages jusqu'au bureau.
+        </p>
+        <p>
+          Techniquement, le téléphone agirait comme une télécommande qui lit le code-barres et envoie ce seul numéro à
+          l'ordinateur de la BCD, lequel garderait toute la logique d'enregistrement en local.
+        </p>
+
+        <h3>Une architecture hybride et un hébergement souple</h3>
+        <p>
+          L'ordinateur de la BCD resterait le coffre-fort de l'école. À l'ouverture et à la fermeture de l'application,
+          une synchronisation sélective mettrait à jour la version en ligne en excluant la table des utilisateurs.
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Catégorie de donnée</th>
+                <th>Ordinateur de la BCD (Local)</th>
+                <th>Version Web &amp; Mobile (En ligne)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Catalogue, couvertures &amp; résumés</strong></td>
+                <td>Stocké et édité ici</td>
+                <td><span class="badge-ok">Synchronisé</span> Lecture &amp; recherche</td>
+              </tr>
+              <tr>
+                <td><strong>Mallettes thématiques &amp; ressources</strong></td>
+                <td>Stocké et édité ici</td>
+                <td><span class="badge-ok">Synchronisé</span> Consultation libre</td>
+              </tr>
+              <tr>
+                <td><strong>Statut des livres &amp; dates de retour</strong></td>
+                <td>Stocké ici</td>
+                <td><span class="badge-ok">Synchronisé</span> <strong>Sans aucun nom</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Statistiques collectives (école / classes)</strong></td>
+                <td>Calculé ici</td>
+                <td><span class="badge-ok">Agrégé</span> Palmarès anonyme</td>
+              </tr>
+              <tr>
+                <td><strong>Noms, prénoms &amp; historique des élèves</strong></td>
+                <td><span class="badge-lock">🔒 100 % confiné sur ce poste</span></td>
+                <td><span class="badge-lock">❌ Jamais transmis ni stocké en ligne</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Les serveurs institutionnels imposent souvent des restrictions réseau qui bloquent les appels automatiques
+          vers les bases bibliographiques externes (BNF, Google Books, OpenLibrary). Deux options gratuites sont donc
+          envisagées : utiliser le palier gratuit d'un hébergeur privé européen (avec connexion chiffrée HTTPS) pour
+          publier la vitrine anonymisée, ou faire du poste de la BCD un mini-serveur local sur le réseau de l'école s'il
+          peut rester allumé. Dans les deux cas, l'évolution reste gratuite pour l'établissement.
+        </p>
+
+        <div class="callout callout-rgpd">
+          <div class="callout-rgpd-title">
+            <span>🛡️</span>
+            <span>Encart technique : Garantie RGPD et <em>Privacy by Design</em></span>
+          </div>
+          <p>
+            Conçu pour un cadre scolaire qui traite des données de mineurs, BCD Express applique les préconisations de
+            la <strong>CNIL</strong> dès sa conception. La base locale <code>bcd.db</code> ne conserve que le strict
+            minimum nécessaire au prêt : nom, prénom, classe et identifiant interne de type <code>EL-004</code>, sans
+            adresse, téléphone, e-mail ni photo. Lors des recherches de livres, seul le code ISBN public est envoyé aux
+            bases bibliographiques, sans aucune donnée d'élève.
+          </p>
+          <p>
+            La version en ligne garderait ce niveau de sécurité, parce que la synchronisation exclut techniquement la
+            table des utilisateurs pour qu'aucun nom d'enfant ne quitte l'école. Si un hébergement cloud est choisi, il
+            reposera obligatoirement sur des serveurs situés dans l'<strong>Union Européenne</strong>, sécurisés en
+            <strong>HTTPS</strong>, avec une authentification pour les fonctions de gestion. L'application assure aussi
+            la sécurité du code (requêtes SQL préparées contre les injections, intégrité stricte de la base) et les
+            droits des familles : accès, rectification, effacement immédiat et gestion du cycle de vie à chaque rentrée
+            via la montée de classe ONDE et l'archivage des CM2.
+          </p>
+        </div>
+
+        <!-- Prototype Interactive Card + QR Code -->
+        <div class="prototype-card">
+          <div class="prototype-text">
+            <h3>🔗 Découvrir le prototype interactif dès maintenant</h3>
+            <p>
+              Une première maquette web interactive est déjà en ligne pour permettre à la direction et à l'équipe
+              enseignante de tester l'ergonomie de BCD Express sur ordinateur ou smartphone.
+            </p>
+            <a class="prototype-link-pill" href="https://aigletable.github.io/BCD-Albert-Camus/" target="_blank"
+              rel="noopener">
+              https://aigletable.github.io/BCD-Albert-Camus/
+            </a>
+          </div>
+          <div class="qr-wrapper">
+            <div id="qrcode"></div>
+            <div class="qr-caption">Scanner pour tester</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5 -->
+      <section id="section-5">
+        <div class="section-header">
+          <span class="section-number">5</span>
+          <h2>Conclusion et prochaines étapes</h2>
+        </div>
+
+        <p>
+          <strong>BCD Express</strong> est opérationnel et autonome. Sa conception locale simplifie l'usage quotidien,
+          protège les données au regard du RGPD et limite la maintenance au minimum pour continuer à servir l'école
+          Albert Camus Pasteur après le Service Civique.
+        </p>
+        <p>
+          L'évolution vers une <strong>version Web et Mobile anonymisée</strong> ouvrirait le catalogue à toutes les
+          classes et aux familles, tout en transformant des smartphones en douchettes sans fil sans coût supplémentaire.
+        </p>
+
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-title">Tester le prototype</div>
+            <p class="step-desc">
+              Parcourir librement la maquette interactive en ligne sur ordinateur ou smartphone pour se familiariser
+              avec l'interface.
+            </p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-title">Recueillir les besoins</div>
+            <p class="step-desc">
+              Identifier avec l'équipe les usages en ligne prioritaires : catalogue en classe, statistiques de lecture,
+              mallettes ou scan mobile.
+            </p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-title">Valider le déploiement</div>
+            <p class="step-desc">
+              Choisir avec la direction le mode d'hébergement retenu (cloud européen gratuit anonymisé ou poste local
+              BCD).
+            </p>
+          </div>
+        </div>
+
+        <footer class="doc-footer">
+          <span>BCD Express — École élémentaire Albert Camus Pasteur (Meudon)</span>
+          <span>Jean-Christophe Artinian · Novembre 2026</span>
+        </footer>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Mermaid.js pour le rendu vectoriel HD des diagrammes UML et SR -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <!-- QRCode.js pour générer un QR Code vectoriel net vers le prototype -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#eff6ff',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#2563eb',
+        lineColor: '#475569',
+        secondaryColor: '#f8fafc',
+        tertiaryColor: '#ecfdf5',
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        fontSize: '12px'
+      },
+      er: {
+        useMaxWidth: true,
+        layoutDirection: 'TB'
+      },
+      class: {
+        useMaxWidth: true
+      }
+    });
+
+    new QRCode(document.getElementById("qrcode"), {
+      text: "https://aigletable.github.io/BCD-Albert-Camus/",
+      width: 112,
+      height: 112,
+      colorDark: "#1e3a5f",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  </script>
+</body>
+
+</html>
