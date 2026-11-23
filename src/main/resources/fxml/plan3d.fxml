@@ -97,7 +97,8 @@
                     <ResizableCanvas fx:id="mapCanvas"/>
 
                     <!-- Barre d'outils flottante en haut à gauche (1:1 Prototype Web) -->
-                    <HBox spacing="6" alignment="CENTER_LEFT" StackPane.alignment="TOP_LEFT" styleClass="map3d-canvas-toolbar">
+                    <HBox spacing="6" alignment="CENTER_LEFT" StackPane.alignment="TOP_LEFT" styleClass="map3d-canvas-toolbar"
+                          maxHeight="-Infinity" maxWidth="-Infinity">
                         <StackPane.margin>
                             <Insets top="12" left="12"/>
                         </StackPane.margin>
@@ -114,7 +115,8 @@
                     </HBox>
 
                     <!-- Boussole d'orientation interactive en haut à droite (1:1 Prototype Web) -->
-                    <HBox spacing="8" alignment="CENTER" StackPane.alignment="TOP_RIGHT" styleClass="map3d-compass-box">
+                    <HBox spacing="8" alignment="CENTER" StackPane.alignment="TOP_RIGHT" styleClass="map3d-compass-box"
+                          maxHeight="-Infinity" maxWidth="-Infinity">
                         <StackPane.margin>
                             <Insets top="12" right="12"/>
                         </StackPane.margin>
@@ -124,6 +126,7 @@
 
                     <!-- Info-bulle flottante au survol -->
                     <VBox fx:id="tooltipBox" visible="false" managed="false" StackPane.alignment="TOP_LEFT"
+                          maxHeight="-Infinity" maxWidth="-Infinity" mouseTransparent="true"
                           styleClass="map3d-floating-tooltip">
                         <Label fx:id="tooltipTitle" text="" styleClass="map3d-tooltip-title"/>
                         <Label fx:id="tooltipSub" text="" styleClass="map3d-tooltip-sub"/>
@@ -131,25 +134,26 @@
                     </VBox>
 
                     <!-- Légende et aide de navigation en bas (1:1 Prototype Web) -->
-                    <HBox spacing="14" alignment="CENTER_LEFT" StackPane.alignment="BOTTOM_CENTER" styleClass="map3d-canvas-hint">
+                    <HBox spacing="14" alignment="CENTER_LEFT" StackPane.alignment="BOTTOM_CENTER" styleClass="map3d-canvas-hint"
+                          maxHeight="-Infinity" prefHeight="40" minHeight="40" fillHeight="false">
                         <StackPane.margin>
                             <Insets bottom="12" left="12" right="12"/>
                         </StackPane.margin>
-                        <HBox spacing="14" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
-                            <HBox spacing="6" alignment="CENTER_LEFT">
-                                <Region styleClass="map3d-swatch-blue"/>
+                        <HBox spacing="14" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" fillHeight="false">
+                            <HBox spacing="6" alignment="CENTER_LEFT" fillHeight="false">
+                                <Region styleClass="map3d-swatch-blue" minWidth="12" minHeight="12" prefWidth="12" prefHeight="12" maxWidth="12" maxHeight="12"/>
                                 <Label text="Bleu : Romans &amp; Séries" styleClass="map3d-hint-text"/>
                             </HBox>
-                            <HBox spacing="6" alignment="CENTER_LEFT">
-                                <Region styleClass="map3d-swatch-green"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT" fillHeight="false">
+                                <Region styleClass="map3d-swatch-green" minWidth="12" minHeight="12" prefWidth="12" prefHeight="12" maxWidth="12" maxHeight="12"/>
                                 <Label text="Vert : Documentaires &amp; Sciences" styleClass="map3d-hint-text"/>
                             </HBox>
-                            <HBox spacing="6" alignment="CENTER_LEFT">
-                                <Region styleClass="map3d-swatch-red"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT" fillHeight="false">
+                                <Region styleClass="map3d-swatch-red" minWidth="12" minHeight="12" prefWidth="12" prefHeight="12" maxWidth="12" maxHeight="12"/>
                                 <Label text="Rouge : Bacs BD, CP/CE1 &amp; Nouveautés" styleClass="map3d-hint-text"/>
                             </HBox>
-                            <HBox spacing="6" alignment="CENTER_LEFT">
-                                <Region styleClass="map3d-swatch-orange"/>
+                            <HBox spacing="6" alignment="CENTER_LEFT" fillHeight="false">
+                                <Region styleClass="map3d-swatch-orange" minWidth="12" minHeight="12" prefWidth="12" prefHeight="12" maxWidth="12" maxHeight="12"/>
                                 <Label text="Orange : Albums &amp; Revues jeunesse" styleClass="map3d-hint-text"/>
                             </HBox>
                         </HBox>
@@ -159,7 +163,7 @@
             </VBox>
 
             <!-- ── Panneau Inspecteur Latéral (Fiche détaillée meuble) ── -->
-            <VBox fx:id="sidebarCard" prefWidth="380" minWidth="340" maxWidth="420" styleClass="map3d-sidebar-card">
+            <VBox fx:id="sidebarCard" prefWidth="350" minWidth="280" maxWidth="380" styleClass="map3d-sidebar-card">
                 <ScrollPane fitToWidth="true" vbarPolicy="AS_NEEDED" hbarPolicy="NEVER" VBox.vgrow="ALWAYS"
                             style="-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0;">
                     <VBox fx:id="sidebarContent" spacing="12" style="-fx-padding: 16px;">

@@ -87,15 +87,15 @@ public class Plan3DController {
     private final LivreDao livreDao = new LivreDao();
 
     /** Angles de caméra 3D (360° yaw, pitch, zoom) - Calqués 1:1 sur le prototype web */
-    private double cameraYaw = -0.65;      // ~ -37° (vue Sud-Ouest classique)
-    private double cameraPitch = 0.62;    // ~ 35.5° d'inclinaison
-    private double cameraZoom = 1.05;
+    private double cameraYaw = -Math.PI / 4.0;      // -45° (vue isométrique classique exacte)
+    private double cameraPitch = Math.PI / 5.2;    // ~ 34.6° d'inclinaison exacte
+    private double cameraZoom = 1.0;
     private double panOffsetX = 0.0;
-    private double panOffsetY = 0.0;
+    private double panOffsetY = -15.0;
 
-    private double targetYaw = -0.65;
-    private double targetPitch = 0.62;
-    private double targetZoom = 1.05;
+    private double targetYaw = -Math.PI / 4.0;
+    private double targetPitch = Math.PI / 5.2;
+    private double targetZoom = 1.0;
 
     /** Mode de vue : Vue 3D Isométrique activée par défaut ! */
     private boolean isView3D = true;
@@ -408,11 +408,11 @@ public class Plan3DController {
     @FXML
     private void handleSetView3D() {
         isView3D = true;
-        targetYaw = -0.65;
-        targetPitch = 0.62;
-        targetZoom = 1.05;
+        targetYaw = -Math.PI / 4.0;
+        targetPitch = Math.PI / 5.2;
+        targetZoom = 1.0;
         panOffsetX = 0.0;
-        panOffsetY = 0.0;
+        panOffsetY = -15.0;
 
         btnView3D.getStyleClass().removeAll("btn-view-active", "btn-view-inactive");
         btnView3D.getStyleClass().add("btn-view-active");
@@ -450,14 +450,15 @@ public class Plan3DController {
     @FXML
     private void handleResetView() {
         if (isView3D) {
-            targetYaw = -0.65;
-            targetPitch = 0.62;
-            targetZoom = 1.05;
+            targetYaw = -Math.PI / 4.0;
+            targetPitch = Math.PI / 5.2;
+            targetZoom = 1.0;
+            panOffsetY = -15.0;
         } else {
             targetZoom = 1.0;
+            panOffsetY = 0.0;
         }
         panOffsetX = 0.0;
-        panOffsetY = 0.0;
         render();
     }
 
@@ -854,7 +855,7 @@ public class Plan3DController {
         double y2 = y1 * cosP - dz * sinP;
         double z2 = y1 * sinP + dz * cosP;
 
-        double scale = (Math.min(cw, ch) / 11.8) * cameraZoom;
+        double scale = (Math.min(cw, ch) / 11.2) * cameraZoom;
         double sx = cw / 2.0 + panOffsetX + x1 * scale;
         double sy = ch / 2.0 + panOffsetY + y2 * scale;
 

@@ -1263,6 +1263,9 @@
     -fx-border-color: rgba(255, 255, 255, 0.12);
     -fx-border-radius: 8px;
     -fx-padding: 6px 14px;
+    -fx-min-height: 40px;
+    -fx-pref-height: 40px;
+    -fx-max-height: 40px;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 8, 0, 0, 2);
 }
 
@@ -1277,10 +1280,10 @@
     -fx-text-fill: #94A3B8;
 }
 
-.map3d-swatch-blue    { -fx-background-color: #2563EB; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; }
-.map3d-swatch-green   { -fx-background-color: #10B981; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; }
-.map3d-swatch-red     { -fx-background-color: #EF4444; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; }
-.map3d-swatch-orange  { -fx-background-color: #F59E0B; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; }
+.map3d-swatch-blue    { -fx-background-color: #2563EB; -fx-min-width: 12px; -fx-min-height: 12px; -fx-pref-width: 12px; -fx-pref-height: 12px; -fx-max-width: 12px; -fx-max-height: 12px; -fx-background-radius: 3px; }
+.map3d-swatch-green   { -fx-background-color: #10B981; -fx-min-width: 12px; -fx-min-height: 12px; -fx-pref-width: 12px; -fx-pref-height: 12px; -fx-max-width: 12px; -fx-max-height: 12px; -fx-background-radius: 3px; }
+.map3d-swatch-red     { -fx-background-color: #EF4444; -fx-min-width: 12px; -fx-min-height: 12px; -fx-pref-width: 12px; -fx-pref-height: 12px; -fx-max-width: 12px; -fx-max-height: 12px; -fx-background-radius: 3px; }
+.map3d-swatch-orange  { -fx-background-color: #F59E0B; -fx-min-width: 12px; -fx-min-height: 12px; -fx-pref-width: 12px; -fx-pref-height: 12px; -fx-max-width: 12px; -fx-max-height: 12px; -fx-background-radius: 3px; }
 
 .map3d-sidebar-card {
     -fx-background-color: #FFFFFF;
