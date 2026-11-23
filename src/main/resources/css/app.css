@@ -1149,36 +1149,35 @@
 }
 
 .map3d-viewport-card {
-    -fx-background-color: #FFFFFF;
-    -fx-border-color: #E2E8F0;
+    -fx-background-color: #0F172A;
+    -fx-border-color: #334155;
     -fx-border-radius: 14px;
     -fx-background-radius: 14px;
-    -fx-padding: 10px;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.04), 8, 0, 0, 2);
+    -fx-padding: 0px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 14, 0, 0, 4);
 }
 
 .map3d-canvas-wrapper {
-    -fx-background-color: #F8FAFC;
-    -fx-background-radius: 10px;
-    -fx-border-color: #E2E8F0;
-    -fx-border-radius: 10px;
+    -fx-background-color: #0F172A;
+    -fx-background-radius: 14px;
+    -fx-border-radius: 14px;
 }
 
 .map3d-canvas-toolbar {
-    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-color: rgba(15, 23, 42, 0.88);
     -fx-background-radius: 8px;
-    -fx-border-color: #E2E8F0;
+    -fx-border-color: rgba(255, 255, 255, 0.14);
     -fx-border-radius: 8px;
-    -fx-padding: 6px 8px;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 6, 0, 0, 2);
+    -fx-padding: 5px 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 8, 0, 0, 2);
 }
 
 .map3d-tool-btn {
-    -fx-background-color: #F8FAFC;
-    -fx-border-color: #E2E8F0;
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-border-color: rgba(255, 255, 255, 0.16);
     -fx-border-radius: 6px;
     -fx-background-radius: 6px;
-    -fx-text-fill: #334155;
+    -fx-text-fill: #F8FAFC;
     -fx-font-size: 11px;
     -fx-font-weight: 600;
     -fx-padding: 4px 8px;
@@ -1186,29 +1185,59 @@
 }
 
 .map3d-tool-btn:hover {
-    -fx-background-color: #F1F5F9;
-    -fx-border-color: #CBD5E1;
+    -fx-background-color: rgba(255, 255, 255, 0.20);
+    -fx-border-color: rgba(255, 255, 255, 0.35);
+}
+
+.btn-view-toggle {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-padding: 4px 10px;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.btn-view-active {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: #FFFFFF;
+    -fx-border-color: #60A5FA;
+    -fx-border-radius: 5px;
+}
+
+.btn-view-inactive {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-text-fill: #94A3B8;
+    -fx-border-color: rgba(255, 255, 255, 0.12);
+    -fx-border-radius: 5px;
+}
+
+.btn-view-inactive:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.16);
+    -fx-text-fill: #FFFFFF;
 }
 
 .map3d-compass-box {
-    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-color: rgba(15, 23, 42, 0.88);
     -fx-background-radius: 8px;
-    -fx-border-color: #E2E8F0;
+    -fx-border-color: rgba(255, 255, 255, 0.14);
     -fx-border-radius: 8px;
     -fx-padding: 5px 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 8, 0, 0, 2);
 }
 
 .map3d-compass-label {
     -fx-font-size: 11px;
     -fx-font-weight: 700;
-    -fx-text-fill: #475569;
+    -fx-text-fill: #CBD5E1;
 }
 
 .map3d-floating-tooltip {
-    -fx-background-color: rgba(15, 23, 42, 0.92);
+    -fx-background-color: rgba(15, 23, 42, 0.94);
     -fx-background-radius: 8px;
+    -fx-border-color: rgba(255, 255, 255, 0.18);
+    -fx-border-radius: 8px;
     -fx-padding: 8px 12px;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 8, 0, 0, 3);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 10, 0, 0, 3);
 }
 
 .map3d-tooltip-title {
@@ -1229,17 +1258,18 @@
 }
 
 .map3d-canvas-hint {
-    -fx-background-color: rgba(255, 255, 255, 0.94);
+    -fx-background-color: rgba(15, 23, 42, 0.90);
     -fx-background-radius: 8px;
-    -fx-border-color: #E2E8F0;
+    -fx-border-color: rgba(255, 255, 255, 0.12);
     -fx-border-radius: 8px;
     -fx-padding: 6px 14px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 8, 0, 0, 2);
 }
 
 .map3d-hint-text {
     -fx-font-size: 11px;
     -fx-font-weight: 600;
-    -fx-text-fill: #334155;
+    -fx-text-fill: #CBD5E1;
 }
 
 .map3d-nav-help {
@@ -1247,11 +1277,10 @@
     -fx-text-fill: #94A3B8;
 }
 
-.map3d-swatch-shelf   { -fx-background-color: #FDE047; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #CA8A04; -fx-border-radius: 3px; }
-.map3d-swatch-bin     { -fx-background-color: #67E8F9; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #0891B2; -fx-border-radius: 3px; }
-.map3d-swatch-green   { -fx-background-color: #4ADE80; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #16A34A; -fx-border-radius: 3px; }
-.map3d-swatch-seating { -fx-background-color: #FB7185; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #E11D48; -fx-border-radius: 3px; }
-.map3d-swatch-desk    { -fx-background-color: #BAE6FD; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #38BDF8; -fx-border-radius: 3px; }
+.map3d-swatch-blue    { -fx-background-color: #2563EB; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; }
+.map3d-swatch-green   { -fx-background-color: #10B981; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; }
+.map3d-swatch-red     { -fx-background-color: #EF4444; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; }
+.map3d-swatch-orange  { -fx-background-color: #F59E0B; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; }
 
 .map3d-sidebar-card {
     -fx-background-color: #FFFFFF;
@@ -1259,4 +1288,33 @@
     -fx-border-radius: 14px;
     -fx-background-radius: 14px;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.04), 8, 0, 0, 2);
+}
+
+.shelf-capacity-gauge {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 8px 10px;
+}
+
+.gauge-bar-track {
+    -fx-background-color: #E2E8F0;
+    -fx-background-radius: 999px;
+    -fx-min-height: 6px;
+    -fx-pref-height: 6px;
+    -fx-max-height: 6px;
+}
+
+.shelf-book-card {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 8px 10px;
+}
+
+.shelf-book-card:hover {
+    -fx-background-color: #F1F5F9;
+    -fx-border-color: #CBD5E1;
 }

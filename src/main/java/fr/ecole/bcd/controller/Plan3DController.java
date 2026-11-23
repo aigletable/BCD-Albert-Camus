@@ -4,6 +4,7 @@ import fr.ecole.bcd.MainApp;
 import fr.ecole.bcd.database.LivreDao;
 import fr.ecole.bcd.model.Livre;
 import fr.ecole.bcd.model.ZoneBcd;
+import fr.ecole.bcd.model.ZoneBcd.CategorieMobilier;
 import fr.ecole.bcd.model.ZoneBcd.FaceBcd;
 import fr.ecole.bcd.service.PlanBcdService;
 import fr.ecole.bcd.service.SoundService;
@@ -18,22 +19,27 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 
 import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Contrôleur de l'onglet Plan 3D de la BCD &amp; Emplacement des Livres.
  *
- * <p>Offre une modélisation spatiale interactive fidèle aux 11 étagères, îlots et bacs
- * réels de l'école Albert Camus, avec vue 2D architecturale, vue 3D isométrique avec
- * extrusion et ombrage, repérage en temps réel par douchette, et inspection des livres
- * physiques stockés dans SQLite.</p>
+ * <p>Design 100% fidèle au prototype web (blueprint CAD sombre, projection 3D isométrique
+ * avec rotation 360°, élévation au survol, livres colorés sur étagères, boussole dynamique,
+ * et fiche d'inspection détaillée avec jauge de capacité et livres réels SQLite).</p>
+ *
+ * @author JC ART
+ * @since 2026-11-23
  */
 public class Plan3DController {
 
@@ -59,13 +65,14 @@ public class Plan3DController {
     @FXML private StackPane canvasContainer;
     @FXML private Canvas mapCanvas;
 
-    @FXML private Button btnView2D;
     @FXML private Button btnView3D;
+    @FXML private Button btnView2D;
     @FXML private Button btnZoomIn;
     @FXML private Button btnZoomOut;
-    @FXML private Button btnResetView;
     @FXML private ToggleButton btnToggleLabels;
+    @FXML private Button btnToggleAmbiance;
 
+    @FXML private Canvas compassCanvas;
     @FXML private Label lblOrientation;
 
     @FXML private VBox tooltipBox;
@@ -79,8 +86,20 @@ public class Plan3DController {
     private final PlanBcdService planService = new PlanBcdService();
     private final LivreDao livreDao = new LivreDao();
 
-    /** Mode de vue : 2D (Plan du dessus) ou 3D (Isométrique). */
-    private boolean isView3D = false;
+    /** Angles de caméra 3D (360° yaw, pitch, zoom) - Calqués 1:1 sur le prototype web */
+    private double cameraYaw = -0.65;      // ~ -37° (vue Sud-Ouest classique)
+    private double cameraPitch = 0.62;    // ~ 35.5° d'inclinaison
+    private double cameraZoom = 1.05;
+    private double panOffsetX = 0.0;
+    private double panOffsetY = 0.0;
+
+    private double targetYaw = -0.65;
+    private double targetPitch = 0.62;
+    private double targetZoom = 1.05;
+
+    /** Mode de vue : Vue 3D Isométrique activée par défaut ! */
+    private boolean isView3D = true;
+    private boolean isWarmAmbiance = false;
 
     /** Meuble actuellement sélectionné. */
     private ZoneBcd selectedZone = null;
@@ -97,22 +116,17 @@ public class Plan3DController {
     private final Set<String> matchedZoneIds = new HashSet<>();
     private String activeFilter = "all";
 
-    /** Transformations de caméra (Pan & Zoom). */
-    private double zoomFactor = 1.0;
-    private double panOffsetX = 0.0;
-    private double panOffsetY = 0.0;
-
     private double dragStartX;
     private double dragStartY;
     private boolean isDragging = false;
 
-    /** Animation du pulse doré pour les résultats de recherche. */
+    /** Animation douce pour la rotation, le survol et le pulse doré */
     private double animationTick = 0.0;
     private AnimationTimer animTimer;
 
     @FXML
     public void initialize() {
-        // Redimensionnement automatique du Canvas
+        // Redimensionnement réactif du Canvas
         canvasContainer.widthProperty().addListener((obs, oldW, newW) -> {
             double w = newW.doubleValue();
             if (w > 0 && Math.abs(mapCanvas.getWidth() - w) > 0.5) {
@@ -131,12 +145,31 @@ public class Plan3DController {
         setupMouseInteractions();
         setupSearchInteractions();
 
-        // Animation douce pour l'épingle et le surbrillance
+        // Boucle d'animation fluide 60fps pour la décélération de caméra et les effets
         animTimer = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                animationTick += 0.05;
+                animationTick += 0.04;
+                boolean needRender = false;
+
+                if (Math.abs(targetYaw - cameraYaw) > 0.001) {
+                    cameraYaw += (targetYaw - cameraYaw) * 0.22;
+                    needRender = true;
+                }
+                if (Math.abs(targetPitch - cameraPitch) > 0.001) {
+                    cameraPitch += (targetPitch - cameraPitch) * 0.22;
+                    needRender = true;
+                }
+                if (Math.abs(targetZoom - cameraZoom) > 0.001) {
+                    cameraZoom += (targetZoom - cameraZoom) * 0.22;
+                    needRender = true;
+                }
+
                 if (pinnedZone != null || !matchedZoneIds.isEmpty()) {
+                    needRender = true;
+                }
+
+                if (needRender) {
                     render();
                 }
             }
@@ -149,85 +182,109 @@ public class Plan3DController {
     }
 
     /**
-     * Rechargement des données lors de la navigation vers l'onglet.
+     * Rechargement des données et actualisation du rendu (appelé par MainApp lors du changement d'onglet).
      */
     public void loadData() {
         render();
-        if (selectedZone != null) {
-            renderSidebarDetail(selectedZone);
-        } else {
-            renderSidebarOverview();
-        }
     }
 
-    /* ── Interactions Souris (Pan, Zoom, Clic, Hover) ─────────────────────── */
+    /* ── Interactions Souris (Rotation 360°, Zoom, Survol, Clic) ─────────── */
 
     private void setupMouseInteractions() {
         mapCanvas.setOnMousePressed(e -> {
-            if (e.isPrimaryButtonDown() || e.isSecondaryButtonDown()) {
-                dragStartX = e.getX() - panOffsetX;
-                dragStartY = e.getY() - panOffsetY;
-                isDragging = false;
+            if (e.isPrimaryButtonDown()) {
+                isDragging = true;
+                dragStartX = e.getX();
+                dragStartY = e.getY();
+                mapCanvas.setCursor(Cursor.CLOSED_HAND);
             }
         });
 
         mapCanvas.setOnMouseDragged(e -> {
-            isDragging = true;
-            panOffsetX = e.getX() - dragStartX;
-            panOffsetY = e.getY() - dragStartY;
-            hideTooltip();
+            if (isDragging) {
+                double dx = e.getX() - dragStartX;
+                double dy = e.getY() - dragStartY;
+                if (isView3D) {
+                    targetYaw += dx * 0.008;
+                    targetPitch = Math.max(0.18, Math.min(Math.PI / 2.05, targetPitch + dy * 0.006));
+                } else {
+                    panOffsetX += dx;
+                    panOffsetY += dy;
+                }
+                dragStartX = e.getX();
+                dragStartY = e.getY();
+                render();
+            }
+        });
+
+        mapCanvas.setOnMouseReleased(e -> {
+            isDragging = false;
+            mapCanvas.setCursor(Cursor.DEFAULT);
+        });
+
+        mapCanvas.setOnScroll(e -> {
+            double factor = e.getDeltaY() < 0 ? 0.90 : 1.10;
+            targetZoom = Math.max(0.45, Math.min(3.2, targetZoom * factor));
             render();
         });
 
         mapCanvas.setOnMouseMoved(e -> {
-            if (isDragging) return;
-            ZoneBcd hit = pickZone(e.getX(), e.getY());
-            if (hit != hoveredZone) {
-                hoveredZone = hit;
-                mapCanvas.setCursor(hit != null ? Cursor.HAND : Cursor.DEFAULT);
-                if (hit != null) {
-                    showTooltip(hit, e.getX(), e.getY());
-                } else {
-                    hideTooltip();
-                }
-                render();
-            } else if (hit != null) {
-                updateTooltipPosition(e.getX(), e.getY());
+            if (!isDragging) {
+                checkHover(e.getX(), e.getY());
             }
         });
 
         mapCanvas.setOnMouseClicked(e -> {
-            if (isDragging) {
-                isDragging = false;
-                return;
-            }
-            ZoneBcd hit = pickZone(e.getX(), e.getY());
-            selectZone(hit);
-        });
-
-        mapCanvas.setOnScroll(e -> {
-            double delta = e.getDeltaY();
-            double factor = delta > 0 ? 1.12 : 0.89;
-            double newZoom = zoomFactor * factor;
-            if (newZoom >= 0.5 && newZoom <= 3.5) {
-                // Centrage du zoom autour du curseur
-                double mouseX = e.getX();
-                double mouseY = e.getY();
-                panOffsetX = mouseX - (mouseX - panOffsetX) * factor;
-                panOffsetY = mouseY - (mouseY - panOffsetY) * factor;
-                zoomFactor = newZoom;
-                render();
+            if (e.isStillSincePress()) {
+                ZoneBcd hit = pickZone(e.getX(), e.getY());
+                selectZone(hit);
+                if (hit != null) {
+                    SoundService.playSuccess();
+                }
             }
         });
     }
 
-    private void showTooltip(ZoneBcd z, double x, double y) {
-        tooltipTitle.setText((z.hasNumero() ? z.getNumero() + " • " : "") + z.getNom());
-        tooltipSub.setText(z.getTypeLabel() + " (" + z.getCouleurReelle() + ")");
-        tooltipHint.setText("Capacité : " + (z.getCapacite() > 0 ? z.getCapacite() + " livres" : "Mobilier") + " • Clic pour inspecter");
-        tooltipBox.setVisible(true);
-        tooltipBox.setManaged(true);
-        updateTooltipPosition(x, y);
+    private ZoneBcd pickZone(double mx, double my) {
+        double w = mapCanvas.getWidth();
+        double h = mapCanvas.getHeight();
+        if (w <= 0 || h <= 0) return null;
+
+        ZoneBcd bestHit = null;
+        double bestDist = Double.MAX_VALUE;
+
+        for (ZoneBcd z : planService.getAllZones()) {
+            Point3D center = project3d(z.getCenterX(), z.getCenterZ(), z.getHauteur() / 2.0, w, h);
+            double dist = Math.hypot(mx - center.sx, my - center.sy);
+            double boundRadius = Math.max(18.0, Math.max(z.getWidth(), z.getDepth()) * 14.0 * cameraZoom);
+            if (dist < boundRadius && dist < bestDist) {
+                bestDist = dist;
+                bestHit = z;
+            }
+        }
+        return bestHit;
+    }
+
+    private void checkHover(double mx, double my) {
+        ZoneBcd hit = pickZone(mx, my);
+        if (!Objects.equals(hit, hoveredZone)) {
+            hoveredZone = hit;
+            if (hoveredZone != null) {
+                String title = (hoveredZone.hasNumero() ? "Zone " + hoveredZone.getNumero() + " • " : "") + hoveredZone.getNomCourt();
+                tooltipTitle.setText(hoveredZone.getIcon() + "  " + title);
+                tooltipSub.setText(hoveredZone.getTypeLabel() + " • " + hoveredZone.getCotePrefix());
+                tooltipBox.setVisible(true);
+                tooltipBox.setManaged(true);
+                updateTooltipPosition(mx, my);
+                mapCanvas.setCursor(Cursor.HAND);
+            } else {
+                hideTooltip();
+                mapCanvas.setCursor(Cursor.DEFAULT);
+            }
+            render();
+        } else if (hoveredZone != null) {
+            updateTooltipPosition(mx, my);
+        }
     }
 
     private void updateTooltipPosition(double x, double y) {
@@ -245,9 +302,7 @@ public class Plan3DController {
     /* ── Barre de recherche et filtres rapides ───────────────────────────── */
 
     private void setupSearchInteractions() {
-        mapSearchField.textProperty().addListener((obs, oldV, newV) -> {
-            handleSearch(newV);
-        });
+        mapSearchField.textProperty().addListener((obs, oldV, newV) -> handleSearch(newV));
     }
 
     private void handleSearch(String query) {
@@ -270,7 +325,6 @@ public class Plan3DController {
             }
         }
 
-        // Recherche également dans la base de données SQLite pour trouver le rayon d'un livre spécifique !
         try {
             List<Livre> livres = livreDao.searchWithCounts(q);
             if (!livres.isEmpty()) {
@@ -289,10 +343,10 @@ public class Plan3DController {
         lblSearchStatus.setManaged(true);
         if (matchedZoneIds.isEmpty()) {
             lblSearchStatus.setText("⚠️ Aucun rayon trouvé pour « " + query + " »");
-            lblSearchStatus.setStyle("-fx-text-fill: #B91C1C; -fx-background-color: #FEF2F2;");
+            lblSearchStatus.setStyle("-fx-text-fill: #FCA5A5; -fx-background-color: rgba(127, 29, 29, 0.5);");
         } else {
             lblSearchStatus.setText("✨ " + matchedZoneIds.size() + " zone(s) surlignée(s)");
-            lblSearchStatus.setStyle("-fx-text-fill: #15803D; -fx-background-color: #F0FDF4;");
+            lblSearchStatus.setStyle("-fx-text-fill: #86EFAC; -fx-background-color: rgba(6, 78, 59, 0.5);");
         }
 
         render();
@@ -304,7 +358,7 @@ public class Plan3DController {
         mapSearchField.requestFocus();
     }
 
-    /* ── Filtres Pilules (Tous, Étagères, Îlots, Bacs, BD, Romans, etc.) ─── */
+    /* ── Filtres Pilules ─────────────────────────────────────────────────── */
 
     @FXML private void handleFilterAll() { applyFilter("all", pillAll); }
     @FXML private void handleFilterShelves() { applyFilter("shelves", pillShelves); }
@@ -333,9 +387,9 @@ public class Plan3DController {
         if (!"all".equals(filter)) {
             for (ZoneBcd z : planService.getAllZones()) {
                 boolean match = switch (filter) {
-                    case "shelves" -> z.getCategorie() == ZoneBcd.CategorieMobilier.SHELF && (z.getId().equals("1") || z.getId().equals("3") || z.getId().equals("8") || z.getId().equals("11"));
+                    case "shelves" -> z.getCategorie() == CategorieMobilier.SHELF && (z.getId().equals("1") || z.getId().equals("3") || z.getId().equals("8") || z.getId().equals("11"));
                     case "ilots" -> z.getId().equals("4") || z.getId().equals("6");
-                    case "bins" -> z.getCategorie() == ZoneBcd.CategorieMobilier.BIN;
+                    case "bins" -> z.getCategorie() == CategorieMobilier.BIN;
                     case "bd" -> z.getId().equals("2");
                     case "romans" -> z.getId().equals("1") || z.getId().equals("3") || z.getId().equals("4");
                     case "albums" -> z.getId().equals("6") || z.getId().equals("8") || z.getId().equals("9");
@@ -349,45 +403,59 @@ public class Plan3DController {
         render();
     }
 
-    /* ── Changement de Vue & Contrôles Caméra ─────────────────────────────── */
-
-    @FXML
-    private void handleSetView2D() {
-        isView3D = false;
-        btnView2D.getStyleClass().removeAll("btn-view-active", "btn-view-inactive");
-        btnView2D.getStyleClass().add("btn-view-active");
-        btnView3D.getStyleClass().removeAll("btn-view-active", "btn-view-inactive");
-        btnView3D.getStyleClass().add("btn-view-inactive");
-        lblOrientation.setText("Nord : Verrière (Couloir) • Sud : Grandes Fenêtres");
-        render();
-    }
+    /* ── Contrôles Caméra (Toolbar Flottante 1:1 Prototype Web) ──────────── */
 
     @FXML
     private void handleSetView3D() {
         isView3D = true;
+        targetYaw = -0.65;
+        targetPitch = 0.62;
+        targetZoom = 1.05;
+        panOffsetX = 0.0;
+        panOffsetY = 0.0;
+
         btnView3D.getStyleClass().removeAll("btn-view-active", "btn-view-inactive");
         btnView3D.getStyleClass().add("btn-view-active");
         btnView2D.getStyleClass().removeAll("btn-view-active", "btn-view-inactive");
         btnView2D.getStyleClass().add("btn-view-inactive");
-        lblOrientation.setText("Orientation 3D : Vue Isométrique depuis le Sud-Ouest");
+        render();
+    }
+
+    @FXML
+    private void handleSetView2D() {
+        isView3D = false;
+        panOffsetX = 0.0;
+        panOffsetY = 0.0;
+        targetZoom = 1.0;
+
+        btnView2D.getStyleClass().removeAll("btn-view-active", "btn-view-inactive");
+        btnView2D.getStyleClass().add("btn-view-active");
+        btnView3D.getStyleClass().removeAll("btn-view-active", "btn-view-inactive");
+        btnView3D.getStyleClass().add("btn-view-inactive");
         render();
     }
 
     @FXML
     private void handleZoomIn() {
-        zoomFactor = Math.min(3.5, zoomFactor * 1.2);
+        targetZoom = Math.min(3.2, targetZoom * 1.25);
         render();
     }
 
     @FXML
     private void handleZoomOut() {
-        zoomFactor = Math.max(0.5, zoomFactor * 0.83);
+        targetZoom = Math.max(0.45, targetZoom * 0.8);
         render();
     }
 
     @FXML
     private void handleResetView() {
-        zoomFactor = 1.0;
+        if (isView3D) {
+            targetYaw = -0.65;
+            targetPitch = 0.62;
+            targetZoom = 1.05;
+        } else {
+            targetZoom = 1.0;
+        }
         panOffsetX = 0.0;
         panOffsetY = 0.0;
         render();
@@ -396,6 +464,13 @@ public class Plan3DController {
     @FXML
     private void handleToggleLabels() {
         btnToggleLabels.setText(btnToggleLabels.isSelected() ? "🏷️ Étiquettes : OUI" : "🏷️ Étiquettes : NON");
+        render();
+    }
+
+    @FXML
+    private void handleToggleAmbiance() {
+        isWarmAmbiance = !isWarmAmbiance;
+        btnToggleAmbiance.setText(isWarmAmbiance ? "💡 Ambre" : "💡 Jour");
         render();
     }
 
@@ -517,7 +592,7 @@ public class Plan3DController {
         }
     }
 
-    /* ── Sélection & Rendu Inspecteur Latéral ─────────────────────────────── */
+    /* ── Sélection & Rendu Inspecteur Latéral 1:1 Prototype Web ──────────── */
 
     public void selectZone(ZoneBcd zone) {
         this.selectedZone = zone;
@@ -532,10 +607,15 @@ public class Plan3DController {
     private void renderSidebarOverview() {
         sidebarContent.getChildren().clear();
 
-        Label title = new Label("🧭  Explorer la BCD");
+        HBox topRow = new HBox(8);
+        topRow.setAlignment(Pos.CENTER_LEFT);
+        Label title = new Label("Implantation de la BCD Camus Pasteur");
         title.setStyle("-fx-font-size: 15px; -fx-font-weight: 800; -fx-text-fill: #0F172A;");
+        Label countBadge = new Label("11 ZONES");
+        countBadge.setStyle("-fx-font-size: 9.5px; -fx-font-weight: 800; -fx-background-color: #FEF3C7; -fx-text-fill: #92400E; -fx-padding: 1 6; -fx-background-radius: 999; -fx-border-color: #FCD34D; -fx-border-radius: 999;");
+        topRow.getChildren().addAll(title, countBadge);
 
-        Label intro = new Label("Cliquez sur une étagère sur le plan 2D ou dans la maquette 3D pour inspecter son contenu et ses livres.");
+        Label intro = new Label("Cliquez sur un meuble dans le plan 3D ou dans la liste pour voir les livres rangés.");
         intro.setWrapText(true);
         intro.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748B;");
 
@@ -544,7 +624,7 @@ public class Plan3DController {
             Button btn = new Button();
             btn.setMaxWidth(Double.MAX_VALUE);
             btn.setAlignment(Pos.CENTER_LEFT);
-            btn.setStyle("-fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 7 10; -fx-cursor: hand;");
+            btn.setStyle("-fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8 10; -fx-cursor: hand;");
 
             HBox row = new HBox(10);
             row.setAlignment(Pos.CENTER_LEFT);
@@ -553,13 +633,19 @@ public class Plan3DController {
             badge.setStyle("-fx-font-size: 11px; -fx-font-weight: 800; -fx-text-fill: #0F172A; -fx-background-color: " + z.getCategorie().getColorFill() + "; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-radius: 999;");
 
             VBox textCol = new VBox(1);
-            Label nom = new Label(z.getIcon() + " " + z.getNom());
-            nom.setStyle("-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #1E293B;");
+            Label nom = new Label(z.getIcon() + "  " + z.getNomCourt());
+            nom.setStyle("-fx-font-size: 12.5px; -fx-font-weight: 700; -fx-text-fill: #1E293B;");
             Label sub = new Label(z.getTypeLabel());
-            sub.setStyle("-fx-font-size: 10.5px; -fx-text-fill: #64748B;");
+            sub.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748B;");
             textCol.getChildren().addAll(nom, sub);
 
-            row.getChildren().addAll(badge, textCol);
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            Label arrow = new Label("Voir →");
+            arrow.setStyle("-fx-font-size: 11px; -fx-text-fill: #1A66FF; -fx-font-weight: 700;");
+
+            row.getChildren().addAll(badge, textCol, spacer, arrow);
             btn.setGraphic(row);
             btn.setOnAction(e -> selectZone(z));
             zonesBox.getChildren().add(btn);
@@ -570,148 +656,228 @@ public class Plan3DController {
 
         FlowPane miscPills = new FlowPane(6, 6);
         for (ZoneBcd m : planService.getMiscFurniture()) {
-            Button chip = new Button(m.getNomCourt());
+            Button chip = new Button(m.getIcon() + " " + m.getNomCourt());
             chip.setStyle("-fx-background-color: #F1F5F9; -fx-text-fill: #475569; -fx-font-size: 11px; -fx-font-weight: 600; -fx-padding: 4 8; -fx-background-radius: 6; -fx-cursor: hand;");
             chip.setOnAction(e -> selectZone(m));
             miscPills.getChildren().add(chip);
         }
 
-        sidebarContent.getChildren().addAll(title, intro, new Separator(), zonesBox, miscTitle, miscPills);
+        sidebarContent.getChildren().addAll(topRow, intro, new Separator(), zonesBox, miscTitle, miscPills);
     }
 
     private void renderSidebarDetail(ZoneBcd z) {
         sidebarContent.getChildren().clear();
 
-        Button btnBack = new Button("← Retour à la vue d'ensemble");
-        btnBack.setStyle("-fx-background-color: transparent; -fx-text-fill: #2563EB; -fx-font-size: 11.5px; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 0;");
+        Button btnBack = new Button("← Implantation de la BCD Camus Pasteur");
+        btnBack.setStyle("-fx-background-color: transparent; -fx-text-fill: #1A66FF; -fx-font-size: 11.5px; -fx-font-weight: 700; -fx-cursor: hand; -fx-padding: 0;");
         btnBack.setOnAction(e -> selectZone(null));
 
-        HBox header = new HBox(10);
+        // 1. En-tête Meuble (Icon 28px + Titre + Badges)
+        HBox header = new HBox(12);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        if (z.hasNumero()) {
-            Label badge = new Label(String.valueOf(z.getNumero()));
-            badge.setStyle("-fx-font-size: 18px; -fx-font-weight: 800; -fx-text-fill: #0F172A; -fx-background-color: " + z.getCategorie().getColorFill() + "; -fx-min-width: 42px; -fx-min-height: 42px; -fx-alignment: center; -fx-background-radius: 10; -fx-border-color: " + z.getCategorie().getColorStroke() + "; -fx-border-radius: 10;");
-            header.getChildren().add(badge);
-        }
+        Label iconLbl = new Label(z.getIcon());
+        iconLbl.setStyle("-fx-font-size: 28px;");
 
         VBox titleCol = new VBox(2);
-        Label title = new Label(z.getNom());
+        Label title = new Label(z.hasNumero() ? "Zone " + z.getNumero() + " • " + z.getNom() : z.getNom());
         title.setWrapText(true);
-        title.setStyle("-fx-font-size: 15px; -fx-font-weight: 800; -fx-text-fill: #0F172A;");
+        title.setStyle("-fx-font-size: 14.5px; -fx-font-weight: 800; -fx-text-fill: #0F172A;");
         Label sub = new Label(z.getTypeLabel());
         sub.setStyle("-fx-font-size: 11.5px; -fx-text-fill: #64748B;");
         titleCol.getChildren().addAll(title, sub);
-        header.getChildren().add(titleCol);
 
-        // Fiche technique
-        GridPane techGrid = new GridPane();
-        techGrid.setHgap(8);
-        techGrid.setVgap(8);
-        techGrid.setStyle("-fx-background-color: #F8FAFC; -fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #E2E8F0; -fx-border-radius: 8;");
+        header.getChildren().addAll(iconLbl, titleCol);
 
-        VBox b1 = createKpiBox("COULEUR RÉELLE", z.getCouleurReelle());
-        VBox b2 = createKpiBox("EMPRISE AU SOL", String.format(Locale.FRENCH, "%.1f m × %.1f m", z.getWidth(), z.getDepth()));
-        GridPane.setHgrow(b1, Priority.ALWAYS);
-        GridPane.setHgrow(b2, Priority.ALWAYS);
-        techGrid.add(b1, 0, 0);
-        techGrid.add(b2, 1, 0);
+        // Badges pilules (Catégorie, Cote, PROTOTYPE)
+        FlowPane badgesRow = new FlowPane(6, 6);
+        Label catBadge = new Label(z.getCategorie() == CategorieMobilier.SHELF ? "🟩 Étagère / Îlot" : (z.getCategorie() == CategorieMobilier.BIN ? "🟥 Bac à livres" : "⬜ Mobilier"));
+        catBadge.setStyle("-fx-font-size: 10.5px; -fx-font-weight: 700; -fx-padding: 3 8; -fx-background-radius: 4; -fx-background-color: " + (z.getCategorie() == CategorieMobilier.SHELF ? "#F0FDF4; -fx-text-fill: #15803D;" : (z.getCategorie() == CategorieMobilier.BIN ? "#FEF2F2; -fx-text-fill: #B91C1C;" : "#F1F5F9; -fx-text-fill: #334155;")));
 
-        // Faces et contenus
-        VBox facesBox = new VBox(6);
-        for (FaceBcd f : z.getFaces()) {
-            VBox fCard = new VBox(3);
-            fCard.setStyle("-fx-background-color: white; -fx-padding: 8 10; -fx-background-radius: 6; -fx-border-color: #E2E8F0; -fx-border-radius: 6;");
-            Label sideLabel = new Label("📍 " + f.side());
-            sideLabel.setStyle("-fx-font-size: 11.5px; -fx-font-weight: 800; -fx-text-fill: #1E293B;");
-            Label sideContent = new Label(f.content());
-            sideContent.setWrapText(true);
-            sideContent.setStyle("-fx-font-size: 11px; -fx-text-fill: #475569;");
-            fCard.getChildren().addAll(sideLabel, sideContent);
-            facesBox.getChildren().add(fCard);
-        }
+        Label coteBadge = new Label("Cote : " + z.getCotePrefix());
+        coteBadge.setStyle("-fx-font-size: 10.5px; -fx-font-weight: 600; -fx-padding: 3 8; -fx-background-radius: 4; -fx-background-color: #F8FAFC; -fx-text-fill: #475569; -fx-border-color: #E2E8F0; -fx-border-radius: 4;");
 
-        // Section livres réels SQLite
-        VBox booksSection = new VBox(6);
-        Label booksHeader = new Label("📚  Livres réels dans cet espace");
-        booksHeader.setStyle("-fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: #0F172A; -fx-padding: 4 0 0 0;");
-        booksSection.getChildren().add(booksHeader);
+        Label protoBadge = new Label("PROTOTYPE");
+        protoBadge.setStyle("-fx-font-size: 9.5px; -fx-font-weight: 800; -fx-background-color: #FEF3C7; -fx-text-fill: #92400E; -fx-padding: 2 6; -fx-background-radius: 4; -fx-border-color: #FCD34D; -fx-border-radius: 4;");
 
-        try {
-            String queryTerm = z.hasNumero() ? (z.getNumero() == 2 ? "Astérix" : (z.getNumero() == 8 ? "animaux" : (z.getNumero() == 1 ? "contes" : "roman"))) : "livre";
-            List<Livre> sample = livreDao.searchWithCounts(queryTerm);
-            if (!sample.isEmpty()) {
-                int limit = Math.min(5, sample.size());
-                for (int i = 0; i < limit; i++) {
-                    Livre l = sample.get(i);
-                    HBox bookRow = new HBox(8);
-                    bookRow.setAlignment(Pos.CENTER_LEFT);
-                    bookRow.setStyle("-fx-background-color: #F8FAFC; -fx-padding: 5 8; -fx-background-radius: 6; -fx-border-color: #E2E8F0; -fx-border-radius: 6;");
+        badgesRow.getChildren().addAll(catBadge, coteBadge, protoBadge);
 
-                    Label bookIcon = new Label(l.getGenre() != null && l.getGenre().equals("BD") ? "💬" : "📖");
-                    bookIcon.setStyle("-fx-font-size: 14px;");
+        // 2. Jauge de capacité (calquée 1:1 sur le prototype web)
+        int estimatedCapacity = z.getCapacite() > 0 ? z.getCapacite() : 120;
+        int estimatedBooks = Math.min(estimatedCapacity, (int)(estimatedCapacity * 0.72));
+        int pct = Math.min(100, (int) Math.round(((double) estimatedBooks / estimatedCapacity) * 100));
 
-                    VBox bookInfo = new VBox(1);
-                    Label bookTitle = new Label(l.getTitre());
-                    bookTitle.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #1E293B;");
-                    Label bookSub = new Label((l.getAuteur() != null ? l.getAuteur() : "Inconnu") + " • " + computeCote(l));
-                    bookSub.setStyle("-fx-font-size: 10px; -fx-text-fill: #64748B;");
-                    bookInfo.getChildren().addAll(bookTitle, bookSub);
+        VBox gaugeCard = new VBox(6);
+        gaugeCard.getStyleClass().add("shelf-capacity-gauge");
 
-                    bookRow.getChildren().addAll(bookIcon, bookInfo);
-                    booksSection.getChildren().add(bookRow);
-                }
-            } else {
-                Label empty = new Label("Aucun exemplaire en base.");
-                empty.setStyle("-fx-font-size: 11px; -fx-text-fill: #94A3B8;");
-                booksSection.getChildren().add(empty);
-            }
-        } catch (SQLException ex) {
-            Label err = new Label("Base locale prête.");
-            err.setStyle("-fx-font-size: 11px; -fx-text-fill: #94A3B8;");
-            booksSection.getChildren().add(err);
-        }
+        HBox gaugeHeader = new HBox();
+        Label lblGaugeTitle = new Label("Capacité estimée");
+        lblGaugeTitle.setStyle("-fx-font-size: 11.5px; -fx-font-weight: 700; -fx-text-fill: #0F172A;");
+        Region gSpacer = new Region();
+        HBox.setHgrow(gSpacer, Priority.ALWAYS);
+        Label lblGaugeVal = new Label(estimatedBooks + " / " + estimatedCapacity + " ouvrages (" + pct + "%)");
+        lblGaugeVal.setStyle("-fx-font-size: 11.5px; -fx-font-weight: 700; -fx-text-fill: #475569;");
+        gaugeHeader.getChildren().addAll(lblGaugeTitle, gSpacer, lblGaugeVal);
 
-        // Boutons d'action
-        Button btnVoirInventaire = new Button("📚 Voir ces livres dans l'inventaire");
-        btnVoirInventaire.setMaxWidth(Double.MAX_VALUE);
-        btnVoirInventaire.getStyleClass().add("btn-outline");
-        btnVoirInventaire.setOnAction(e -> {
+        ProgressBar pBar = new ProgressBar((double) pct / 100.0);
+        pBar.setMaxWidth(Double.MAX_VALUE);
+        pBar.setPrefHeight(7);
+        String barColor = pct > 85 ? "#EF4444" : (pct > 65 ? "#F59E0B" : "#10B981");
+        pBar.setStyle("-fx-accent: " + barColor + ";");
+
+        gaugeCard.getChildren().addAll(gaugeHeader, pBar);
+
+        // 3. Système de Cote & Rangement
+        VBox deweyBox = new VBox(4);
+        deweyBox.setStyle("-fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10;");
+        Label lblDeweyT = new Label("🏷️ Système de Cote & Rangement :");
+        lblDeweyT.setStyle("-fx-font-size: 11.5px; -fx-font-weight: 800; -fx-text-fill: #0F172A;");
+
+        String faceDesc = z.getFaces().stream().map(FaceBcd::content).reduce((a, b) -> a + " • " + b).orElse(z.getTypeLabel());
+        Label lblDeweySub = new Label(faceDesc);
+        lblDeweySub.setWrapText(true);
+        lblDeweySub.setStyle("-fx-font-size: 11px; -fx-text-fill: #475569;");
+
+        Label lblCoteEx = new Label("Exemple : " + z.getCotePrefix());
+        lblCoteEx.setStyle("-fx-font-size: 10.5px; -fx-font-weight: 700; -fx-text-fill: #1A66FF;");
+
+        deweyBox.getChildren().addAll(lblDeweyT, lblDeweySub, lblCoteEx);
+
+        // 4. Boutons d'action rapides
+        HBox actionsRow = new HBox(6);
+        Button btnRanger = new Button("⚡ Bip & Ranger ici");
+        btnRanger.getStyleClass().add("btn-douchette-indigo");
+        btnRanger.setOnAction(e -> handleOpenAssistantDouchette());
+
+        Button btnPrintLabel = new Button("🏷️ Étiquette meuble");
+        btnPrintLabel.getStyleClass().add("btn-outline");
+        btnPrintLabel.setOnAction(e -> handleOpenEtiquettesRayon());
+
+        Button btnInventaire = new Button("📚 Inventaire");
+        btnInventaire.getStyleClass().add("btn-outline");
+        btnInventaire.setOnAction(e -> {
             MainApp.selectTab("Inventaire");
             Object ctrl = MainApp.getTabController("Inventaire");
             if (ctrl instanceof InventaireController ic) {
                 ic.filterByQuery(z.getNomCourt());
             }
         });
+        actionsRow.getChildren().addAll(btnRanger, btnPrintLabel, btnInventaire);
 
-        Button btnBipIci = new Button("⚡ Bip & Ranger un livre ici");
-        btnBipIci.setMaxWidth(Double.MAX_VALUE);
-        btnBipIci.getStyleClass().add("btn-douchette-indigo");
-        btnBipIci.setOnAction(e -> handleOpenAssistantDouchette());
+        // 5. Exemples d'ouvrages répertoriés dans ce rayon (issus de SQLite)
+        VBox booksSection = new VBox(6);
+        Label booksHeader = new Label("Exemples d'ouvrages répertoriés dans ce rayon :");
+        booksHeader.setStyle("-fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: #0F172A; -fx-padding: 6 0 2 0;");
+        booksSection.getChildren().add(booksHeader);
+
+        try {
+            String q = z.hasNumero() ? (z.getNumero() == 2 ? "Astérix" : (z.getNumero() == 8 ? "sciences" : (z.getNumero() == 1 ? "conte" : "livre"))) : "livre";
+            List<Livre> sample = livreDao.searchWithCounts(q);
+            if (!sample.isEmpty()) {
+                int limit = Math.min(4, sample.size());
+                for (int i = 0; i < limit; i++) {
+                    Livre l = sample.get(i);
+                    HBox bookCard = new HBox(8);
+                    bookCard.setAlignment(Pos.CENTER_LEFT);
+                    bookCard.getStyleClass().add("shelf-book-card");
+
+                    Label bEmoji = new Label(l.getGenre() != null && l.getGenre().equals("BD") ? "💬" : (l.getGenre() != null && l.getGenre().equals("Documentaire") ? "🔬" : "📖"));
+                    bEmoji.setStyle("-fx-font-size: 15px; -fx-padding: 2;");
+
+                    VBox bInfo = new VBox(2);
+                    HBox.setHgrow(bInfo, Priority.ALWAYS);
+                    Label bTitle = new Label(l.getTitre());
+                    bTitle.setStyle("-fx-font-size: 11.5px; -fx-font-weight: 700; -fx-text-fill: #0F172A;");
+                    Label bMeta = new Label((l.getAuteur() != null ? l.getAuteur() : "Collectif") + " • " + computeCote(l));
+                    bMeta.setStyle("-fx-font-size: 10.5px; -fx-text-fill: #64748B;");
+                    bInfo.getChildren().addAll(bTitle, bMeta);
+
+                    Button btnLoc = new Button("Localiser");
+                    btnLoc.setStyle("-fx-font-size: 10px; -fx-padding: 3 6; -fx-background-radius: 4; -fx-cursor: hand; -fx-background-color: #EFF6FF; -fx-text-fill: #1D4ED8; -fx-border-color: #BFDBFE; -fx-border-radius: 4;");
+                    btnLoc.setOnAction(e -> {
+                        pinnedZone = z;
+                        pinnedBookTitle = l.getTitre();
+                        pinnedBookCote = computeCote(l);
+                        SoundService.playSuccess();
+                        render();
+                    });
+
+                    bookCard.getChildren().addAll(bEmoji, bInfo, btnLoc);
+                    booksSection.getChildren().add(bookCard);
+                }
+            } else {
+                Label empty = new Label("Espace de consultation ou étagère en cours de remplissage.");
+                empty.setStyle("-fx-font-size: 11px; -fx-text-fill: #94A3B8; -fx-font-style: italic;");
+                booksSection.getChildren().add(empty);
+            }
+        } catch (SQLException ex) {
+            Label err = new Label("Base SQLite locale prête.");
+            err.setStyle("-fx-font-size: 11px; -fx-text-fill: #94A3B8;");
+            booksSection.getChildren().add(err);
+        }
 
         sidebarContent.getChildren().addAll(
                 btnBack,
                 header,
-                techGrid,
-                facesBox,
+                badgesRow,
+                gaugeCard,
+                deweyBox,
+                actionsRow,
                 new Separator(),
-                booksSection,
-                btnVoirInventaire,
-                btnBipIci
+                booksSection
         );
     }
 
-    private VBox createKpiBox(String title, String value) {
-        VBox box = new VBox(2);
-        Label lblT = new Label(title);
-        lblT.setStyle("-fx-font-size: 9px; -fx-font-weight: 800; -fx-text-fill: #94A3B8;");
-        Label lblV = new Label(value);
-        lblV.setStyle("-fx-font-size: 11.5px; -fx-font-weight: 700; -fx-text-fill: #1E293B;");
-        box.getChildren().addAll(lblT, lblV);
-        return box;
+    /* ── Moteur de Rendu 3D Isométrique (1:1 Prototype Web) ─────────────── */
+
+    private static class Point3D {
+        final double sx, sy, depth;
+        Point3D(double sx, double sy, double depth) {
+            this.sx = sx;
+            this.sy = sy;
+            this.depth = depth;
+        }
     }
 
-    /* ── Moteur de Rendu Graphique (Canvas 2D / 3D) ───────────────────────── */
+    private Point3D project3d(double x, double y, double z, double cw, double ch) {
+        double dx = x - PlanBcdService.ROOM_WIDTH / 2.0;
+        double dy = y - PlanBcdService.ROOM_DEPTH / 2.0;
+        double dz = z;
+
+        double cosY = Math.cos(cameraYaw);
+        double sinY = Math.sin(cameraYaw);
+        double x1 = dx * cosY - dy * sinY;
+        double y1 = dx * sinY + dy * cosY;
+
+        double cosP = Math.cos(cameraPitch);
+        double sinP = Math.sin(cameraPitch);
+        double y2 = y1 * cosP - dz * sinP;
+        double z2 = y1 * sinP + dz * cosP;
+
+        double scale = (Math.min(cw, ch) / 11.8) * cameraZoom;
+        double sx = cw / 2.0 + panOffsetX + x1 * scale;
+        double sy = ch / 2.0 + panOffsetY + y2 * scale;
+
+        return new Point3D(sx, sy, z2);
+    }
+
+    private double getPolygonSignedArea(Point3D[] pts) {
+        double area = 0;
+        for (int i = 0; i < pts.length; i++) {
+            int j = (i + 1) % pts.length;
+            area += pts[i].sx * pts[j].sy - pts[j].sx * pts[i].sy;
+        }
+        return area / 2.0;
+    }
+
+    private Color shadeColor(Color c, double percent) {
+        double factor = percent / 100.0;
+        if (factor >= 0) {
+            return c.interpolate(Color.WHITE, factor);
+        } else {
+            return c.interpolate(Color.BLACK, -factor);
+        }
+    }
 
     private void render() {
         double w = mapCanvas.getWidth();
@@ -721,6 +887,21 @@ public class Plan3DController {
         GraphicsContext gc = mapCanvas.getGraphicsContext2D();
         gc.clearRect(0, 0, w, h);
 
+        // 1. Fond Radial Gradient Blueprint CAD Sombre (1:1 Prototype Web)
+        RadialGradient bg = new RadialGradient(
+                0, 0,
+                w / 2.0, h * 0.35,
+                Math.max(w, h) * 0.85,
+                false,
+                CycleMethod.NO_CYCLE,
+                new Stop(0.0, isWarmAmbiance ? Color.web("#371B10") : Color.web("#1E293B")),
+                new Stop(1.0, isWarmAmbiance ? Color.web("#1A0B05") : Color.web("#0F172A"))
+        );
+        gc.setFill(bg);
+        gc.fillRect(0, 0, w, h);
+
+        updateCompassNeedle();
+
         if (isView3D) {
             render3DIsometric(gc, w, h);
         } else {
@@ -728,28 +909,483 @@ public class Plan3DController {
         }
     }
 
-    /**
-     * Rendu 2D Architectural (Vue du dessus fidèle au plan SVG de la BCD).
-     */
+    private void updateCompassNeedle() {
+        if (compassCanvas == null || lblOrientation == null) return;
+        GraphicsContext gc = compassCanvas.getGraphicsContext2D();
+        double cw = compassCanvas.getWidth();
+        double ch = compassCanvas.getHeight();
+        gc.clearRect(0, 0, cw, ch);
+
+        double deg = (cameraYaw * 180.0 / Math.PI) + 45.0;
+        double rad = Math.toRadians(deg);
+
+        // Cadran circulaire
+        gc.setStroke(Color.rgb(255, 255, 255, 0.35));
+        gc.setLineWidth(1.2);
+        gc.strokeOval(1, 1, cw - 2, ch - 2);
+
+        double cx = cw / 2.0;
+        double cy = ch / 2.0;
+        double len = cw * 0.38;
+
+        double nx = cx + Math.sin(rad) * len;
+        double ny = cy - Math.cos(rad) * len;
+        double sx = cx - Math.sin(rad) * len;
+        double sy = cy + Math.cos(rad) * len;
+
+        // Pointe Nord (Rouge)
+        gc.setStroke(Color.web("#EF4444"));
+        gc.setLineWidth(2.4);
+        gc.strokeLine(cx, cy, nx, ny);
+
+        // Pointe Sud (Gris/Blanc)
+        gc.setStroke(Color.web("#94A3B8"));
+        gc.setLineWidth(2.4);
+        gc.strokeLine(cx, cy, sx, sy);
+
+        double normDeg = (deg % 360.0 + 360.0) % 360.0;
+        if (normDeg >= 315 || normDeg < 45) {
+            lblOrientation.setText("Vue Nord (Affiches / Verrière)");
+        } else if (normDeg >= 45 && normDeg < 135) {
+            lblOrientation.setText("Vue Ouest (Porte d'entrée)");
+        } else if (normDeg >= 135 && normDeg < 225) {
+            lblOrientation.setText("Vue Sud (Grandes Fenêtres)");
+        } else {
+            lblOrientation.setText("Vue Est (Linéaire Mural)");
+        }
+    }
+
+    private void render3DIsometric(GraphicsContext gc, double cw, double ch) {
+        drawFloorParquet(gc, cw, ch);
+        drawArchitectureFeatures(gc, cw, ch);
+
+        // Tri des meubles en profondeur (depth-sorting physique)
+        List<ZoneBcd> sorted = new ArrayList<>(planService.getAllZones());
+        sorted.sort((a, b) -> {
+            Point3D pa = project3d(a.getCenterX(), a.getCenterZ(), a.getHauteur() / 2.0, cw, ch);
+            Point3D pb = project3d(b.getCenterX(), b.getCenterZ(), b.getHauteur() / 2.0, cw, ch);
+            return Double.compare(pa.depth, pb.depth);
+        });
+
+        for (ZoneBcd z : sorted) {
+            boolean isSelected = z.equals(selectedZone);
+            boolean isHovered = z.equals(hoveredZone);
+            boolean isMatched = matchedZoneIds.contains(z.getId());
+            boolean isDimmed = !matchedZoneIds.isEmpty() && !isMatched && !isSelected;
+
+            gc.setGlobalAlpha(isDimmed ? 0.25 : 1.0);
+            drawFurniture3D(gc, z, cw, ch, isHovered, isSelected);
+            gc.setGlobalAlpha(1.0);
+        }
+
+        // Étiquettes badges au-dessus des meubles
+        if (btnToggleLabels.isSelected()) {
+            for (ZoneBcd z : sorted) {
+                boolean isSelected = z.equals(selectedZone);
+                boolean isMatched = matchedZoneIds.contains(z.getId());
+                boolean isDimmed = !matchedZoneIds.isEmpty() && !isMatched && !isSelected;
+                if (!isDimmed) {
+                    drawShelfLabelBadge(gc, z, cw, ch, isSelected);
+                }
+            }
+        }
+
+        if (pinnedZone != null) {
+            drawHighlightedPin(gc, cw, ch);
+        }
+    }
+
+    private void drawFloorParquet(GraphicsContext gc, double cw, double ch) {
+        double rw = PlanBcdService.ROOM_WIDTH;
+        double rd = PlanBcdService.ROOM_DEPTH;
+
+        Point3D p0 = project3d(0, 0, 0, cw, ch);
+        Point3D p1 = project3d(rw, 0, 0, cw, ch);
+        Point3D p2 = project3d(rw, rd, 0, cw, ch);
+        Point3D p3 = project3d(0, rd, 0, cw, ch);
+
+        gc.setFill(isWarmAmbiance ? Color.web("#B45309") : Color.web("#2A374A"));
+        gc.fillPolygon(new double[]{p0.sx, p1.sx, p2.sx, p3.sx},
+                       new double[]{p0.sy, p1.sy, p2.sy, p3.sy}, 4);
+
+        gc.setStroke(Color.web("#475569"));
+        gc.setLineWidth(1.5);
+        gc.strokePolygon(new double[]{p0.sx, p1.sx, p2.sx, p3.sx},
+                         new double[]{p0.sy, p1.sy, p2.sy, p3.sy}, 4);
+
+        // Lignes fines du sol
+        gc.setStroke(isWarmAmbiance ? Color.rgb(255, 255, 255, 0.08) : Color.rgb(255, 255, 255, 0.05));
+        gc.setLineWidth(1.0);
+        for (double x = 1.0; x < rw; x += 1.0) {
+            Point3D a = project3d(x, 0, 0, cw, ch);
+            Point3D b = project3d(x, rd, 0, cw, ch);
+            gc.strokeLine(a.sx, a.sy, b.sx, b.sy);
+        }
+        for (double z = 1.0; z < rd; z += 1.0) {
+            Point3D a = project3d(0, z, 0, cw, ch);
+            Point3D b = project3d(rw, z, 0, cw, ch);
+            gc.strokeLine(a.sx, a.sy, b.sx, b.sy);
+        }
+
+        // Tapis d'accueil bleu porte d'entrée
+        Point3D m0 = project3d(1.0, 0.05, 0.01, cw, ch);
+        Point3D m1 = project3d(2.1, 0.05, 0.01, cw, ch);
+        Point3D m2 = project3d(2.1, 1.0, 0.01, cw, ch);
+        Point3D m3 = project3d(1.0, 1.0, 0.01, cw, ch);
+        gc.setFill(Color.web("#2563EB"));
+        gc.fillPolygon(new double[]{m0.sx, m1.sx, m2.sx, m3.sx},
+                       new double[]{m0.sy, m1.sy, m2.sy, m3.sy}, 4);
+        gc.setStroke(Color.web("#93C5FD"));
+        gc.setLineWidth(1.2);
+        gc.strokePolygon(new double[]{m0.sx, m1.sx, m2.sx, m3.sx},
+                         new double[]{m0.sy, m1.sy, m2.sy, m3.sy}, 4);
+    }
+
+    private void drawArchitectureFeatures(GraphicsContext gc, double cw, double ch) {
+        double rw = PlanBcdService.ROOM_WIDTH;
+        double rd = PlanBcdService.ROOM_DEPTH;
+        double wallH = 1.4;
+
+        // Mur Nord : Verrière jaune
+        drawBoxSegment(gc, 2.1, -0.15, 0, 6.7, 0.15, wallH, Color.web("#F59E0B"), Color.web("#D97706"), cw, ch);
+
+        // Mur Ouest
+        drawBoxSegment(gc, -0.15, 0, 0, 0.15, rd, wallH, Color.web("#64748B"), Color.web("#475569"), cw, ch);
+
+        // Mur Sud : Grandes fenêtres extérieures (vitrage cyan)
+        drawBoxSegment(gc, 0, rd, 0, rw, 0.15, 0.7, Color.web("#38BDF8"), Color.web("#0284C7"), cw, ch);
+
+        // Mur Est
+        drawBoxSegment(gc, rw, 0, 0, 0.15, rd, wallH, Color.web("#64748B"), Color.web("#475569"), cw, ch);
+    }
+
+    private void drawBoxSegment(GraphicsContext gc, double x, double y, double z,
+                                double bw, double bd, double bh,
+                                Color topColor, Color sideColor, double cw, double ch) {
+        Point3D p001 = project3d(x, y, z + bh, cw, ch);
+        Point3D p101 = project3d(x + bw, y, z + bh, cw, ch);
+        Point3D p111 = project3d(x + bw, y + bd, z + bh, cw, ch);
+        Point3D p011 = project3d(x, y + bd, z + bh, cw, ch);
+
+        Point3D p000 = project3d(x, y, z, cw, ch);
+        Point3D p100 = project3d(x + bw, y, z, cw, ch);
+        Point3D p110 = project3d(x + bw, y + bd, z, cw, ch);
+        Point3D p010 = project3d(x, y + bd, z, cw, ch);
+
+        Point3D[][] faces = {
+                { p001, p101, p111, p011 }, // top
+                { p010, p011, p111, p110 }, // front (South)
+                { p100, p101, p001, p000 }, // back (North)
+                { p110, p111, p101, p100 }, // right (East)
+                { p000, p001, p011, p010 }  // left (West)
+        };
+
+        Color[] colors = {
+                topColor,
+                sideColor,
+                shadeColor(sideColor, -25),
+                shadeColor(sideColor, -12),
+                shadeColor(sideColor, 8)
+        };
+
+        for (int i = 0; i < faces.length; i++) {
+            Point3D[] pts = faces[i];
+            if (getPolygonSignedArea(pts) > 0) {
+                gc.beginPath();
+                gc.moveTo(pts[0].sx, pts[0].sy);
+                for (int p = 1; p < pts.length; p++) {
+                    gc.lineTo(pts[p].sx, pts[p].sy);
+                }
+                gc.closePath();
+                gc.setFill(colors[i]);
+                gc.fill();
+                gc.setStroke(Color.rgb(0, 0, 0, 0.22));
+                gc.setLineWidth(1.0);
+                gc.stroke();
+            }
+        }
+    }
+
+    private void drawFurniture3D(GraphicsContext gc, ZoneBcd z, double cw, double ch, boolean isHovered, boolean isSelected) {
+        double lift = isHovered ? 0.16 : 0.0;
+        double baseZ = lift;
+
+        if (isSelected) {
+            drawSelectionHalo(gc, z, cw, ch);
+        }
+
+        if (z.getCategorie() == CategorieMobilier.SHELF) {
+            drawBookShelf(gc, z, baseZ, cw, ch, isHovered, isSelected);
+        } else if (z.getCategorie() == CategorieMobilier.BIN) {
+            drawBookBin(gc, z, baseZ, cw, ch, isHovered, isSelected);
+        } else if (z.getId().equals("m-bureau")) {
+            drawReceptionDesk(gc, z, baseZ, cw, ch, isHovered, isSelected);
+        } else if (z.getId().equals("m-table")) {
+            drawReadingTable(gc, z, baseZ, cw, ch, isHovered, isSelected);
+        } else if (z.getId().equals("m-canape") || z.getId().equals("m-chaises")) {
+            drawSeating(gc, z, baseZ, cw, ch, isHovered, isSelected);
+        } else if (z.getId().equals("m-poufs")) {
+            drawPoufs(gc, z, baseZ, cw, ch, isHovered, isSelected);
+        } else if (z.getId().equals("m-chariot")) {
+            drawCart(gc, z, baseZ, cw, ch, isHovered, isSelected);
+        }
+    }
+
+    private void drawSelectionHalo(GraphicsContext gc, ZoneBcd z, double cw, double ch) {
+        double pad = 0.18;
+        Point3D p0 = project3d(z.getX1() - pad, z.getZ1() - pad, 0.02, cw, ch);
+        Point3D p1 = project3d(z.getX2() + pad, z.getZ1() - pad, 0.02, cw, ch);
+        Point3D p2 = project3d(z.getX2() + pad, z.getZ2() + pad, 0.02, cw, ch);
+        Point3D p3 = project3d(z.getX1() - pad, z.getZ2() + pad, 0.02, cw, ch);
+
+        gc.setFill(Color.rgb(59, 130, 246, 0.35));
+        gc.fillPolygon(new double[]{p0.sx, p1.sx, p2.sx, p3.sx},
+                       new double[]{p0.sy, p1.sy, p2.sy, p3.sy}, 4);
+
+        gc.setStroke(Color.web("#60A5FA"));
+        gc.setLineWidth(2.5);
+        gc.setLineDashes(6.0, 4.0);
+        gc.strokePolygon(new double[]{p0.sx, p1.sx, p2.sx, p3.sx},
+                         new double[]{p0.sy, p1.sy, p2.sy, p3.sy}, 4);
+        gc.setLineDashes(null);
+    }
+
+    private void drawBookShelf(GraphicsContext gc, ZoneBcd z, double baseZ, double cw, double ch, boolean isHovered, boolean isSelected) {
+        Color baseCol;
+        if (isSelected) {
+            baseCol = Color.web("#2563EB");
+        } else if (isHovered) {
+            baseCol = Color.web("#34D399");
+        } else if (z.getId().equals("8")) {
+            baseCol = Color.web("#10B981"); // Vert émeraude pour biblio verte
+        } else {
+            baseCol = Color.web("#F59E0B"); // Jaune école
+        }
+
+        drawBoxSegment(gc, z.getX1(), z.getZ1(), baseZ, z.getWidth(), z.getDepth(), z.getHauteur(),
+                shadeColor(baseCol, 22), baseCol, cw, ch);
+
+        // Dessin des livres réalistes sur les étagères (1:1 Prototype Web)
+        drawBooksOnShelf(gc, z, baseZ, cw, ch);
+    }
+
+    private void drawBooksOnShelf(GraphicsContext gc, ZoneBcd z, double baseZ, double cw, double ch) {
+        Color[] bookColors = {
+                Color.web("#EF4444"), Color.web("#3B82F6"), Color.web("#F59E0B"), Color.web("#10B981"),
+                Color.web("#8B5CF6"), Color.web("#EC4899"), Color.web("#06B6D4"), Color.web("#F97316")
+        };
+        int shelfLevels = 3;
+        boolean isHorizontal = z.getWidth() >= z.getDepth();
+
+        if (isHorizontal) {
+            int count = Math.min(10, Math.max(5, (int)(z.getWidth() * 4)));
+            double step = z.getWidth() / (count + 1);
+            for (int s = 1; s <= shelfLevels; s++) {
+                double bz = baseZ + (z.getHauteur() / (shelfLevels + 1)) * s;
+                for (int i = 0; i < count; i++) {
+                    double bx = z.getX1() + 0.08 + i * step;
+                    Color col = bookColors[(i * 3 + s) % bookColors.length];
+                    Point3D pA = project3d(bx, z.getZ2() + 0.02, bz, cw, ch);
+                    Point3D pB = project3d(bx + step * 0.72, z.getZ2() + 0.02, bz + (z.getHauteur() * 0.16), cw, ch);
+                    double minX = Math.min(pA.sx, pB.sx);
+                    double minY = Math.min(pA.sy, pB.sy);
+                    double bw = Math.max(3.0, Math.abs(pB.sx - pA.sx));
+                    double bh = Math.max(6.0, Math.abs(pB.sy - pA.sy));
+                    gc.setFill(col);
+                    gc.fillRect(minX, minY, bw, bh);
+                }
+            }
+        } else {
+            int count = Math.min(12, Math.max(6, (int)(z.getDepth() * 4)));
+            double step = z.getDepth() / (count + 1);
+            for (int s = 1; s <= shelfLevels; s++) {
+                double bz = baseZ + (z.getHauteur() / (shelfLevels + 1)) * s;
+                for (int i = 0; i < count; i++) {
+                    double by = z.getZ1() + 0.08 + i * step;
+                    Color col = bookColors[(i * 2 + s) % bookColors.length];
+                    Point3D pA = project3d(z.getX2() + 0.02, by, bz, cw, ch);
+                    Point3D pB = project3d(z.getX2() + 0.02, by + step * 0.72, bz + (z.getHauteur() * 0.16), cw, ch);
+                    double minX = Math.min(pA.sx, pB.sx);
+                    double minY = Math.min(pA.sy, pB.sy);
+                    double bw = Math.max(3.0, Math.abs(pB.sx - pA.sx));
+                    double bh = Math.max(6.0, Math.abs(pB.sy - pA.sy));
+                    gc.setFill(col);
+                    gc.fillRect(minX, minY, bw, bh);
+                }
+            }
+        }
+    }
+
+    private void drawBookBin(GraphicsContext gc, ZoneBcd z, double baseZ, double cw, double ch, boolean isHovered, boolean isSelected) {
+        Color baseCol;
+        if (isSelected) {
+            baseCol = Color.web("#2563EB");
+        } else if (isHovered) {
+            baseCol = Color.web("#F87171");
+        } else if (z.getId().equals("7")) {
+            baseCol = Color.web("#059669"); // Caisse verte
+        } else {
+            baseCol = Color.web("#EF4444"); // Rouge BD / Bacs
+        }
+
+        drawBoxSegment(gc, z.getX1(), z.getZ1(), baseZ, z.getWidth(), z.getDepth(), z.getHauteur(),
+                shadeColor(baseCol, 18), baseCol, cw, ch);
+
+        Point3D pMid = project3d(z.getCenterX(), z.getCenterZ(), baseZ + z.getHauteur() + 0.1, cw, ch);
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("System", FontWeight.BOLD, 9.5));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText(z.getNomCourt(), pMid.sx, pMid.sy);
+    }
+
+    private void drawReceptionDesk(GraphicsContext gc, ZoneBcd z, double baseZ, double cw, double ch, boolean isHovered, boolean isSelected) {
+        Color deskCol = isSelected ? Color.web("#2563EB") : (isHovered ? Color.web("#60A5FA") : Color.web("#E2E8F0"));
+        drawBoxSegment(gc, z.getX1(), z.getZ1(), baseZ, z.getWidth(), z.getDepth(), z.getHauteur(), Color.WHITE, deskCol, cw, ch);
+
+        // Ordinateur PC BCD Express
+        double pcX = z.getX1() + 0.2;
+        double pcZ = z.getZ1() + 0.3;
+        double pcH = baseZ + z.getHauteur();
+        drawBoxSegment(gc, pcX, pcZ, pcH, 0.4, 0.5, 0.35, Color.web("#38BDF8"), Color.web("#1E293B"), cw, ch);
+
+        Point3D pPc = project3d(pcX + 0.2, pcZ + 0.25, pcH + 0.45, cw, ch);
+        gc.setFill(Color.web("#38BDF8"));
+        gc.setFont(Font.font("System", FontWeight.BOLD, 9));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("💻 BCD Express", pPc.sx, pPc.sy);
+    }
+
+    private void drawReadingTable(GraphicsContext gc, ZoneBcd z, double baseZ, double cw, double ch, boolean isHovered, boolean isSelected) {
+        Color tableCol = isSelected ? Color.web("#2563EB") : (isHovered ? Color.web("#94A3B8") : Color.web("#CBD5E1"));
+        drawBoxSegment(gc, z.getX1(), z.getZ1(), baseZ, z.getWidth(), z.getDepth(), z.getHauteur(), Color.web("#F1F5F9"), tableCol, cw, ch);
+
+        Point3D pCenter = project3d(z.getCenterX(), z.getCenterZ(), baseZ + z.getHauteur() + 0.15, cw, ch);
+        gc.setFill(Color.web("#475569"));
+        gc.setFont(Font.font("System", FontWeight.BOLD, 9.5));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("📖 8 Places Travail / Pop-ups", pCenter.sx, pCenter.sy);
+    }
+
+    private void drawSeating(GraphicsContext gc, ZoneBcd z, double baseZ, double cw, double ch, boolean isHovered, boolean isSelected) {
+        Color col = isSelected ? Color.web("#2563EB") : (isHovered ? Color.web("#34D399") : Color.web("#10B981"));
+        drawBoxSegment(gc, z.getX1(), z.getZ1(), baseZ, z.getWidth(), z.getDepth(), z.getHauteur() * 0.55, shadeColor(col, 15), col, cw, ch);
+        drawBoxSegment(gc, z.getX1(), z.getZ1(), baseZ + z.getHauteur() * 0.55, z.getWidth(), 0.2, z.getHauteur() * 0.45, shadeColor(col, 25), col, cw, ch);
+    }
+
+    private void drawPoufs(GraphicsContext gc, ZoneBcd z, double baseZ, double cw, double ch, boolean isHovered, boolean isSelected) {
+        // Tapis vert foncé
+        Point3D p0 = project3d(z.getX1(), z.getZ1(), baseZ, cw, ch);
+        Point3D p1 = project3d(z.getX2(), z.getZ1(), baseZ, cw, ch);
+        Point3D p2 = project3d(z.getX2(), z.getZ2(), baseZ, cw, ch);
+        Point3D p3 = project3d(z.getX1(), z.getZ2(), baseZ, cw, ch);
+
+        gc.setFill(Color.web("#065F46"));
+        gc.fillPolygon(new double[]{p0.sx, p1.sx, p2.sx, p3.sx},
+                       new double[]{p0.sy, p1.sy, p2.sy, p3.sy}, 4);
+
+        // 3 Poufs verts
+        Color[] pColors = { Color.web("#10B981"), Color.web("#34D399"), Color.web("#059669") };
+        for (int i = 0; i < 3; i++) {
+            double px = z.getX1() + 0.35;
+            double pz = z.getZ1() + 0.3 + i * 0.5;
+            drawBoxSegment(gc, px, pz, baseZ + 0.02, 0.4, 0.4, 0.35, pColors[i], shadeColor(pColors[i], -15), cw, ch);
+        }
+    }
+
+    private void drawCart(GraphicsContext gc, ZoneBcd z, double baseZ, double cw, double ch, boolean isHovered, boolean isSelected) {
+        Color col = isSelected ? Color.web("#2563EB") : (isHovered ? Color.web("#94A3B8") : Color.web("#E2E8F0"));
+        drawBoxSegment(gc, z.getX1(), z.getZ1(), baseZ, z.getWidth(), z.getDepth(), z.getHauteur(), Color.WHITE, col, cw, ch);
+
+        Point3D pMid = project3d(z.getCenterX(), z.getCenterZ(), baseZ + z.getHauteur() + 0.12, cw, ch);
+        gc.setFill(Color.web("#475569"));
+        gc.setFont(Font.font("System", FontWeight.BOLD, 9));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("🛒 Retours", pMid.sx, pMid.sy);
+    }
+
+    private void drawShelfLabelBadge(GraphicsContext gc, ZoneBcd z, double cw, double ch, boolean isSelected) {
+        Point3D pTop = project3d(z.getCenterX(), z.getCenterZ(), z.getHauteur() + 0.42, cw, ch);
+
+        String text = (z.hasNumero() ? z.getIcon() + " " + z.getNumero() + ". " + z.getNomCourt() : z.getIcon() + " " + z.getNomCourt());
+        gc.setFont(Font.font("-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", FontWeight.BOLD, 10.5));
+
+        Text t = new Text(text);
+        t.setFont(gc.getFont());
+        double tw = t.getLayoutBounds().getWidth();
+        double pad = 8.0;
+        double bw = tw + pad * 2.0;
+        double bh = 20.0;
+        double bx = pTop.sx - bw / 2.0;
+        double by = pTop.sy - bh / 2.0;
+
+        gc.setFill(isSelected ? Color.web("#2563EB") : Color.rgb(15, 23, 42, 0.90));
+        gc.fillRoundRect(bx, by, bw, bh, 6, 6);
+        gc.setStroke(isSelected ? Color.web("#93C5FD") : Color.rgb(255, 255, 255, 0.22));
+        gc.setLineWidth(1.0);
+        gc.strokeRoundRect(bx, by, bw, bh, 6, 6);
+
+        gc.setFill(Color.WHITE);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText(text, pTop.sx, pTop.sy + 4.0);
+    }
+
+    private void drawHighlightedPin(GraphicsContext gc, double cw, double ch) {
+        if (pinnedZone == null) return;
+        Point3D top = project3d(pinnedZone.getCenterX(), pinnedZone.getCenterZ(), pinnedZone.getHauteur() + 0.75, cw, ch);
+        double bounce = Math.sin(animationTick * 3.0) * 8.0;
+        double py = top.sy + bounce;
+
+        gc.setFill(Color.web("#EF4444"));
+        gc.fillPolygon(new double[]{top.sx - 8, top.sx + 8, top.sx},
+                       new double[]{py - 24, py - 24, py}, 3);
+        gc.fillOval(top.sx - 12, py - 36, 24, 24);
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("System", FontWeight.BOLD, 12));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("📍", top.sx, py - 20);
+
+        if (pinnedBookTitle != null) {
+            String label = pinnedBookTitle + (pinnedBookCote != null ? " (" + pinnedBookCote + ")" : "");
+            Text t = new Text(label);
+            t.setFont(Font.font("System", FontWeight.BOLD, 11));
+            double tw = t.getLayoutBounds().getWidth();
+            double bw = tw + 16;
+            double bh = 22;
+            double bx = top.sx - bw / 2.0;
+            double by = py - 64;
+
+            gc.setFill(Color.rgb(15, 23, 42, 0.95));
+            gc.fillRoundRect(bx, by, bw, bh, 6, 6);
+            gc.setStroke(Color.web("#F59E0B"));
+            gc.setLineWidth(1.5);
+            gc.strokeRoundRect(bx, by, bw, bh, 6, 6);
+
+            gc.setFill(Color.web("#FDE68A"));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText(label, top.sx, by + 15);
+        }
+    }
+
+    /* ── Moteur de Rendu 2D Architectural (Plan du Dessus CAD) ──────────── */
+
     private void render2DPlan(GraphicsContext gc, double cw, double ch) {
         double roomW = PlanBcdService.ROOM_WIDTH;
         double roomD = PlanBcdService.ROOM_DEPTH;
 
-        // Calcul de l'échelle d'affichage en conservant le ratio
-        double margin = 40.0;
+        double margin = 48.0;
         double scaleX = (cw - margin * 2) / roomW;
         double scaleY = (ch - margin * 2) / roomD;
-        double scale = Math.min(scaleX, scaleY) * zoomFactor;
+        double scale = Math.min(scaleX, scaleY) * cameraZoom;
 
         double originX = (cw - roomW * scale) / 2.0 + panOffsetX;
         double originY = (ch - roomD * scale) / 2.0 + panOffsetY;
 
-        // 1. Fond de la salle
-        gc.setFill(Color.web("#FFFFFF"));
+        // Sol 2D sombre blueprint
+        gc.setFill(isWarmAmbiance ? Color.web("#B45309", 0.85) : Color.web("#1E293B"));
         gc.fillRect(originX, originY, roomW * scale, roomD * scale);
 
-        // Grille carrelée fine (tous les 1 mètre)
-        gc.setStroke(Color.web("#F1F5F9"));
+        gc.setStroke(Color.rgb(255, 255, 255, 0.08));
         gc.setLineWidth(1.0);
         for (double x = 1.0; x < roomW; x += 1.0) {
             gc.strokeLine(originX + x * scale, originY, originX + x * scale, originY + roomD * scale);
@@ -759,44 +1395,33 @@ public class Plan3DController {
         }
 
         // Contour de la salle
-        gc.setStroke(Color.web("#334155"));
-        gc.setLineWidth(3.0);
+        gc.setStroke(Color.web("#475569"));
+        gc.setLineWidth(2.5);
         gc.strokeRect(originX, originY, roomW * scale, roomD * scale);
 
-        // 2. Murs et ouvertures architecturales
-        // Verrière jaune (Nord : Z=0, X=2.1 à 8.8)
+        // Verrière jaune (Nord)
         gc.setStroke(Color.web("#EAB308"));
         gc.setLineWidth(5.0);
         gc.strokeLine(originX + 2.1 * scale, originY, originX + 8.8 * scale, originY);
 
         gc.setFont(Font.font("System", FontWeight.BOLD, 10));
-        gc.setFill(Color.web("#A16207"));
+        gc.setFill(Color.web("#FCD34D"));
         gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText("VERRIÈRE JAUNE (COULOIR)", originX + 5.45 * scale, originY - 10);
 
-        // Porte d'entrée (Nord : X=1.0 à 2.0)
-        gc.setFill(Color.web("#FFFFFF"));
-        gc.fillRect(originX + 1.0 * scale, originY - 3, 1.0 * scale, 6);
-        gc.setStroke(Color.web("#2563EB"));
-        gc.setLineWidth(2.5);
-        gc.strokeLine(originX + 1.0 * scale, originY, originX + 1.0 * scale, originY + 0.95 * scale);
-        gc.fillText("PORTE", originX + 1.5 * scale, originY - 10);
+        // Porte d'entrée
+        gc.setFill(Color.web("#2563EB"));
+        gc.fillRect(originX + 1.0 * scale, originY - 2, 1.0 * scale, 5);
+        gc.fillText("PORTE D'ENTRÉE", originX + 1.5 * scale, originY - 10);
 
-        // Grandes fenêtres extérieures (Sud : Z=7.5, X=0.4 à 8.6)
+        // Fenêtres (Sud)
         gc.setStroke(Color.web("#38BDF8"));
         gc.setLineWidth(5.0);
         gc.strokeLine(originX + 0.4 * scale, originY + roomD * scale, originX + 8.6 * scale, originY + roomD * scale);
-        gc.setFill(Color.web("#0284C7"));
-        gc.fillText("GRANDES FENÊTRES EXTÉRIEURES & RADIATEURS", originX + 4.5 * scale, originY + roomD * scale + 18);
+        gc.setFill(Color.web("#38BDF8"));
+        gc.fillText("GRANDES FENÊTRES EXTÉRIEURES", originX + 4.5 * scale, originY + roomD * scale + 18);
 
-        // Tapis bleu décoratif sous les poufs
-        gc.setFill(Color.web("#BAE6FD", 0.45));
-        gc.setStroke(Color.web("#7DD3FC"));
-        gc.setLineWidth(1.0);
-        gc.fillRoundRect(originX + 6.5 * scale, originY + 5.6 * scale, 1.6 * scale, 1.7 * scale, 10, 10);
-        gc.strokeRoundRect(originX + 6.5 * scale, originY + 5.6 * scale, 1.6 * scale, 1.7 * scale, 10, 10);
-
-        // 3. Dessin des meubles et îlots
+        // Dessin des meubles 2D
         for (ZoneBcd z : planService.getAllZones()) {
             double rx = originX + z.getX1() * scale;
             double ry = originY + z.getZ1() * scale;
@@ -810,28 +1435,25 @@ public class Plan3DController {
 
             gc.setGlobalAlpha(isDimmed ? 0.28 : 1.0);
 
-            // Couleur principale
             Color fillColor = Color.web(z.getCategorie().getColorFill());
             Color strokeColor = Color.web(z.getCategorie().getColorStroke());
-
             if ("8".equals(z.getId())) {
-                fillColor = Color.web("#BBF7D0"); // Vert clair pour biblio verte
+                fillColor = Color.web("#BBF7D0");
                 strokeColor = Color.web("#16A34A");
             }
 
             gc.setFill(fillColor);
             gc.fillRoundRect(rx, ry, rw, rh, 6, 6);
 
-            // Contour
             if (isSelected) {
-                gc.setStroke(Color.web("#1D4ED8"));
-                gc.setLineWidth(3.5);
+                gc.setStroke(Color.web("#60A5FA"));
+                gc.setLineWidth(3.0);
             } else if (isMatched) {
                 double pulse = 2.0 + Math.sin(animationTick * 2.0) * 1.5;
                 gc.setStroke(Color.web("#F59E0B"));
                 gc.setLineWidth(pulse);
             } else if (isHovered) {
-                gc.setStroke(Color.web("#0F172A"));
+                gc.setStroke(Color.WHITE);
                 gc.setLineWidth(2.0);
             } else {
                 gc.setStroke(strokeColor);
@@ -839,264 +1461,65 @@ public class Plan3DController {
             }
             gc.strokeRoundRect(rx, ry, rw, rh, 6, 6);
 
-            // Numéro ou Libellé
             if (btnToggleLabels.isSelected()) {
                 double cx = rx + rw / 2.0;
                 double cy = ry + rh / 2.0;
-
                 if (z.hasNumero()) {
-                    // Pastille blanche avec numéro
-                    double badgeR = Math.max(8, Math.min(14, 11 * zoomFactor));
-                    gc.setFill(Color.WHITE);
+                    double badgeR = Math.max(9, Math.min(13, 11 * cameraZoom));
+                    gc.setFill(Color.rgb(15, 23, 42, 0.90));
                     gc.fillOval(cx - badgeR, cy - badgeR, badgeR * 2, badgeR * 2);
                     gc.setStroke(strokeColor);
                     gc.setLineWidth(1.2);
                     gc.strokeOval(cx - badgeR, cy - badgeR, badgeR * 2, badgeR * 2);
 
-                    gc.setFill(Color.web("#0F172A"));
+                    gc.setFill(Color.WHITE);
                     gc.setFont(Font.font("System", FontWeight.BOLD, Math.max(9, badgeR * 1.1)));
                     gc.setTextAlign(TextAlignment.CENTER);
                     gc.fillText(String.valueOf(z.getNumero()), cx, cy + badgeR * 0.38);
                 } else {
                     gc.setFill(Color.web(z.getCategorie().getColorText()));
-                    gc.setFont(Font.font("System", FontWeight.BOLD, Math.max(8, 10 * zoomFactor)));
+                    gc.setFont(Font.font("System", FontWeight.BOLD, Math.max(8, 10 * cameraZoom)));
                     gc.setTextAlign(TextAlignment.CENTER);
                     gc.fillText(z.getNomCourt(), cx, cy + 3);
                 }
             }
-
             gc.setGlobalAlpha(1.0);
         }
 
-        // 4. Épingle flottante animée si livre repéré
         if (pinnedZone != null) {
-            drawPin(gc, originX + pinnedZone.getCenterX() * scale, originY + pinnedZone.getCenterZ() * scale);
+            drawPin2D(gc, originX + pinnedZone.getCenterX() * scale, originY + pinnedZone.getCenterZ() * scale);
         }
     }
 
-    /**
-     * Rendu 3D Isométrique complet avec extrusion, ombrage de profondeur et textures.
-     */
-    private void render3DIsometric(GraphicsContext gc, double cw, double ch) {
-        double roomW = PlanBcdService.ROOM_WIDTH;
-        double roomD = PlanBcdService.ROOM_DEPTH;
+    private void drawPin2D(GraphicsContext gc, double x, double y) {
+        double bounce = Math.sin(animationTick * 3.0) * 5.0;
+        double py = y + bounce;
 
-        // Facteurs de projection isométrique standard (30 degrés)
-        double cosAngle = 0.866; // cos(30°)
-        double sinAngle = 0.500; // sin(30°)
-        double unitScale = 36.0 * zoomFactor;
-        double heightScale = 28.0 * zoomFactor;
-
-        double centerX = cw / 2.0 + panOffsetX;
-        double centerY = ch / 2.0 + 80 + panOffsetY;
-
-        // Fonction locale de projection (x, z, h) -> (sx, sy)
-        java.util.function.BiFunction<Double, Double, double[]> project = (x, z) -> {
-            double rx = x - roomW / 2.0;
-            double rz = z - roomD / 2.0;
-            double sx = centerX + (rx - rz) * cosAngle * unitScale;
-            double sy = centerY + (rx + rz) * sinAngle * unitScale;
-            return new double[]{sx, sy};
-        };
-
-        // 1. Sol isométrique
-        double[] p0 = project.apply(0.0, 0.0);
-        double[] p1 = project.apply(roomW, 0.0);
-        double[] p2 = project.apply(roomW, roomD);
-        double[] p3 = project.apply(0.0, roomD);
-
-        gc.setFill(Color.web("#F8FAFC"));
-        gc.fillPolygon(new double[]{p0[0], p1[0], p2[0], p3[0]},
-                       new double[]{p0[1], p1[1], p2[1], p3[1]}, 4);
-        gc.setStroke(Color.web("#94A3B8"));
-        gc.setLineWidth(2.0);
-        gc.strokePolygon(new double[]{p0[0], p1[0], p2[0], p3[0]},
-                         new double[]{p0[1], p1[1], p2[1], p3[1]}, 4);
-
-        // Murs arrière (Nord et Ouest)
-        double wallH = 2.4 * heightScale;
-        gc.setFill(Color.web("#E2E8F0", 0.65));
-        // Mur Nord
-        gc.fillPolygon(new double[]{p0[0], p1[0], p1[0], p0[0]},
-                       new double[]{p0[1], p1[1], p1[1] - wallH, p0[1] - wallH}, 4);
-        // Mur Ouest
-        gc.fillPolygon(new double[]{p0[0], p3[0], p3[0], p0[0]},
-                       new double[]{p0[1], p3[1], p3[1] - wallH, p0[1] - wallH}, 4);
-
-        // 2. Dessin des meubles triés en profondeur (tri par Z puis X pour bon ordre de tracé)
-        List<ZoneBcd> sorted = new ArrayList<>(planService.getAllZones());
-        sorted.sort(Comparator.comparingDouble((ZoneBcd z) -> z.getZ1() + z.getX1()));
-
-        for (ZoneBcd z : sorted) {
-            boolean isSelected = z.equals(selectedZone);
-            boolean isHovered = z.equals(hoveredZone);
-            boolean isMatched = matchedZoneIds.contains(z.getId());
-            boolean isDimmed = !matchedZoneIds.isEmpty() && !isMatched && !isSelected;
-
-            gc.setGlobalAlpha(isDimmed ? 0.25 : 1.0);
-
-            double hPix = z.getHauteur() * heightScale;
-            double[] b0 = project.apply(z.getX1(), z.getZ1());
-            double[] b1 = project.apply(z.getX2(), z.getZ1());
-            double[] b2 = project.apply(z.getX2(), z.getZ2());
-            double[] b3 = project.apply(z.getX1(), z.getZ2());
-
-            Color baseColor = Color.web(z.getCategorie().getColorFill());
-            if ("8".equals(z.getId())) baseColor = Color.web("#4ADE80"); // Vert
-
-            // Face latérale Sud (b3 à b2)
-            gc.setFill(baseColor.darker());
-            gc.fillPolygon(new double[]{b3[0], b2[0], b2[0], b3[0]},
-                           new double[]{b3[1], b2[1], b2[1] - hPix, b3[1] - hPix}, 4);
-
-            // Face latérale Est (b2 à b1)
-            gc.setFill(baseColor.darker().darker());
-            gc.fillPolygon(new double[]{b2[0], b1[0], b1[0], b2[0]},
-                           new double[]{b2[1], b1[1], b1[1] - hPix, b2[1] - hPix}, 4);
-
-            // Face supérieure (Top)
-            gc.setFill(isSelected ? Color.web("#3B82F6") : baseColor.brighter());
-            gc.fillPolygon(new double[]{b0[0], b1[0], b2[0], b3[0]},
-                           new double[]{b0[1] - hPix, b1[1] - hPix, b2[1] - hPix, b3[1] - hPix}, 4);
-
-            // Arêtes
-            gc.setStroke(isSelected ? Color.web("#1D4ED8") : (isMatched ? Color.web("#F59E0B") : Color.web("#334155")));
-            gc.setLineWidth(isSelected || isMatched ? 2.5 : 1.0);
-            gc.strokePolygon(new double[]{b0[0], b1[0], b2[0], b3[0]},
-                             new double[]{b0[1] - hPix, b1[1] - hPix, b2[1] - hPix, b3[1] - hPix}, 4);
-
-            // Étiquettes flottantes 3D
-            if (btnToggleLabels.isSelected() && z.hasNumero()) {
-                double topCenterX = (b0[0] + b1[0] + b2[0] + b3[0]) / 4.0;
-                double topCenterY = (b0[1] + b1[1] + b2[1] + b3[1]) / 4.0 - hPix - 14;
-
-                double badgeR = Math.max(9, 11 * zoomFactor);
-                gc.setFill(isSelected ? Color.web("#1D4ED8") : Color.web("#0F172A", 0.9));
-                gc.fillRoundRect(topCenterX - badgeR * 1.5, topCenterY - badgeR, badgeR * 3, badgeR * 2, 8, 8);
-
-                gc.setFill(Color.WHITE);
-                gc.setFont(Font.font("System", FontWeight.BOLD, Math.max(9, badgeR * 1.05)));
-                gc.setTextAlign(TextAlignment.CENTER);
-                gc.fillText(String.valueOf(z.getNumero()), topCenterX, topCenterY + badgeR * 0.38);
-            }
-
-            gc.setGlobalAlpha(1.0);
-        }
-
-        // Épingle 3D
-        if (pinnedZone != null) {
-            double[] topPos = project.apply(pinnedZone.getCenterX(), pinnedZone.getCenterZ());
-            drawPin(gc, topPos[0], topPos[1] - pinnedZone.getHauteur() * heightScale - 20);
-        }
-    }
-
-    private void drawPin(GraphicsContext gc, double x, double y) {
-        double bounce = Math.sin(animationTick * 3.0) * 6;
-        double py = y - 10 + bounce;
-
-        // Ombre au sol
-        gc.setFill(Color.web("#0F172A", 0.25));
-        gc.fillOval(x - 8, y + 4, 16, 6);
-
-        // Bulle de l'épingle
-        gc.setFill(Color.web("#DC2626"));
-        gc.setStroke(Color.web("#FEF08A"));
-        gc.setLineWidth(2.0);
-
-        String text = pinnedBookTitle != null ? "📍 " + pinnedBookTitle : "📍 Zone " + (pinnedZone.hasNumero() ? pinnedZone.getNumero() : "");
-        gc.setFont(Font.font("System", FontWeight.BOLD, 11));
-        double textW = 120;
-        gc.fillRoundRect(x - textW / 2.0, py - 30, textW, 24, 8, 8);
-        gc.strokeRoundRect(x - textW / 2.0, py - 30, textW, 24, 8, 8);
-
-        // Flèche vers le bas
-        gc.fillPolygon(new double[]{x - 5, x + 5, x},
-                       new double[]{py - 6, py - 6, py}, 3);
+        gc.setFill(Color.web("#EF4444"));
+        gc.fillPolygon(new double[]{x - 7, x + 7, x}, new double[]{py - 20, py - 20, py}, 3);
+        gc.fillOval(x - 10, py - 30, 20, 20);
 
         gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("System", FontWeight.BOLD, 10));
         gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText(text.length() > 18 ? text.substring(0, 16) + "…" : text, x, py - 14);
+        gc.fillText("📍", x, py - 16);
     }
 
-    /**
-     * Détection du meuble cliqué ou survolé.
-     */
-    private ZoneBcd pickZone(double mx, double my) {
-        double roomW = PlanBcdService.ROOM_WIDTH;
-        double roomD = PlanBcdService.ROOM_DEPTH;
-
-        if (!isView3D) {
-            double margin = 40.0;
-            double scaleX = (mapCanvas.getWidth() - margin * 2) / roomW;
-            double scaleY = (mapCanvas.getHeight() - margin * 2) / roomD;
-            double scale = Math.min(scaleX, scaleY) * zoomFactor;
-
-            double originX = (mapCanvas.getWidth() - roomW * scale) / 2.0 + panOffsetX;
-            double originY = (mapCanvas.getHeight() - roomD * scale) / 2.0 + panOffsetY;
-
-            double roomX = (mx - originX) / scale;
-            double roomZ = (my - originY) / scale;
-
-            for (ZoneBcd z : planService.getAllZones()) {
-                if (z.containsPoint(roomX, roomZ)) {
-                    return z;
-                }
-            }
-        } else {
-            // Détection en mode isométrique
-            double cosAngle = 0.866;
-            double sinAngle = 0.500;
-            double unitScale = 36.0 * zoomFactor;
-            double heightScale = 28.0 * zoomFactor;
-            double centerX = mapCanvas.getWidth() / 2.0 + panOffsetX;
-            double centerY = mapCanvas.getHeight() / 2.0 + 80 + panOffsetY;
-
-            List<ZoneBcd> sorted = new ArrayList<>(planService.getAllZones());
-            sorted.sort((a, b) -> Double.compare(b.getZ1() + b.getX1(), a.getZ1() + a.getX1()));
-
-            for (ZoneBcd z : sorted) {
-                double rx = z.getCenterX() - roomW / 2.0;
-                double rz = z.getCenterZ() - roomD / 2.0;
-                double sx = centerX + (rx - rz) * cosAngle * unitScale;
-                double sy = centerY + (rx + rz) * sinAngle * unitScale - z.getHauteur() * heightScale / 2.0;
-                double dist = Math.hypot(mx - sx, my - sy);
-                if (dist < 26 * zoomFactor) {
-                    return z;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Calcule la cote indicative d'un livre pour affichage sur le plan et la douchette.
-     */
-    public static String computeCote(Livre l) {
-        if (l == null) return "S.C.";
-        String genre = l.getGenre() != null ? l.getGenre().trim() : "";
-        String dewey = l.getDewey() != null ? l.getDewey().trim() : "";
-        String auteur = l.getAuteur() != null ? l.getAuteur().trim().toUpperCase(Locale.FRENCH) : "";
-        String trigramme = auteur.length() >= 3 ? auteur.substring(0, 3) : auteur;
-
-        if (!dewey.isEmpty()) {
-            return dewey + (!trigramme.isEmpty() ? " " + trigramme : "");
-        }
-        if ("BD".equalsIgnoreCase(genre)) {
-            return "BD" + (!trigramme.isEmpty() ? " " + trigramme : "");
-        }
-        if ("Roman".equalsIgnoreCase(genre)) {
-            return "R " + (!trigramme.isEmpty() ? trigramme : "");
-        }
-        if ("Album".equalsIgnoreCase(genre)) {
-            return "A " + (!trigramme.isEmpty() ? trigramme : "");
-        }
-        if ("Conte".equalsIgnoreCase(genre)) {
-            return "C " + (!trigramme.isEmpty() ? trigramme : "");
-        }
-        if ("Revue / Magazine".equalsIgnoreCase(genre)) {
-            return "REV";
-        }
-        return (!genre.isEmpty() ? genre.substring(0, Math.min(3, genre.length())).toUpperCase() : "LIV")
-                + (!trigramme.isEmpty() ? " " + trigramme : "");
+    private static String computeCote(Livre l) {
+        if (l == null) return "BCD";
+        String genre = l.getGenre() != null ? l.getGenre().toUpperCase() : "ROM";
+        String auteur = l.getAuteur() != null ? l.getAuteur().trim().toUpperCase() : "INC";
+        String prefix = switch (genre) {
+            case "BD", "BANDE DESSINÉE" -> "BD";
+            case "DOCUMENTAIRE" -> "DOC";
+            case "ALBUM" -> "ALB";
+            case "CONTE" -> "CON";
+            case "POÉSIE" -> "POE";
+            case "THÉÂTRE" -> "THE";
+            case "REVUE", "MAGAZINE" -> "REV";
+            default -> "ROM";
+        };
+        char tri = PlanBcdService.getNomFamilleLettre(auteur);
+        return prefix + " " + tri;
     }
 }
