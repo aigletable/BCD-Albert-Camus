@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.canvas.Canvas?>
+<?import fr.ecole.bcd.view.ResizableCanvas?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
@@ -87,13 +87,13 @@
         </VBox>
 
         <!-- ── 4. Zone Principale : Viewport Carte (2D / 3D) + Panneau latéral Inspecteur ── -->
-        <HBox spacing="14" VBox.vgrow="ALWAYS" minHeight="540">
+        <HBox spacing="14" VBox.vgrow="ALWAYS" minHeight="0" prefHeight="400">
 
             <!-- ── Viewport Carte & Maquette ── -->
-            <VBox spacing="0" HBox.hgrow="ALWAYS" styleClass="map3d-viewport-card">
-                <StackPane fx:id="canvasContainer" VBox.vgrow="ALWAYS" styleClass="map3d-canvas-wrapper">
-                    <!-- Canvas de dessin principal -->
-                    <Canvas fx:id="mapCanvas"/>
+            <VBox spacing="0" HBox.hgrow="ALWAYS" styleClass="map3d-viewport-card" minHeight="0">
+                <StackPane fx:id="canvasContainer" VBox.vgrow="ALWAYS" styleClass="map3d-canvas-wrapper" minHeight="0" minWidth="0">
+                    <!-- Canvas de dessin principal redimensionnable sans boucle d'agrandissement -->
+                    <ResizableCanvas fx:id="mapCanvas"/>
 
                     <!-- Barre d'outils flottante en haut à droite -->
                     <HBox spacing="6" alignment="CENTER_RIGHT" StackPane.alignment="TOP_RIGHT" styleClass="map3d-canvas-toolbar">

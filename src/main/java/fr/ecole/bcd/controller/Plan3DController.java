@@ -114,12 +114,18 @@ public class Plan3DController {
     public void initialize() {
         // Redimensionnement automatique du Canvas
         canvasContainer.widthProperty().addListener((obs, oldW, newW) -> {
-            mapCanvas.setWidth(newW.doubleValue());
-            render();
+            double w = newW.doubleValue();
+            if (w > 0 && Math.abs(mapCanvas.getWidth() - w) > 0.5) {
+                mapCanvas.setWidth(w);
+                render();
+            }
         });
         canvasContainer.heightProperty().addListener((obs, oldH, newH) -> {
-            mapCanvas.setHeight(newH.doubleValue());
-            render();
+            double h = newH.doubleValue();
+            if (h > 0 && Math.abs(mapCanvas.getHeight() - h) > 0.5) {
+                mapCanvas.setHeight(h);
+                render();
+            }
         });
 
         setupMouseInteractions();

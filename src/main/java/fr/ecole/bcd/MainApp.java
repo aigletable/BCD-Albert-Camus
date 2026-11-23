@@ -275,8 +275,8 @@ public class MainApp extends Application {
         // Onglet Mallettes Pédagogiques (FXML chargé)
         tabPane.getTabs().add(createFxmlTab("🎒  Mallettes Thématiques", "/fxml/mallettes.fxml"));
 
-        // Onglet Plan 3D de la BCD & Rangement (FXML chargé)
-        tabPane.getTabs().add(createFxmlTab("🗺️  Plan 3D BCD", "/fxml/plan3d.fxml"));
+        // Onglet Plan 3D de la BCD & Rangement (FXML chargé directement sans ScrollPane pour garantir un plan fixe)
+        tabPane.getTabs().add(createFxmlTabDirect("🗺️  Plan 3D BCD", "/fxml/plan3d.fxml"));
 
         // Synchronisation automatique des données lors de la navigation entre onglets
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
@@ -432,6 +432,30 @@ public class MainApp extends Application {
             System.err.println("❌ Erreur de chargement FXML : " + fxmlPath);
             e.printStackTrace();
             // Fallback : placeholder en cas d'erreur
+            tab.setContent(createPlaceholderContent(title, "⚠️ Erreur de chargement : " + e.getMessage()));
+        }
+        return tab;
+    }
+
+    /**
+     * Charge une vue FXML et instancie son contrôleur directement dans l'onglet sans ScrollPane externe.
+     * Utilisé pour les vues à disposition fixe et interactive (comme le Plan 3D de la BCD)
+     * afin d'éviter toute boucle d'agrandissement et de garantir une page stable.
+     *
+     * @param title l'intitulé textuel affiché dans l'onglet
+     * @param fxmlPath le chemin du fichier FXML dans les ressources de l'application
+     * @return l'onglet prêt à être inséré dans le {@link TabPane}
+     */
+    private Tab createFxmlTabDirect(String title, String fxmlPath) {
+        Tab tab = new Tab(title);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Node content = loader.load();
+            tab.setContent(content);
+            tab.setUserData(loader.getController());
+        } catch (IOException e) {
+            System.err.println("❌ Erreur de chargement FXML direct : " + fxmlPath);
+            e.printStackTrace();
             tab.setContent(createPlaceholderContent(title, "⚠️ Erreur de chargement : " + e.getMessage()));
         }
         return tab;
