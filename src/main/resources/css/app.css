@@ -1043,3 +1043,220 @@
 
 
 
+
+/* ── 🗺️ PLAN 3D & RANGEMENT BCD EXPRESS (Style Prototype Web) ──────── */
+.map3d-header {
+    -fx-padding: 0 0 4px 0;
+}
+
+.map3d-prototype-pill {
+    -fx-background-color: #FEF3C7;
+    -fx-text-fill: #92400E;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: 800;
+    -fx-padding: 2px 8px;
+    -fx-background-radius: 999px;
+    -fx-border-color: #FCD34D;
+    -fx-border-radius: 999px;
+}
+
+.btn-douchette-indigo {
+    -fx-background-color: #6366F1;
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-font-size: 12px;
+    -fx-padding: 6px 14px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.btn-douchette-indigo:hover {
+    -fx-background-color: #4F46E5;
+}
+
+.map3d-banner-intention {
+    -fx-background-color: #FFFBEB;
+    -fx-border-width: 1px 1px 1px 4px;
+    -fx-border-color: #FDE68A #FDE68A #FDE68A #F59E0B;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 14px;
+}
+
+.map3d-topbar-card {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 12px 14px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.03), 6, 0, 0, 1);
+}
+
+.map3d-search-box {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 2px 10px;
+}
+
+.map3d-search-input {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-font-size: 12.5px;
+    -fx-padding: 6px 4px;
+}
+
+.btn-clear-search {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 11px;
+    -fx-padding: 2px 6px;
+    -fx-cursor: hand;
+}
+
+.btn-clear-search:hover {
+    -fx-text-fill: #0F172A;
+}
+
+.map3d-search-status {
+    -fx-font-size: 11.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 4px 10px;
+    -fx-background-radius: 6px;
+}
+
+.map3d-pill {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #475569;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-padding: 4px 10px;
+    -fx-background-radius: 999px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 999px;
+    -fx-cursor: hand;
+}
+
+.map3d-pill:hover {
+    -fx-background-color: #E2E8F0;
+    -fx-text-fill: #0F172A;
+}
+
+.map3d-pill-active {
+    -fx-background-color: #1A66FF !important;
+    -fx-text-fill: #FFFFFF !important;
+    -fx-border-color: #1A66FF !important;
+}
+
+.map3d-viewport-card {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 14px;
+    -fx-background-radius: 14px;
+    -fx-padding: 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.04), 8, 0, 0, 2);
+}
+
+.map3d-canvas-wrapper {
+    -fx-background-color: #F8FAFC;
+    -fx-background-radius: 10px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 10px;
+}
+
+.map3d-canvas-toolbar {
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-radius: 8px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8px;
+    -fx-padding: 6px 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 6, 0, 0, 2);
+}
+
+.map3d-tool-btn {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-text-fill: #334155;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-padding: 4px 8px;
+    -fx-cursor: hand;
+}
+
+.map3d-tool-btn:hover {
+    -fx-background-color: #F1F5F9;
+    -fx-border-color: #CBD5E1;
+}
+
+.map3d-compass-box {
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-radius: 8px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8px;
+    -fx-padding: 5px 10px;
+}
+
+.map3d-compass-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #475569;
+}
+
+.map3d-floating-tooltip {
+    -fx-background-color: rgba(15, 23, 42, 0.92);
+    -fx-background-radius: 8px;
+    -fx-padding: 8px 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 8, 0, 0, 3);
+}
+
+.map3d-tooltip-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #FFFFFF;
+}
+
+.map3d-tooltip-sub {
+    -fx-font-size: 10.5px;
+    -fx-text-fill: #94A3B8;
+}
+
+.map3d-tooltip-hint {
+    -fx-font-size: 9.5px;
+    -fx-text-fill: #38BDF8;
+    -fx-padding: 2px 0 0 0;
+}
+
+.map3d-canvas-hint {
+    -fx-background-color: rgba(255, 255, 255, 0.94);
+    -fx-background-radius: 8px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8px;
+    -fx-padding: 6px 14px;
+}
+
+.map3d-hint-text {
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #334155;
+}
+
+.map3d-nav-help {
+    -fx-font-size: 10.5px;
+    -fx-text-fill: #94A3B8;
+}
+
+.map3d-swatch-shelf   { -fx-background-color: #FDE047; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #CA8A04; -fx-border-radius: 3px; }
+.map3d-swatch-bin     { -fx-background-color: #67E8F9; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #0891B2; -fx-border-radius: 3px; }
+.map3d-swatch-green   { -fx-background-color: #4ADE80; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #16A34A; -fx-border-radius: 3px; }
+.map3d-swatch-seating { -fx-background-color: #FB7185; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #E11D48; -fx-border-radius: 3px; }
+.map3d-swatch-desk    { -fx-background-color: #BAE6FD; -fx-min-width: 12px; -fx-min-height: 12px; -fx-background-radius: 3px; -fx-border-color: #38BDF8; -fx-border-radius: 3px; }
+
+.map3d-sidebar-card {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 14px;
+    -fx-background-radius: 14px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.04), 8, 0, 0, 2);
+}

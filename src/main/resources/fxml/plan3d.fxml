@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+    Onglet Plan 3D de la BCD & Emplacement des Livres — BCD Express
+    Design 100% fidèle au prototype web :
+    - En-tête : Titre + Badge Prototype + Actions (Assistant Douchette, Étiquettes, Vue Web 3D)
+    - Bandeau d'intention Prototype jaune
+    - Barre de recherche rapide & filtres de rayons (Pills)
+    - Disposition divisée :
+        * Gauche : Viewport interactif (Plan 2D / 3D Isométrique) avec barre d'outils flottante et légende
+        * Droite : Fiche d'inspection latérale détaillée avec livres réels issus de SQLite
+-->
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="fr.ecole.bcd.controller.Plan3DController">
+
+    <VBox spacing="14" styleClass="tab-content">
+
+        <!-- ── 1. En-tête de l'onglet avec tag PROTOTYPE ── -->
+        <HBox spacing="12" alignment="CENTER_LEFT" styleClass="map3d-header">
+            <VBox spacing="3" HBox.hgrow="ALWAYS">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="🗺️  Plan 3D de la BCD &amp; Emplacement des Livres" styleClass="screen-title"/>
+                    <Label text="💡 PROTOTYPE / IDÉE EN TEST" styleClass="map3d-prototype-pill"/>
+                </HBox>
+                <Label text="Modélisation spatiale interactive fidèle aux étagères et îlots réels de la BCD Albert Camus • Repérage de rayon et reclassement douchette"
+                       styleClass="screen-subtitle"/>
+            </VBox>
+
+            <HBox spacing="8" alignment="CENTER_RIGHT">
+                <Button fx:id="btnAssistantDouchette" text="⚡ Assistant Douchette (Bip &amp; Range)"
+                        styleClass="btn-douchette-indigo" onAction="#handleOpenAssistantDouchette"/>
+                <Button fx:id="btnEtiquettesRayon" text="🏷️ Étiquettes de rayon"
+                        styleClass="btn-outline" onAction="#handleOpenEtiquettesRayon"/>
+                <Button fx:id="btnOuvrirVueWeb" text="🌐 Vue Web 3D (Three.js)"
+                        styleClass="btn-outline" onAction="#handleOpenVueWeb"/>
+            </HBox>
+        </HBox>
+
+        <!-- ── 2. Bandeau explicatif : Note d'intention Prototype / Idée ── -->
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="map3d-banner-intention">
+            <Label text="💡" style="-fx-font-size: 20px;"/>
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label text="Note d'intention (Concept exploratoire) :"
+                       style="-fx-font-weight: 800; -fx-text-fill: #92400E; -fx-font-size: 12.5px;"/>
+                <Label text="Cet onglet est un prototype pour tester l'idée d'une carte 3D interactive de la bibliothèque avec chaque étagère identifiée (Romans Séries, Docs Histoire, Îlots, Biblio verte, Bac BD, Bacs CP/CE1, etc.) pour guider les élèves et bénévoles."
+                       wrapText="true" style="-fx-text-fill: #92400E; -fx-font-size: 12px;"/>
+            </VBox>
+        </HBox>
+
+        <!-- ── 3. Barre de recherche rapide & filtres de rayons ── -->
+        <VBox spacing="8" styleClass="map3d-topbar-card">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <HBox spacing="8" alignment="CENTER_LEFT" styleClass="map3d-search-box" HBox.hgrow="ALWAYS">
+                    <Label text="🔍" style="-fx-font-size: 14px; -fx-text-fill: #94A3B8;"/>
+                    <TextField fx:id="mapSearchField"
+                               promptText="Où est rangé ce livre ? (ex: Petit Prince, Astérix, Harry Potter, Wapiti, Dinosaures...)"
+                               HBox.hgrow="ALWAYS" styleClass="map3d-search-input"/>
+                    <Button fx:id="btnClearSearch" text="✕" onAction="#handleClearSearch"
+                            visible="false" managed="false" styleClass="btn-clear-search"/>
+                </HBox>
+
+                <!-- Label indiquant le résultat de recherche -->
+                <Label fx:id="lblSearchStatus" text="" styleClass="map3d-search-status" visible="false" managed="false"/>
+            </HBox>
+
+            <!-- Filtres pilules de rayon comme sur le prototype -->
+            <ScrollPane fitToHeight="true" vbarPolicy="NEVER" hbarPolicy="AS_NEEDED"
+                        style="-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0;">
+                <HBox fx:id="pillsContainer" spacing="6" alignment="CENTER_LEFT">
+                    <Button fx:id="pillAll" text="Tous les espaces (11)" styleClass="map3d-pill, map3d-pill-active" onAction="#handleFilterAll"/>
+                    <Button fx:id="pillShelves" text="🟩 Étagères murales" styleClass="map3d-pill" onAction="#handleFilterShelves"/>
+                    <Button fx:id="pillIlots" text="🏛️ Îlots centraux" styleClass="map3d-pill" onAction="#handleFilterIlots"/>
+                    <Button fx:id="pillBins" text="🟥 Bacs à livres" styleClass="map3d-pill" onAction="#handleFilterBins"/>
+                    <Button fx:id="pillBD" text="💬 BD &amp; Mangas" styleClass="map3d-pill" onAction="#handleFilterBD"/>
+                    <Button fx:id="pillRomans" text="📚 Romans &amp; Séries" styleClass="map3d-pill" onAction="#handleFilterRomans"/>
+                    <Button fx:id="pillAlbums" text="🎨 Albums A-T" styleClass="map3d-pill" onAction="#handleFilterAlbums"/>
+                    <Button fx:id="pillDocs" text="🔬 Documentaires" styleClass="map3d-pill" onAction="#handleFilterDocs"/>
+                    <Button fx:id="pillRevues" text="📰 Revues Jeunesse" styleClass="map3d-pill" onAction="#handleFilterRevues"/>
+                </HBox>
+            </ScrollPane>
+        </VBox>
+
+        <!-- ── 4. Zone Principale : Viewport Carte (2D / 3D) + Panneau latéral Inspecteur ── -->
+        <HBox spacing="14" VBox.vgrow="ALWAYS" minHeight="540">
+
+            <!-- ── Viewport Carte & Maquette ── -->
+            <VBox spacing="0" HBox.hgrow="ALWAYS" styleClass="map3d-viewport-card">
+                <StackPane fx:id="canvasContainer" VBox.vgrow="ALWAYS" styleClass="map3d-canvas-wrapper">
+                    <!-- Canvas de dessin principal -->
+                    <Canvas fx:id="mapCanvas"/>
+
+                    <!-- Barre d'outils flottante en haut à droite -->
+                    <HBox spacing="6" alignment="CENTER_RIGHT" StackPane.alignment="TOP_RIGHT" styleClass="map3d-canvas-toolbar">
+                        <HBox alignment="CENTER" spacing="2" styleClass="view-switcher-box">
+                            <Button fx:id="btnView2D" text="📐 Plan 2D" onAction="#handleSetView2D"
+                                    styleClass="btn-view-toggle, btn-view-active"/>
+                            <Button fx:id="btnView3D" text="🧊 Vue 3D Isométrique" onAction="#handleSetView3D"
+                                    styleClass="btn-view-toggle, btn-view-inactive"/>
+                        </HBox>
+                        <Button fx:id="btnZoomIn" text="🔍+" onAction="#handleZoomIn" styleClass="map3d-tool-btn" tooltip="$tooltipZoomIn"/>
+                        <Button fx:id="btnZoomOut" text="🔍-" onAction="#handleZoomOut" styleClass="map3d-tool-btn"/>
+                        <Button fx:id="btnResetView" text="🔄 Réinitialiser" onAction="#handleResetView" styleClass="map3d-tool-btn"/>
+                        <ToggleButton fx:id="btnToggleLabels" text="🏷️ Étiquettes : OUI" selected="true"
+                                      onAction="#handleToggleLabels" styleClass="map3d-tool-btn"/>
+                    </HBox>
+
+                    <!-- Boussole / Orientation en haut à gauche -->
+                    <HBox spacing="6" alignment="CENTER_LEFT" StackPane.alignment="TOP_LEFT" styleClass="map3d-compass-box">
+                        <Label text="🧭" style="-fx-font-size: 14px;"/>
+                        <Label fx:id="lblOrientation" text="Nord : Verrière (Couloir) • Sud : Grandes Fenêtres"
+                               styleClass="map3d-compass-label"/>
+                    </HBox>
+
+                    <!-- Info-bulle flottante au survol -->
+                    <VBox fx:id="tooltipBox" visible="false" managed="false" StackPane.alignment="TOP_LEFT"
+                          styleClass="map3d-floating-tooltip">
+                        <Label fx:id="tooltipTitle" text="" styleClass="map3d-tooltip-title"/>
+                        <Label fx:id="tooltipSub" text="" styleClass="map3d-tooltip-sub"/>
+                        <Label fx:id="tooltipHint" text="Clic pour ouvrir la fiche détaillée" styleClass="map3d-tooltip-hint"/>
+                    </VBox>
+
+                    <!-- Légende et aide de navigation en bas -->
+                    <HBox spacing="14" alignment="CENTER_LEFT" StackPane.alignment="BOTTOM_CENTER" styleClass="map3d-canvas-hint">
+                        <HBox spacing="14" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Region styleClass="map3d-swatch-shelf"/>
+                                <Label text="Étagères" styleClass="map3d-hint-text"/>
+                            </HBox>
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Region styleClass="map3d-swatch-bin"/>
+                                <Label text="Bacs à livres" styleClass="map3d-hint-text"/>
+                            </HBox>
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Region styleClass="map3d-swatch-green"/>
+                                <Label text="Biblio verte (Sciences)" styleClass="map3d-hint-text"/>
+                            </HBox>
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Region styleClass="map3d-swatch-seating"/>
+                                <Label text="Chaises / Poufs" styleClass="map3d-hint-text"/>
+                            </HBox>
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Region styleClass="map3d-swatch-desk"/>
+                                <Label text="Bureaux / Tri" styleClass="map3d-hint-text"/>
+                            </HBox>
+                        </HBox>
+                        <Label text="🖱️ Clic = inspecter • Glisser = déplacer • Molette = zoomer" styleClass="map3d-nav-help"/>
+                    </HBox>
+                </StackPane>
+            </VBox>
+
+            <!-- ── Panneau Inspecteur Latéral (Fiche détaillée meuble) ── -->
+            <VBox fx:id="sidebarCard" prefWidth="380" minWidth="340" maxWidth="420" styleClass="map3d-sidebar-card">
+                <ScrollPane fitToWidth="true" vbarPolicy="AS_NEEDED" hbarPolicy="NEVER" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0;">
+                    <VBox fx:id="sidebarContent" spacing="12" style="-fx-padding: 16px;">
+                        <!-- Contenu injecté dynamiquement par le contrôleur -->
+                    </VBox>
+                </ScrollPane>
+            </VBox>
+
+        </HBox>
+
+    </VBox>
+
+</StackPane>

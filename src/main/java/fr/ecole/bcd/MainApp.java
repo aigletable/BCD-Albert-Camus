@@ -275,6 +275,9 @@ public class MainApp extends Application {
         // Onglet Mallettes Pédagogiques (FXML chargé)
         tabPane.getTabs().add(createFxmlTab("🎒  Mallettes Thématiques", "/fxml/mallettes.fxml"));
 
+        // Onglet Plan 3D de la BCD & Rangement (FXML chargé)
+        tabPane.getTabs().add(createFxmlTab("🗺️  Plan 3D BCD", "/fxml/plan3d.fxml"));
+
         // Synchronisation automatique des données lors de la navigation entre onglets
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null && newTab.getUserData() != null) {
@@ -291,6 +294,8 @@ public class MainApp extends Application {
                     uc.loadData();
                 } else if (controller instanceof fr.ecole.bcd.controller.MallettesController mc) {
                     mc.loadData();
+                } else if (controller instanceof fr.ecole.bcd.controller.Plan3DController p3c) {
+                    p3c.loadData();
                 }
             }
         });

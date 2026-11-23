@@ -127,6 +127,7 @@ public class SmokeTest {
             testBackupService();
             testPassageAnneeService();
             testRechercheMotsCles();
+            testPlanBcdService();
 
             // Nettoyage final
             cleanTestData();
@@ -1764,6 +1765,78 @@ public class SmokeTest {
         // 4. Nettoyage
         dao.delete(l1.getIsbn());
         dao.delete(l2.getIsbn());
+
+        System.out.println();
+    }
+
+    // =====================================================================
+    //  Tests PlanBcdService & ZoneBcd (Plan 2D & Maquette 3D BCD Camus)
+    // =====================================================================
+
+    private static void testPlanBcdService() {
+        System.out.println("── 🗺️ Test PlanBcdService & Rangement BCD (11 Zones réelles) ──");
+        fr.ecole.bcd.service.PlanBcdService service = new fr.ecole.bcd.service.PlanBcdService();
+
+        // 1. Structure du plan
+        check("16 éléments au total (11 zones + 5 mobiliers)", service.getAllZones().size() == 16);
+        check("11 zones numérotées exactes", service.getNumberedZones().size() == 11);
+        check("5 mobiliers complémentaires", service.getMiscFurniture().size() == 5);
+
+        // 2. Vérification des zones clés
+        fr.ecole.bcd.model.ZoneBcd z1 = service.findByNumero(1).orElse(null);
+        check("Zone 1 présente (Contes / Poésie & Romans A-P)", z1 != null && z1.getNom().contains("Contes"));
+
+        fr.ecole.bcd.model.ZoneBcd z2 = service.findByNumero(2).orElse(null);
+        check("Zone 2 présente (Grand bac BD)", z2 != null && z2.getCotePrefix().equals("BD"));
+
+        fr.ecole.bcd.model.ZoneBcd z3 = service.findByNumero(3).orElse(null);
+        check("Zone 3 présente (Grand linéaire mural S-Z & Docs)", z3 != null && z3.getNom().contains("Grand linéaire mural"));
+
+        fr.ecole.bcd.model.ZoneBcd z8 = service.findByNumero(8).orElse(null);
+        check("Zone 8 présente (Bibliothèque Verte Sciences 500)", z8 != null && z8.getCouleurReelle().contains("VERTE"));
+
+        // 3. Règles d'affectation automatique de rayon (determineZoneForLivre)
+        Livre bd = new Livre("9782864972662", "Astérix le Gaulois", "Goscinny & Uderzo", "Albert René", "");
+        bd.setGenre("BD");
+        check("BD Astérix rangée en Zone 2 (Grand bac BD)", service.determineZoneForLivre(bd).getNumero() == 2);
+
+        Livre harry = new Livre("9782070584628", "Harry Potter à l'école des sorciers", "J.K. Rowling", "Gallimard", "");
+        harry.setGenre("Roman");
+        check("Harry Potter rangé en Zone 3 (Mur Romans S-Z / Séries)", service.determineZoneForLivre(harry).getNumero() == 3);
+
+        Livre romanA = new Livre("9782070612758", "Charlie et la chocolaterie", "Roald Dahl", "Gallimard", "");
+        romanA.setGenre("Roman");
+        check("Roman auteur D (Dahl) rangé en Zone 1 (Étagère Romans A-P)", service.determineZoneForLivre(romanA).getNumero() == 1);
+
+        Livre romanZ = new Livre("9782070515158", "Le Tour du monde en 80 jours", "Jules Verne", "Hetzel", "");
+        romanZ.setGenre("Roman");
+        check("Roman auteur V (Verne) rangé en Zone 3 (Mur Romans S-Z)", service.determineZoneForLivre(romanZ).getNumero() == 3);
+
+        Livre conte = new Livre("9782070538805", "Contes de ma mère l'Oye", "Charles Perrault", "Gallimard", "");
+        conte.setGenre("Conte");
+        check("Conte Perrault rangé en Zone 1 (Face Contes)", service.determineZoneForLivre(conte).getNumero() == 1);
+
+        Livre docSciences = new Livre("9782092589000", "Les dinosaures", "Collectif", "Nathan", "");
+        docSciences.setGenre("Documentaire");
+        docSciences.setDewey("599");
+        check("Docu Sciences 599 rangé en Zone 8 (Bibliothèque Verte)", service.determineZoneForLivre(docSciences).getNumero() == 8);
+
+        Livre docHist = new Livre("9782092589001", "Les châteaux forts au Moyen Âge", "Historien", "Nathan", "");
+        docHist.setGenre("Documentaire");
+        docHist.setDewey("944");
+        check("Docu Histoire 944 rangé en Zone 3 (Mur Docs Histoire 900)", service.determineZoneForLivre(docHist).getNumero() == 3);
+
+        Livre album = new Livre("9782211090000", "Chien bleu", "Nadja", "L'école des loisirs", "");
+        album.setGenre("Album");
+        check("Album classique Nadja rangé en Zone 6 (Îlot central Albums)", service.determineZoneForLivre(album).getNumero() == 6);
+
+        Livre jeu = new Livre("9782700000000", "Où est Charlie ?", "Martin Handford", "Gründ", "");
+        check("Livre jeu Charlie rangé en Zone 7 (Bac Livres jeux)", service.determineZoneForLivre(jeu).getNumero() == 7);
+
+        // 4. Recherche textuelle (matchesQuery)
+        check("Recherche 'astérix' trouve la Zone 2", z2.matchesQuery("astérix"));
+        check("Recherche 'dinosaures' trouve la Zone 8", z8.matchesQuery("dinosaures"));
+        check("Recherche 'poésie' trouve la Zone 1", z1.matchesQuery("poésie"));
 
         System.out.println();
     }

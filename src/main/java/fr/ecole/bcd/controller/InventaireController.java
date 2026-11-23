@@ -851,6 +851,17 @@ public class InventaireController {
         }
     }
 
+    /**
+     * Filtre le catalogue par mot-clé (appelé depuis le plan 3D ou d'autres onglets).
+     *
+     * @param query terme de recherche
+     */
+    public void filterByQuery(String query) {
+        if (searchField != null) {
+            searchField.setText(query != null ? query : "");
+        }
+    }
+
     private void applyFilter(String query) {
         String lowerQuery = (query != null && !query.isBlank()) ? query.trim() : null;
         String[] queryTokens = null;

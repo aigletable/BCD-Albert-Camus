@@ -1132,3 +1132,94 @@
     -fx-border-width: 0 0 1 0;
 }
 
+
+/* ── 🗺️ PLAN 3D & RANGEMENT BCD EXPRESS (Thème Sombre) ──────── */
+.map3d-prototype-pill {
+    -fx-background-color: rgba(245, 158, 11, 0.2);
+    -fx-text-fill: #FBBF24;
+    -fx-border-color: #F59E0B;
+}
+
+.map3d-banner-intention {
+    -fx-background-color: rgba(245, 158, 11, 0.12);
+    -fx-border-color: rgba(245, 158, 11, 0.3) rgba(245, 158, 11, 0.3) rgba(245, 158, 11, 0.3) #F59E0B;
+}
+
+.map3d-topbar-card {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.map3d-search-box {
+    -fx-background-color: #0F172A;
+    -fx-border-color: #334155;
+}
+
+.map3d-search-input {
+    -fx-text-fill: #F1F5F9;
+}
+
+.map3d-pill {
+    -fx-background-color: #334155;
+    -fx-text-fill: #94A3B8;
+    -fx-border-color: #475569;
+}
+
+.map3d-pill:hover {
+    -fx-background-color: #475569;
+    -fx-text-fill: #F1F5F9;
+}
+
+.map3d-pill-active {
+    -fx-background-color: #2563EB !important;
+    -fx-text-fill: #FFFFFF !important;
+    -fx-border-color: #3B82F6 !important;
+}
+
+.map3d-viewport-card {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.map3d-canvas-wrapper {
+    -fx-background-color: #0F172A;
+    -fx-border-color: #334155;
+}
+
+.map3d-canvas-toolbar {
+    -fx-background-color: rgba(30, 41, 59, 0.94);
+    -fx-border-color: #334155;
+}
+
+.map3d-tool-btn {
+    -fx-background-color: #334155;
+    -fx-border-color: #475569;
+    -fx-text-fill: #E2E8F0;
+}
+
+.map3d-tool-btn:hover {
+    -fx-background-color: #475569;
+}
+
+.map3d-compass-box {
+    -fx-background-color: rgba(30, 41, 59, 0.94);
+    -fx-border-color: #334155;
+}
+
+.map3d-compass-label {
+    -fx-text-fill: #94A3B8;
+}
+
+.map3d-canvas-hint {
+    -fx-background-color: rgba(30, 41, 59, 0.94);
+    -fx-border-color: #334155;
+}
+
+.map3d-hint-text {
+    -fx-text-fill: #CBD5E1;
+}
+
+.map3d-sidebar-card {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
