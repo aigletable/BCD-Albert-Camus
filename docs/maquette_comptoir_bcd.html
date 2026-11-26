@@ -1,0 +1,2951 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BCD Express — Le Comptoir Chaleureux & Assistant Spatial 2D/3D</title>
+    <script src="js/three.min.js"></script>
+    <script>
+        if (typeof THREE === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette Bibliothèque Chaleureuse & Papier Kraft */
+            --bg-base: #F8F5EE;
+            --surface: #FFFFFF;
+            --surface-soft: #F1ECE1;
+            --surface-hover: #E7E0D2;
+            --ink: #1F1B16;
+            --ink-muted: #6E6557;
+            --border: #E2D9CA;
+            --border-light: #ECE5D8;
+
+            /* Accents chaleureux de l'école */
+            --forest: #1E5139;
+            --forest-light: #E7F0EC;
+            --forest-hover: #163E2B;
+            --terracotta: #C85434;
+            --terracotta-light: #FBEFEA;
+            --gold: #D49B28;
+            --gold-light: #FDF7EA;
+            --gold-border: #E5B246;
+            --blue-book: #2A5C8A;
+            --blue-light: #EBF2F8;
+
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-full: 9999px;
+
+            --shadow-sm: 0 2px 8px rgba(31, 27, 22, 0.05);
+            --shadow-md: 0 8px 24px rgba(31, 27, 22, 0.07);
+            --shadow-lg: 0 16px 40px rgba(31, 27, 22, 0.10);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background: var(--bg-base);
+            color: var(--ink);
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- EN-TÊTE ÉPURÉ DU COMPTOIR --- */
+        header.comptoir-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: var(--shadow-sm);
+            z-index: 20;
+            flex-shrink: 0;
+        }
+
+        .brand-block {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-md);
+            background: var(--forest);
+            color: white;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            box-shadow: 0 2px 6px rgba(30, 81, 57, 0.3);
+        }
+        .brand-text h1 {
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1.15;
+            color: var(--ink);
+        }
+        .brand-text p {
+            font-size: 11.5px;
+            color: var(--ink-muted);
+            font-weight: 500;
+        }
+
+        nav.main-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface-soft);
+            padding: 4px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-light);
+        }
+        .nav-link {
+            border: none;
+            background: transparent;
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--ink-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+        .nav-link:hover {
+            color: var(--ink);
+        }
+        .nav-link.active {
+            background: var(--surface);
+            color: var(--forest);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .scanner-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--forest-light);
+            color: var(--forest);
+            padding: 5px 12px;
+            border-radius: var(--radius-full);
+            font-size: 11.5px;
+            font-weight: 700;
+            border: 1px solid #C4DFC5;
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+            animation: pulseGreen 2s infinite ease-in-out;
+        }
+        @keyframes pulseGreen {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.6; }
+        }
+
+        /* --- CORPS PRINCIPAL EN 2 COLONNES --- */
+        main.comptoir-body {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 16px;
+            padding: 14px 20px;
+            min-height: 0;
+        }
+
+        @media (max-width: 1024px) {
+            main.comptoir-body {
+                grid-template-columns: 1fr;
+                overflow-y: visible;
+            }
+        }
+
+        .col-left {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        /* Barre universelle de scan */
+        .scan-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 10px 14px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .scan-card:focus-within {
+            border-color: var(--forest);
+            box-shadow: 0 8px 24px rgba(30, 81, 57, 0.12);
+        }
+        .scan-input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .scan-badge {
+            background: var(--forest);
+            color: white;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 5px 9px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+        .scan-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-family: inherit;
+            font-size: 13.5px;
+            color: var(--ink);
+            background: transparent;
+            font-weight: 500;
+        }
+        .scan-input::placeholder {
+            color: #9D9487;
+            font-weight: 400;
+        }
+        .btn-enter-scan {
+            background: var(--forest);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-enter-scan:hover {
+            background: var(--forest-hover);
+        }
+
+        .class-pills-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+        .class-pill-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--ink-muted);
+            white-space: nowrap;
+        }
+        .class-pill {
+            border: 1px solid var(--border);
+            background: var(--surface-soft);
+            color: var(--ink);
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+        .class-pill:hover {
+            background: #E8E0D2;
+        }
+        .class-pill.active {
+            background: var(--forest);
+            color: white;
+            border-color: var(--forest);
+        }
+
+        /* FICHE ÉLÈVE : "LE SAC DE L'ÉLÈVE" */
+        .student-hero-card {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 280px;
+        }
+
+        .student-header {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #FFFEFB;
+        }
+        .student-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .student-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--forest-light);
+            color: var(--forest);
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            font-weight: 800;
+            border: 2px solid #C4DFC5;
+        }
+        .student-info h2 {
+            font-size: 14.5px;
+            font-weight: 800;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .class-tag {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+            background: var(--surface-soft);
+            color: var(--ink-muted);
+        }
+        .student-info p {
+            font-size: 10.5px;
+            color: var(--ink-muted);
+            margin-top: 1px;
+        }
+
+        .quota-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+        }
+        .quota-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--forest);
+        }
+        .quota-bar-bg {
+            width: 90px;
+            height: 6px;
+            background: var(--surface-soft);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+        .quota-bar-fill {
+            height: 100%;
+            background: var(--forest);
+            border-radius: var(--radius-full);
+            transition: width 0.3s ease;
+        }
+
+        .student-loans-area {
+            flex: 1;
+            padding: 10px 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .area-title {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--ink-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .book-card-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #FCFCFA;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 8px 10px;
+            transition: all 0.15s;
+        }
+        .book-card-item:hover {
+            border-color: #BDB19C;
+            background: #FFFFFF;
+            box-shadow: var(--shadow-sm);
+        }
+        .book-card-item.late {
+            background: var(--terracotta-light);
+            border-color: #F3C4B4;
+        }
+        .book-cover {
+            width: 34px;
+            height: 46px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, #2A5C8A, #4E86B9);
+            color: white;
+            display: grid;
+            place-items: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+        }
+        .book-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .book-title {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .book-meta {
+            font-size: 10.5px;
+            color: var(--ink-muted);
+            margin-top: 1px;
+        }
+        .book-due-pill {
+            display: inline-block;
+            margin-top: 2px;
+            font-size: 9.5px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: var(--radius-full);
+            background: var(--forest-light);
+            color: var(--forest);
+        }
+        .book-card-item.late .book-due-pill {
+            background: #FFFFFF;
+            color: var(--terracotta);
+            font-weight: 800;
+        }
+        .btn-return-book {
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--ink);
+            padding: 4px 9px;
+            border-radius: var(--radius-sm);
+            font-size: 10.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-return-book:hover {
+            border-color: var(--forest);
+            color: var(--forest);
+        }
+
+        .pending-loan-box {
+            background: #FDF9EE;
+            border: 2px dashed #E5C77B;
+            border-radius: var(--radius-md);
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .btn-confirm-loan {
+            background: var(--forest);
+            color: white;
+            border: none;
+            padding: 7px 12px;
+            border-radius: var(--radius-md);
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(30, 81, 57, 0.2);
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .btn-confirm-loan:hover {
+            background: var(--forest-hover);
+        }
+
+        /* --- COLONNE DROITE : RETOURS & JUMEAU 2D / 3D --- */
+        .col-right {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .returns-express-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 10px 14px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            flex-shrink: 0;
+        }
+        .card-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-header-row h3 {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .returns-input-row {
+            display: flex;
+            gap: 8px;
+        }
+        .returns-input {
+            flex: 1;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 6px 10px;
+            font-size: 11.5px;
+            font-family: inherit;
+            outline: none;
+            background: var(--surface-soft);
+        }
+        .returns-input:focus {
+            background: white;
+            border-color: var(--forest);
+        }
+
+        /* L'AIDE AU RANGEMENT : JUMEAU NUMÉRIQUE FIDÈLE D'ALBERT CAMUS */
+        .shelving-assistant-card {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 12px 14px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            min-height: 340px;
+        }
+
+        .view-switch-tabs {
+            display: flex;
+            background: var(--surface-soft);
+            padding: 2px;
+            border-radius: var(--radius-full);
+            gap: 2px;
+        }
+        .tab-btn {
+            border: none;
+            background: transparent;
+            padding: 4px 9px;
+            border-radius: var(--radius-full);
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--ink-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .tab-btn.active {
+            background: white;
+            color: var(--forest);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Conseil textuel dynamique */
+        .shelving-tip-box {
+            background: var(--gold-light);
+            border: 1px solid #E8CD94;
+            border-radius: var(--radius-md);
+            padding: 8px 11px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            flex-shrink: 0;
+        }
+        .tip-icon {
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+        .tip-text h4 {
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #8C610E;
+        }
+        .tip-text p {
+            font-size: 10.5px;
+            color: var(--ink);
+            margin-top: 1px;
+        }
+
+        .desk-indicator-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: var(--radius-full);
+            background: #EBF2F8;
+            color: #2A5C8A;
+            margin-top: 3px;
+            border: 1px solid #C5DCF0;
+        }
+        .desk-indicator-badge.success {
+            background: #E7F0EC;
+            color: #1E5139;
+            border-color: #B2D8C3;
+        }
+        .desk-indicator-badge.late {
+            background: #FDF4E6;
+            color: #B45309;
+            border-color: #F8D9A8;
+        }
+
+        /* CONTENEUR DE VISUALISATION (PLAN 2D / 3D) */
+        .spatial-viewer-container {
+            flex: 1;
+            min-height: 250px;
+            background: #F8F6F0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Plan 2D SVG */
+        #svg-plan-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            background: #FFFFFF;
+            transition: opacity 0.2s ease;
+        }
+        #svg-plan-container.hidden {
+            display: none;
+        }
+        #bcd-svg {
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            user-select: none;
+        }
+
+        .svg-furniture-item {
+            cursor: pointer;
+            transition: filter 0.15s ease, transform 0.15s ease;
+        }
+        .svg-furniture-item:hover {
+            filter: brightness(0.92) drop-shadow(0 2px 5px rgba(0,0,0,0.15));
+        }
+        .svg-furniture-item.active rect.main-rect {
+            stroke: #D49B28 !important;
+            stroke-width: 0.12 !important;
+        }
+        @keyframes pulseGoldSvg {
+            0%, 100% { stroke: #D49B28; stroke-width: 0.11; }
+            50% { stroke: #F59E0B; stroke-width: 0.18; }
+        }
+        .svg-furniture-item.active rect.main-rect {
+            animation: pulseGoldSvg 1.5s infinite ease-in-out;
+        }
+
+        /* Vue 3D Three.js */
+        #three-canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            inset: 0;
+            display: block;
+            cursor: grab;
+            transition: opacity 0.2s ease;
+        }
+        #three-canvas-container:active {
+            cursor: grabbing;
+        }
+        #three-canvas-container.hidden {
+            display: none;
+        }
+
+        /* Calque étiquettes 3D */
+        #labels-3d-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 5;
+        }
+        .label-3d-pin {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            color: #1F1B16;
+            border: 2px solid #D49B28;
+            font-size: 10px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+        .label-3d-pin:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            background: #FEF3C7;
+        }
+        .label-3d-pin.active {
+            background: #D49B28;
+            color: #FFFFFF;
+            border-color: #8C610E;
+            transform: translate(-50%, -50%) scale(1.25);
+            box-shadow: 0 0 10px rgba(212, 155, 40, 0.6);
+        }
+
+        .viewer-hint-bar {
+            position: absolute;
+            bottom: 6px;
+            left: 8px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(4px);
+            color: var(--ink-muted);
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 9.5px;
+            font-weight: 700;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid var(--border);
+            z-index: 10;
+        }
+
+        .floating-shelf-badge {
+            position: absolute;
+            bottom: 6px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid var(--gold);
+            color: #8C610E;
+            padding: 3px 9px;
+            border-radius: var(--radius-full);
+            font-size: 9.5px;
+            font-weight: 800;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        /* --- BARRE DOCK DE TEST EN BAS --- */
+        footer.dock-bar {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .scenario-chips {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .sc-btn {
+            border: 1px solid var(--border);
+            background: var(--surface-soft);
+            color: var(--ink);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 10.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .sc-btn:hover {
+            background: #E8E0D2;
+        }
+        .sc-btn.primary {
+            background: var(--forest-light);
+            color: var(--forest);
+            border-color: #C4DFC5;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--surface);
+            border: 2px solid var(--forest);
+            border-radius: var(--radius-full);
+            padding: 6px 16px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--forest);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+        }
+        .toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* --- MULTI-VUES (LES LIVRES, MALLETTES, GESTION) & MODALE --- */
+        .app-view { display: none !important; }
+        .app-view.active { display: flex !important; }
+        main.comptoir-body.app-view.active { display: grid !important; }
+
+        .subpage-body {
+            flex: 1;
+            flex-direction: column;
+            gap: 14px;
+            padding: 16px 24px;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .subpage-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .subpage-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--ink);
+        }
+        .subpage-header p {
+            font-size: 12px;
+            color: var(--ink-muted);
+            margin-top: 2px;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-forest, .btn-forest-sm, .btn-soft, .btn-soft-sm, .btn-indigo, .btn-blue {
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .btn-forest { background: var(--forest); color: #fff; padding: 8px 14px; font-size: 12px; box-shadow: 0 3px 10px rgba(30,81,57,0.18); }
+        .btn-forest:hover { background: var(--forest-hover); }
+        .btn-forest-sm { background: var(--forest); color: #fff; padding: 5px 10px; font-size: 11px; border-radius: var(--radius-sm); }
+        .btn-forest-sm:hover { background: var(--forest-hover); }
+        .btn-indigo { background: #4F46E5; color: #fff; padding: 8px 14px; font-size: 12px; box-shadow: 0 3px 10px rgba(79,70,229,0.2); }
+        .btn-indigo:hover { background: #4338CA; }
+        .btn-blue { background: var(--blue-book); color: #fff; padding: 8px 14px; font-size: 12px; }
+        .btn-blue:hover { filter: brightness(0.92); }
+        .btn-soft { background: var(--surface); color: var(--ink); border-color: var(--border); padding: 7px 12px; font-size: 12px; }
+        .btn-soft:hover { background: var(--surface-soft); }
+        .btn-soft-sm { background: var(--surface-soft); color: var(--ink); border-color: var(--border); padding: 4px 9px; font-size: 11px; border-radius: var(--radius-sm); }
+        .btn-soft-sm:hover { background: var(--surface-hover); }
+
+        .toolbar-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 10px 14px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            flex-shrink: 0;
+        }
+        .toolbar-row, .toolbar-filters {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .toolbar-filters label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--ink-muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .toolbar-filters select, .toolbar-filters input[type="text"], .toolbar-row input[type="text"] {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px 10px;
+            font-family: inherit;
+            font-size: 12px;
+            color: var(--ink);
+            background: var(--surface-soft);
+            outline: none;
+        }
+        .toolbar-filters select:focus, .toolbar-filters input:focus, .toolbar-row input:focus {
+            background: #fff;
+            border-color: var(--forest);
+        }
+        .search-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 4px 10px;
+        }
+        .search-wrap input {
+            flex: 1;
+            border: none !important;
+            background: transparent !important;
+            outline: none;
+            font-size: 12.5px;
+            padding: 4px 0 !important;
+        }
+
+        .split-layout {
+            flex: 1;
+            display: grid;
+            gap: 16px;
+            min-height: 0;
+        }
+        .split-60-40 { grid-template-columns: 1.45fr 1fr; }
+        .split-35-65 { grid-template-columns: 0.78fr 1.45fr; }
+        .split-50-50 { grid-template-columns: 1fr 1fr; }
+        @media (max-width: 1024px) {
+            .subpage-body { overflow-y: auto; }
+            .split-60-40, .split-35-65, .split-50-50 { grid-template-columns: 1fr; }
+        }
+        .panel-scroll {
+            overflow-y: auto;
+            min-height: 0;
+            padding-right: 4px;
+        }
+
+        /* Catalogue Livres */
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+        }
+        .catalog-book-card {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 11px 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            transition: all 0.15s;
+            box-shadow: var(--shadow-sm);
+        }
+        .catalog-book-card:hover {
+            border-color: #BDB19C;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        .catalog-book-card.selected {
+            border-color: var(--forest);
+            background: #F9FCFA;
+            box-shadow: 0 0 0 2px rgba(30,81,57,0.14);
+        }
+        .catalog-card-top { display: flex; gap: 10px; align-items: flex-start; }
+        .book-cover-lg {
+            width: 44px; height: 60px; border-radius: 6px; color: #fff;
+            display: grid; place-items: center; font-size: 20px; flex-shrink: 0;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.14);
+        }
+        .book-cover-xl {
+            width: 68px; height: 92px; border-radius: 9px; color: #fff;
+            display: grid; place-items: center; font-size: 32px; flex-shrink: 0;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.16);
+        }
+        .catalog-card-title { font-size: 13px; font-weight: 800; color: var(--ink); line-height: 1.25; }
+        .catalog-card-author { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+        .catalog-tags-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+        .catalog-card-footer {
+            display: flex; align-items: center; justify-content: space-between; gap: 6px;
+            padding-top: 7px; border-top: 1px solid var(--border-light);
+        }
+        .zone-mini-tag { font-size: 10px; font-weight: 600; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .tag-pill, .status-pill {
+            font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: var(--radius-full);
+            background: var(--blue-light); color: var(--blue-book); white-space: nowrap;
+        }
+        .tag-pill.soft { background: var(--surface-soft); color: var(--ink-muted); }
+        .tag-pill.gold { background: var(--gold-light); color: #8C610E; }
+        .tag-pill.purple { background: #F3E8FF; color: #6B21A8; }
+        .status-pill.pill-forest { background: var(--forest-light); color: var(--forest); }
+        .status-pill.pill-gold { background: var(--gold-light); color: #8C610E; border: 1px solid #F3D99B; }
+        .status-pill.pill-terracotta { background: var(--terracotta-light); color: var(--terracotta); }
+
+        .detail-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        .detail-panel-inner { display: flex; flex-direction: column; gap: 12px; }
+        .detail-hero { display: flex; gap: 14px; align-items: flex-start; }
+        .detail-book-title { font-size: 16.5px; font-weight: 800; color: var(--ink); line-height: 1.2; }
+        .detail-book-author { font-size: 12px; color: var(--ink-muted); margin-top: 3px; }
+        .locate-callout-card {
+            background: var(--gold-light);
+            border: 1.5px solid #E8CD94;
+            border-radius: var(--radius-md);
+            padding: 11px 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .detail-section-card {
+            background: #FCFCFA;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 11px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .detail-section-card h4 { font-size: 12.5px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+        .section-row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .copies-list { display: flex; flex-direction: column; gap: 6px; }
+        .copy-row {
+            display: flex; align-items: center; gap: 8px; padding: 7px 9px;
+            background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+            font-size: 12px;
+        }
+        .mono-badge {
+            font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700;
+            background: var(--blue-light); color: var(--blue-book); padding: 2px 6px; border-radius: 5px;
+        }
+        .resource-list { list-style: none; display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
+        .resource-list li { background: #fff; border: 1px solid var(--border-light); padding: 6px 9px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+        .muted-xs { font-size: 11px; color: var(--ink-muted); }
+
+        .catalog-table-wrap {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: auto;
+        }
+        .warm-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .warm-table th {
+            text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--ink-muted); background: var(--surface-soft); padding: 9px 12px; border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 1;
+        }
+        .warm-table td { padding: 9px 12px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+        .warm-table tbody tr { cursor: pointer; transition: background 0.12s; }
+        .warm-table tbody tr:hover { background: #FAF7F0; }
+        .warm-table tbody tr.selected { background: var(--forest-light); }
+
+        /* Mallettes */
+        .kpi-pills-row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .kpi-pill-mini {
+            font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-full);
+            background: var(--surface); border: 1px solid var(--border); color: var(--ink);
+        }
+        .kpi-pill-mini.green { background: var(--forest-light); color: var(--forest); border-color: #C4DFC5; }
+        .kpi-pill-mini.gold { background: var(--gold-light); color: #8C610E; border-color: #E8CD94; }
+
+        .mallette-list-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+            padding: 11px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 5px;
+            box-shadow: var(--shadow-sm); transition: all 0.15s;
+        }
+        .mallette-list-card:hover { background: #FCFBF8; transform: translateY(-1px); }
+        .mallette-list-card.selected { background: #F8FBF9; border-color: var(--forest); box-shadow: 0 0 0 2px rgba(30,81,57,0.12); }
+        .mallette-card-title { font-size: 13.5px; font-weight: 800; color: var(--ink); }
+        .mallette-borrower-line { font-size: 11px; font-weight: 700; color: var(--blue-book); margin-top: 2px; }
+        .mallette-detail-head {
+            display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+            padding-bottom: 10px; border-bottom: 1px solid var(--border-light);
+        }
+        .sub-tabs {
+            display: flex; gap: 6px; background: var(--surface-soft); padding: 4px; border-radius: var(--radius-md); align-self: flex-start;
+        }
+        .sub-tab-btn {
+            border: none; background: transparent; padding: 6px 12px; border-radius: var(--radius-sm);
+            font-size: 12px; font-weight: 700; color: var(--ink-muted); cursor: pointer;
+        }
+        .sub-tab-btn.active { background: var(--surface); color: var(--forest); box-shadow: var(--shadow-sm); }
+        .mallette-books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 9px; }
+        .mallette-book-tile {
+            display: flex; align-items: center; gap: 9px; background: #FCFCFA; border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 8px 10px;
+        }
+        .stepper-box {
+            display: inline-flex; align-items: center; gap: 6px; background: var(--surface-soft);
+            border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 5px;
+        }
+        .stepper-box button {
+            border: none; background: #fff; width: 20px; height: 20px; border-radius: 5px;
+            font-weight: 800; cursor: pointer; color: var(--ink);
+        }
+        .stepper-box span { font-size: 11.5px; font-weight: 800; min-width: 14px; text-align: center; }
+
+        /* Gestion */
+        .gestion-subnav {
+            display: flex; gap: 4px; background: var(--surface-soft); padding: 4px;
+            border-radius: var(--radius-full); border: 1px solid var(--border);
+        }
+        .gestion-content-wrap { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+        .kpi-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; flex-shrink: 0; }
+        .kpi-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; flex-shrink: 0; }
+        .kpi-card-warm {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+            padding: 10px 14px; display: flex; align-items: center; gap: 11px; box-shadow: var(--shadow-sm);
+        }
+        .kpi-card-warm > span { font-size: 22px; }
+        .kpi-card-warm strong { font-size: 18px; font-weight: 800; color: var(--ink); }
+        .kpi-mini-box {
+            background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+            padding: 8px; text-align: center;
+        }
+        .kpi-mini-box strong { font-size: 18px; font-weight: 800; }
+        .user-row-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+            padding: 9px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.14s;
+        }
+        .user-row-card:hover { background: #FCFBF8; border-color: #BDB19C; }
+        .user-row-card.selected { background: #F7FBF9; border-color: var(--forest); box-shadow: 0 0 0 2px rgba(30,81,57,0.12); }
+        .kv-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 3px 0; border-bottom: 1px dashed var(--border-light); }
+
+        .label-preview-box {
+            width: 220px; background: #FFFEFB; border: 1px solid #CBD5E1; border-radius: 6px;
+            padding: 9px 12px; text-align: center; display: flex; flex-direction: column; gap: 4px; align-items: center;
+        }
+        .label-preview-box.with-cut-borders { border: 1.5px dashed #64748B; }
+        .label-prev-header { font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; color: var(--ink-muted); }
+        .label-prev-title { font-size: 10.5px; font-weight: 800; color: var(--ink); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .barcode-bars {
+            width: 150px; height: 24px;
+            background: repeating-linear-gradient(90deg, #1F1B16 0 2px, transparent 2px 4px, #1F1B16 4px 5px, transparent 5px 8px, #1F1B16 8px 11px, transparent 11px 13px);
+        }
+        .barcode-bars.small { width: 115px; height: 18px; }
+        .label-prev-code { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700; color: var(--blue-book); }
+
+        .recolement-banner {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+            padding: 10px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-shrink: 0;
+        }
+        .recolement-banner.frozen { background: var(--terracotta-light); border-color: #F3C4B4; }
+
+        .alert-inline-warn { background: var(--terracotta-light); border: 1px solid #F3C4B4; color: var(--terracotta); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; }
+        .alert-inline-ok { background: var(--forest-light); border: 1px solid #C4DFC5; color: var(--forest); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11.5px; font-weight: 600; }
+        .alert-inline-info { background: var(--blue-light); border: 1px solid #C5DCF0; color: var(--blue-book); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12px; }
+        .empty-state-card {
+            background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius-lg);
+            padding: 30px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
+        }
+        .empty-inline-box {
+            display: flex; align-items: center; gap: 10px; background: var(--surface-soft);
+            border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 12px; font-size: 12px;
+        }
+        .empty-inline-box span { font-size: 24px; }
+
+        /* Modale In-App */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(31, 27, 22, 0.45); backdrop-filter: blur(2px);
+            display: none; align-items: center; justify-content: center; padding: 20px; z-index: 200;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg); width: 100%; max-width: 580px; max-height: 88vh;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .modal-header {
+            padding: 14px 18px; border-bottom: 1px solid var(--border-light); background: #FFFEFB;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .modal-header h3 { font-size: 15px; font-weight: 800; color: var(--ink); }
+        .modal-close-btn {
+            border: none; background: var(--surface-soft); width: 28px; height: 28px; border-radius: 50%;
+            font-weight: 800; cursor: pointer; color: var(--ink-muted);
+        }
+        .modal-body { padding: 16px 18px; overflow-y: auto; }
+        .modal-footer {
+            padding: 12px 18px; border-top: 1px solid var(--border-light); background: #FFFEFB;
+            display: flex; justify-content: flex-end; gap: 8px;
+        }
+        .form-stack { display: flex; flex-direction: column; gap: 10px; }
+        .form-stack label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 700; color: var(--ink-muted); }
+        .form-stack input, .form-stack select {
+            border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 10px;
+            font-family: inherit; font-size: 12.5px; color: var(--ink); background: #fff;
+        }
+        .inline-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .a4-preview-sheet { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; }
+        .a4-sheet-grid { display: grid; gap: 8px; }
+        .a4-cell {
+            border: 1px dashed #CBD5E1; border-radius: 5px; padding: 6px;
+            display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
+        }
+        .a4-cell.skipped { background: var(--surface-soft); color: var(--ink-muted); font-size: 10px; justify-content: center; min-height: 60px; }
+
+        /* --- STUDIO UNIFIÉ D'AJOUT DE LIVRES (DOUCHETTE • API • MANUEL) --- */
+        .modal-card.modal-card-wide {
+            max-width: 1020px;
+            width: 95vw;
+            max-height: 90vh;
+        }
+        .modal-card.modal-card-wide .modal-body {
+            padding: 14px 18px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .intake-layout {
+            display: grid;
+            grid-template-columns: 1.4fr 0.9fr;
+            gap: 16px;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        @media (max-width: 900px) {
+            .modal-card.modal-card-wide .modal-body { overflow-y: auto; }
+            .intake-layout { grid-template-columns: 1fr; overflow: visible; }
+        }
+        .intake-left {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .intake-omnibar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #FFFEFB;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 8px 10px;
+            box-shadow: var(--shadow-sm);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .intake-omnibar:focus-within {
+            border-color: var(--forest);
+            box-shadow: 0 6px 18px rgba(30, 81, 57, 0.12);
+        }
+        .intake-omnibar input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+        .intake-controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .rafale-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--forest-light);
+            border: 1px solid #C4DFC5;
+            color: var(--forest);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .intake-demo-chips {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .intake-api-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .intake-api-card {
+            background: #FFFFFF;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .intake-api-card:hover {
+            border-color: var(--forest);
+            box-shadow: var(--shadow-sm);
+        }
+        .source-badge {
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .source-badge.bnf { background: #EBF2F8; color: #1E40AF; }
+        .source-badge.google { background: var(--gold-light); color: #92400E; }
+        .source-badge.openlib { background: #F3E8FF; color: #6B21A8; }
+        .source-badge.bcd { background: var(--forest-light); color: var(--forest); }
+        .intake-api-actions {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .intake-manual-card {
+            background: #FCFCFA;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 11px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .intake-manual-card.highlight-manual {
+            border-color: var(--gold);
+            background: var(--gold-light);
+        }
+        .intake-no-barcode-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: #FFFFFF;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 6px 10px;
+            font-size: 11.5px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .intake-session-panel {
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .intake-session-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-height: 160px;
+        }
+        .intake-session-item {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 9px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .intake-remove-btn {
+            border: none;
+            background: transparent;
+            color: var(--ink-muted);
+            font-weight: 800;
+            cursor: pointer;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .intake-remove-btn:hover { background: var(--terracotta-light); color: var(--terracotta); }
+
+        /* --- ÉCRAN D'ACCUEIL FAÇON NETFLIX (SÉLECTION PROFIL / CLASSE) --- */
+        .profile-splash-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            background: radial-gradient(circle at top, #FFFDF8 0%, #F2EDE1 100%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        .profile-splash-overlay.open { display: flex; }
+        .profile-splash-inner {
+            max-width: 980px;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+        .profile-splash-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--forest);
+            box-shadow: var(--shadow-sm);
+        }
+        .profile-splash-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--ink);
+            letter-spacing: -0.02em;
+        }
+        .profile-splash-sub {
+            font-size: 13.5px;
+            color: var(--ink-muted);
+            max-width: 600px;
+        }
+        .profile-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 14px;
+            margin: 12px 0;
+        }
+        @media (max-width: 960px) {
+            .profile-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 560px) {
+            .profile-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .profile-tile {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 14px 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s, box-shadow 0.18s;
+        }
+        .profile-tile:hover {
+            transform: translateY(-5px) scale(1.03);
+            border-color: var(--forest);
+            box-shadow: var(--shadow-lg);
+        }
+        .profile-tile.admin-tile {
+            background: #FCFAF5;
+            border-style: dashed;
+        }
+        .profile-tile.admin-tile:hover {
+            border-style: solid;
+            border-color: var(--gold);
+        }
+        .profile-avatar-tile {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            display: grid;
+            place-items: center;
+            font-size: 36px;
+            color: #FFFFFF;
+            box-shadow: 0 6px 14px rgba(31, 27, 22, 0.16);
+        }
+        .profile-name {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--ink);
+            line-height: 1.2;
+        }
+        .profile-meta {
+            font-size: 11px;
+            color: var(--ink-muted);
+            font-weight: 600;
+        }
+        .profile-badge-scanner {
+            width: 100%;
+            max-width: 660px;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-full);
+            padding: 6px 10px 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow-sm);
+            flex-wrap: wrap;
+        }
+        .profile-badge-scanner input {
+            flex: 1;
+            min-width: 180px;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+        .profile-pin-card {
+            background: var(--surface);
+            border: 2px solid var(--gold);
+            border-radius: var(--radius-lg);
+            padding: 14px 20px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            max-width: 440px;
+            width: 100%;
+        }
+        .profile-pin-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .profile-pin-row input {
+            width: 130px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.25em;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 6px 10px;
+            outline: none;
+        }
+        .profile-pin-row input:focus { border-color: var(--forest); }
+        .header-profile-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+            color: var(--ink);
+            padding: 5px 11px;
+            border-radius: var(--radius-full);
+            font-family: inherit;
+            font-size: 11.5px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .header-profile-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--forest);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ÉCRAN D'ACCUEIL FAÇON NETFLIX (CHOIX PROFIL / CLASSE) -->
+    <div id="profileSplashOverlay" class="profile-splash-overlay open"></div>
+
+    <!-- EN-TÊTE DU COMPTOIR -->
+    <header class="comptoir-header">
+        <div class="brand-block">
+            <div class="brand-icon">📖</div>
+            <div class="brand-text">
+                <h1>BCD Albert Camus</h1>
+                <p>École élémentaire Pasteur • Meudon</p>
+            </div>
+        </div>
+
+        <nav class="main-nav">
+            <button class="nav-link active" data-view="comptoir" onclick="switchMainView('comptoir')">🖥️ Le Comptoir</button>
+            <button class="nav-link" data-view="livres" onclick="switchMainView('livres')">📚 Les Livres</button>
+            <button class="nav-link" data-view="mallettes" onclick="switchMainView('mallettes')">🎒 Mallettes</button>
+            <button id="navBtnGestion" class="nav-link" data-view="gestion" onclick="switchMainView('gestion')">⚙️ Gestion</button>
+        </nav>
+
+        <div class="header-status">
+            <div class="scanner-pill">
+                <span class="pulse-dot"></span>
+                <span>Douchette prête</span>
+            </div>
+            <div id="headerActiveLoansKpi" style="font-size: 11px; font-weight: 700; color: var(--ink-muted);">
+                📚 32 prêts actifs
+            </div>
+            <button id="headerProfileBtn" class="header-profile-btn" onclick="openProfilePicker()" title="Changer de classe ou passer en mode Admin">
+                🦁 Mme Dupont • CM1-A ▾
+            </button>
+        </div>
+    </header>
+
+    <!-- CORPS DU COMPTOIR EN 2 COLONNES -->
+    <main id="view-comptoir" class="comptoir-body app-view active">
+
+        <!-- COLONNE GAUCHE : LE SAC DE L'ÉLÈVE -->
+        <section class="col-left">
+
+            <!-- BARRE DE SCAN UNIVERSELLE -->
+            <div class="scan-card">
+                <form class="scan-input-row" onsubmit="handleScanInput(event)">
+                    <div class="scan-badge">⚡ Scan</div>
+                    <input id="scanInputField" class="scan-input" type="text"
+                        placeholder="Bipez la carte d'un élève ou tapez un prénom (ex: Lucas, Léa)..." autocomplete="off" autofocus>
+                    <button type="submit" class="btn-enter-scan">Valider</button>
+                </form>
+
+                <div id="comptoirStudentPills" class="class-pills-row">
+                    <span class="class-pill-label">Classes :</span>
+                    <button class="class-pill" onclick="selectStudent('thomas_cp')">CP (Roy)</button>
+                    <button class="class-pill" onclick="selectStudent('hugo_ce1')">CE1 (Blanc)</button>
+                    <button class="class-pill" onclick="selectStudent('camille_ce2')">CE2 (Martin)</button>
+                    <button class="class-pill active" onclick="selectStudent('lucas_cm1')">CM1-A (Dupont)</button>
+                    <button class="class-pill" onclick="selectStudent('lea_cm2')">CM2-B (Simon)</button>
+                </div>
+            </div>
+
+            <!-- FICHE ÉLÈVE : SAC D'EMPRUNT -->
+            <div class="student-hero-card">
+                <div class="student-header">
+                    <div class="student-profile">
+                        <div class="student-avatar" id="studentAvatar">👦</div>
+                        <div class="student-info">
+                            <h2 id="studentName">
+                                Lucas DUPONT
+                                <span class="class-tag" id="studentClass">CM1-A</span>
+                            </h2>
+                            <p id="studentSub">Dernier passage à la BCD il y a 6 jours</p>
+                        </div>
+                    </div>
+
+                    <div class="quota-box">
+                        <span class="quota-label" id="quotaLabel">2 / 3 livres empruntés</span>
+                        <div class="quota-bar-bg">
+                            <div class="quota-bar-fill" id="quotaBar" style="width: 66%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="student-loans-area">
+                    <div class="area-title">
+                        <span>Livres actuellement dans son sac (2)</span>
+                        <span style="color: var(--forest); font-weight: 700;">1 place restante</span>
+                    </div>
+
+                    <!-- Livre 1 -->
+                    <div class="book-card-item" id="loanItem1">
+                        <div class="book-cover" style="background: linear-gradient(135deg, #1E5139, #388E67);">👑</div>
+                        <div class="book-info">
+                            <div class="book-title">Le Petit Prince</div>
+                            <div class="book-meta">Antoine de Saint-Exupéry • Cote R SAI</div>
+                            <span class="book-due-pill">⏳ À rendre le 30 novembre</span>
+                        </div>
+                        <button class="btn-return-book" onclick="returnStudentBook('loanItem1', 'Le Petit Prince', '1')">
+                            Rendre
+                        </button>
+                    </div>
+
+                    <!-- Livre 2 -->
+                    <div class="book-card-item late" id="loanItem2">
+                        <div class="book-cover" style="background: linear-gradient(135deg, #C85434, #E2795D);">🌍</div>
+                        <div class="book-info">
+                            <div class="book-title">Le Tour du Monde en 80 Jours</div>
+                            <div class="book-meta">Jules Verne • Cote R VER</div>
+                            <span class="book-due-pill">⏰ En retard de 4 jours</span>
+                        </div>
+                        <button class="btn-return-book" onclick="returnStudentBook('loanItem2', 'Le Tour du Monde', '1')">
+                            Rendre
+                        </button>
+                    </div>
+
+                    <!-- Panier d'emprunt en cours de scan -->
+                    <div id="pendingLoanCard" class="pending-loan-box" style="display: none;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="book-cover" style="width: 34px; height: 46px; font-size: 15px; background: #D49B28;">✨</div>
+                            <div>
+                                <div style="font-size: 12.5px; font-weight: 800; color: #8C610E;" id="pendingBookTitle">
+                                    Charlie et la Chocolaterie
+                                </div>
+                                <div style="font-size: 10.5px; color: var(--ink-muted);" id="pendingBookMeta">
+                                    Roald Dahl • Cote R DAH
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-confirm-loan" onclick="confirmPendingLoan()">
+                            ✓ Valider le prêt (Entrée)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- COLONNE DROITE : RETOURS & JUMEAU NUMÉRIQUE 2D / 3D -->
+        <section class="col-right">
+
+            <!-- BOÎTE DE RETOURS EXPRESS DOUCHETTE -->
+            <div class="returns-express-card">
+                <div class="card-header-row">
+                    <h3>📦 Retours Express Douchette</h3>
+                    <span style="font-size: 10.5px; font-weight: 700; color: var(--ink-muted);">Piles du matin</span>
+                </div>
+                <form class="returns-input-row" onsubmit="handleExpressReturn(event)">
+                    <input id="expressReturnInput" class="returns-input" type="text"
+                        placeholder="Bipez un livre retourné (ex: Harry Potter, Charlie, Dinosaures, Astérix)..." autocomplete="off">
+                    <button type="submit" class="btn-enter-scan" style="background: var(--blue-book);">Bip</button>
+                </form>
+            </div>
+
+            <!-- L'AIDE AU RANGEMENT : JUMEAU NUMÉRIQUE FIDÈLE D'ALBERT CAMUS -->
+            <div class="shelving-assistant-card">
+                <div class="card-header-row">
+                    <h3>🗺️ Où ranger ce livre ?</h3>
+                    <div class="view-switch-tabs">
+                        <button id="btnTab2D" class="tab-btn" onclick="setViewerMode('2d')">
+                            📐 Plan 2D
+                        </button>
+                        <button id="btnTabRoom" class="tab-btn active" onclick="setViewerMode('room')">
+                            🌐 Salle 3D
+                        </button>
+                        <button id="btnTabDesk" class="tab-btn" onclick="setViewerMode('desk')">
+                            💻 Vue Bureau
+                        </button>
+                        <button id="btnTabShelf" class="tab-btn" onclick="setViewerMode('shelf')">
+                            🔍 Zoom Rayon
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Conseil textuel dynamique avec repérage par rapport au bureau -->
+                <div class="shelving-tip-box" id="shelvingTip">
+                    <div class="tip-icon" id="tipShelfIcon">📍</div>
+                    <div class="tip-text" style="flex: 1;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <h4 id="tipShelfTitle">Étagère 1 • Romans A–P</h4>
+                            <span id="tipDeskRelation" class="desk-indicator-badge late">🔄 Côté Allée centrale</span>
+                        </div>
+                        <p id="tipShelfPos">Face droite ➔ <strong>Rayon 2 (Hauteur d'yeux)</strong> : Romans A à G.</p>
+                    </div>
+                </div>
+
+                <!-- CONTENEUR DU RENDU (PLAN 2D SVG & THREE.JS 3D TEMPS RÉEL) -->
+                <div class="spatial-viewer-container" id="spatialContainer">
+                    
+                    <!-- PLAN 2D SVG (Architectural, toujours actif et zéro plantage) -->
+                    <div id="svg-plan-container" class="hidden">
+                        <svg id="bcd-svg" viewBox="-0.6 -0.7 10.2 8.9">
+                            <defs>
+                                <pattern id="grid-pattern" width="0.5" height="0.5" patternUnits="userSpaceOnUse">
+                                    <path d="M 0.5 0 L 0 0 0 0.5" fill="none" stroke="#F1EFE9" stroke-width="0.02" />
+                                </pattern>
+                            </defs>
+
+                            <!-- Sol 9.0m x 7.5m -->
+                            <rect x="0" y="0" width="9.0" height="7.5" fill="#FAFAF8" stroke="#D1C7B7" stroke-width="0.08" rx="0.05" />
+                            <rect x="0" y="0" width="9.0" height="7.5" fill="url(#grid-pattern)" />
+
+                            <!-- Verrière jaune (Z=0, X=2.1 à 8.8) -->
+                            <line x1="2.1" y1="0" x2="8.8" y2="0" stroke="#F59E0B" stroke-width="0.14" stroke-linecap="round" />
+                            <text x="5.45" y="-0.22" text-anchor="middle" font-size="0.22" font-weight="700" fill="#B45309">VERRIÈRE JAUNE (COULOIR)</text>
+
+                            <!-- Porte d'entrée (X=1.0 à 2.0) -->
+                            <rect x="1.0" y="-0.06" width="1.0" height="0.12" fill="#FFFFFF" />
+                            <line x1="1.0" y1="0" x2="1.0" y2="0.95" stroke="#2563EB" stroke-width="0.07" />
+                            <path d="M 1.0 0.95 A 0.95 0.95 0 0 0 1.95 0" fill="none" stroke="#93C5FD" stroke-width="0.04" stroke-dasharray="0.1,0.08" />
+                            <text x="1.5" y="-0.22" text-anchor="middle" font-size="0.20" font-weight="700" fill="#2563EB">PORTE</text>
+
+                            <!-- Fenêtres cour (Z=7.5) -->
+                            <line x1="0.4" y1="7.5" x2="8.6" y2="7.5" stroke="#38BDF8" stroke-width="0.14" stroke-linecap="round" />
+                            <text x="4.5" y="7.95" text-anchor="middle" font-size="0.22" font-weight="700" fill="#0284C7">FENÊTRES EXTÉRIEURES & RADIATEURS</text>
+
+                            <!-- Tapis bleu lecture -->
+                            <rect x="6.5" y="5.6" width="1.6" height="1.7" rx="0.15" fill="#BAE6FD" opacity="0.45" stroke="#7DD3FC" stroke-width="0.03" stroke-dasharray="0.1,0.06" />
+
+                            <!-- Meubles injectés en SVG -->
+                            <g id="svgFurnitureGroup"></g>
+                        </svg>
+                    </div>
+
+                    <!-- VUE 3D THREE.JS -->
+                    <div id="three-canvas-container"></div>
+
+                    <!-- ÉTIQUETTES FLOTTANTES 1 À 11 SUR LA 3D -->
+                    <div id="labels-3d-layer"></div>
+                    
+                    <div class="viewer-hint-bar" id="viewerHintBar">
+                        <span>🖱️ Tourner : Clic gauche • Zoomer : Molette</span>
+                    </div>
+
+                    <div id="shelfCalloutBadge" class="floating-shelf-badge">
+                        <span>✨ Étagère 1 • Rayon 2</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- ÉCRAN 2 : LES LIVRES (CATALOGUE VISUEL) -->
+    <main id="view-livres" class="app-view subpage-body"></main>
+
+    <!-- ÉCRAN 3 : MALLETTES PÉDAGOGIQUES -->
+    <main id="view-mallettes" class="app-view subpage-body"></main>
+
+    <!-- ÉCRAN 4 : GESTION (ÉLÈVES, ÉTIQUETTES, RÉCOLEMENT, SAUVEGARDES) -->
+    <main id="view-gestion" class="app-view subpage-body"></main>
+
+    <!-- BARRE DOCK DE TEST EN BAS -->
+    <footer id="comptoirDockBar" class="dock-bar">
+        <div class="scenario-chips">
+            <span style="font-weight: 800; color: var(--ink-muted); text-transform: uppercase; font-size: 10px;">Scénarios Double-Face :</span>
+            <button class="sc-btn primary" onclick="testScenario('scan_charlie')">
+                📖 1A. Charlie (Meuble 1 ➔ Face Droite • Côté Allée 🔄)
+            </button>
+            <button class="sc-btn" onclick="testScenario('return_perrault')">
+                🧚 1B. Contes Perrault (Meuble 1 ➔ Face Gauche • Côté Bureau 👁️)
+            </button>
+            <button class="sc-btn" onclick="testScenario('return_dino')">
+                🦖 2A. Dinosaures (Biblio verte 8 ➔ Face Droite • Côté Tapis 🔄)
+            </button>
+            <button class="sc-btn" onclick="testScenario('return_sorciere')">
+                👑 2B. Sorcières (Biblio verte 8 ➔ Face Gauche • Côté Bureau 👁️)
+            </button>
+            <button class="sc-btn" onclick="testScenario('return_harry')">
+                ⚡ 3. Harry Potter (Mur 3)
+            </button>
+            <button class="sc-btn" onclick="setViewerMode('desk')">
+                💻 4. Vue Bureau PC (Vos yeux)
+            </button>
+            <button class="sc-btn" onclick="resetComptoir()">
+                🔄 Recentrer
+            </button>
+        </div>
+
+        <div style="color: var(--ink-muted); font-size: 10.5px;">
+            Jumeau Spatial BCD Albert Camus (9,0m × 7,5m) • Double mode 2D vectoriel & 3D WebGL
+        </div>
+    </footer>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toastNotification" class="toast">
+        <span id="toastIcon">✨</span>
+        <span id="toastText">Action effectuée</span>
+    </div>
+
+    <!-- CODE COMPLET & SÉCURISÉ (DOUBLE MOTEUR 2D + 3D SANS ERREUR) -->
+    <script>
+        const ROOM_W = 9.0;
+        const ROOM_D = 7.5;
+
+        // Les 11 meubles réels et le mobilier d'Albert Camus
+        const ITEMS = [
+            { id: '1', num: 1, name: "Étagère Contes & Romans A-P", category: 'shelf', style3d: 'shelf-yellow', x1: 4.1, x2: 4.7, z1: 0.1, z2: 1.8, height: 1.45, color2d: '#F59E0B', doubleFaced: true, axis: 'X', faceA: { id: 'gauche', name: 'Face Gauche (Contes)' }, faceB: { id: 'droite', name: 'Face Droite (Romans A-P)' } },
+            { id: '2', num: 2, name: "Grand bac BD & Mangas", category: 'bin', style3d: 'bin-bd-tiered', x1: 5.8, x2: 6.7, z1: 0.1, z2: 1.9, height: 1.15, color2d: '#06B6D4' },
+            { id: '3', num: 3, name: "Grand linéaire mural (Histoire & Séries)", category: 'shelf', style3d: 'shelf-yellow', x1: 8.3, x2: 8.9, z1: 0.2, z2: 7.3, height: 1.65, color2d: '#F59E0B' },
+            { id: '4', num: 4, name: "Îlot central droit (Mallettes & Sciences)", category: 'shelf', style3d: 'shelf-yellow', x1: 6.1, x2: 7.7, z1: 3.2, z2: 3.8, height: 1.45, color2d: '#F59E0B', doubleFaced: true, axis: 'Z', faceA: { id: 'haut', name: 'Face Avant (Sciences 600-700)' }, faceB: { id: 'bas', name: 'Face Arrière (Chair de Poule)' } },
+            { id: '5', num: 5, name: "Petit bac central blanc", category: 'bin', style3d: 'bin-white', x1: 5.3, x2: 5.9, z1: 3.2, z2: 3.8, height: 0.85, color2d: '#06B6D4' },
+            { id: '6', num: 6, name: "Îlot central gauche (Albums A-T)", category: 'shelf', style3d: 'shelf-yellow', x1: 3.4, x2: 5.0, z1: 3.2, z2: 3.8, height: 1.45, color2d: '#F59E0B', doubleFaced: true, axis: 'Z', faceA: { id: 'haut', name: 'Face Avant (Albums A-T)' }, faceB: { id: 'bas', name: 'Face Arrière (Revues jeunesse)' } },
+            { id: '7', num: 7, name: "Bac Livres jeux", category: 'bin', style3d: 'bin-green', x1: 2.3, x2: 3.2, z1: 3.1, z2: 3.9, height: 0.78, color2d: '#10B981' },
+            { id: '8', num: 8, name: "Bibliothèque Verte (Sciences & Dinos)", category: 'shelf', style3d: 'shelf-green', x1: 5.6, x2: 6.2, z1: 5.4, z2: 7.4, height: 1.55, color2d: '#10B981', doubleFaced: true, axis: 'X', faceA: { id: 'gauche', name: 'Face Gauche (Albums thèmes & CP)' }, faceB: { id: 'droite', name: 'Face Droite (Sciences & Dinos)' } },
+            { id: '9', num: 9, name: "Bacs bois fenêtres CP/CE1", category: 'bin', style3d: 'bin-wood', x1: 4.4, x2: 5.5, z1: 6.8, z2: 7.4, height: 0.65, color2d: '#D97706' },
+            { id: '10', num: 10, name: "Bac roulant CP/CE1", category: 'bin', style3d: 'bin-yellow', x1: 3.5, x2: 4.8, z1: 5.7, z2: 6.3, height: 0.85, color2d: '#06B6D4' },
+            { id: '11', num: 11, name: "Présentoir Nouveautés & Table", category: 'shelf', style3d: 'shelf-yellow', x1: 2.5, x2: 3.1, z1: 5.4, z2: 7.4, height: 1.5, color2d: '#F59E0B', doubleFaced: true, axis: 'X', faceA: { id: 'gauche', name: 'Face Gauche (Pop-up)' }, faceB: { id: 'droite', name: 'Face Droite (Nouveautés)' } },
+            // Mobilier d'ambiance
+            { id: 'desk', num: null, name: "Bureau BCD & PC", category: 'desk', style3d: 'desk-pc', x1: 0.4, x2: 1.4, z1: 2.6, z2: 4.4, height: 0.76, color2d: '#38BDF8' },
+            { id: 'table', num: null, name: "Table de Tri & Travail", category: 'desk', style3d: 'table-work', x1: 0.6, x2: 1.6, z1: 5.5, z2: 7.1, height: 0.75, color2d: '#38BDF8' },
+            { id: 'chairs', num: null, name: "Chaises d'attente", category: 'seating', style3d: 'chairs-3', x1: 2.4, x2: 3.8, z1: 0.2, z2: 0.7, height: 0.80, color2d: '#F43F5E' },
+            { id: 'sofa', num: null, name: "Canapé vert BD", category: 'seating', style3d: 'sofa-green', x1: 4.9, x2: 5.6, z1: 0.2, z2: 0.8, height: 0.75, color2d: '#10B981' },
+            { id: 'poufs', num: null, name: "Poufs lecture détente", category: 'seating', style3d: 'poufs-green', x1: 6.6, x2: 7.9, z1: 6.6, z2: 7.3, height: 0.42, color2d: '#84CC16' }
+        ];
+
+        // Configuration exacte du cadrage et de la tablette 3D pour chaque face
+        const SHELF_PRESETS = {
+            // Meuble 1 : Face Droite (Romans) vs Face Gauche (Contes)
+            '1': {
+                name: "Étagère 1 • Romans A–P",
+                targetFace: "droite",
+                faceName: "Face Droite (Côté Allée)",
+                tierName: "Rayon 2 (Hauteur d'yeux)",
+                desc: "Romans A à G (Roald Dahl, Charlie...)",
+                deskRelation: "🔄 Côté Allée centrale (Faire le tour du meuble)",
+                deskBadgeClass: "late",
+                targetLook: { x: 4.55, y: 0.85, z: 0.95 },
+                camPos: { x: 6.4, y: 1.35, z: 0.95 },
+                highlight: { w: 0.26, h: 0.045, d: 1.6, x: 4.55, y: 0.78, z: 0.95 }
+            },
+            '1_droite': {
+                name: "Étagère 1 • Romans A–P",
+                targetFace: "droite",
+                faceName: "Face Droite (Côté Allée)",
+                tierName: "Rayon 2 (Hauteur d'yeux)",
+                desc: "Romans A à G (Roald Dahl, Charlie...)",
+                deskRelation: "🔄 Côté Allée centrale (Faire le tour du meuble)",
+                deskBadgeClass: "late",
+                targetLook: { x: 4.55, y: 0.85, z: 0.95 },
+                camPos: { x: 6.4, y: 1.35, z: 0.95 },
+                highlight: { w: 0.26, h: 0.045, d: 1.6, x: 4.55, y: 0.78, z: 0.95 }
+            },
+            '1_gauche': {
+                name: "Étagère 1 • Contes & Poésie",
+                targetFace: "gauche",
+                faceName: "Face Gauche (Côté Bureau)",
+                tierName: "Rayon 1 (Présentoir incliné)",
+                desc: "Contes de Grimm, Perrault, Poésie",
+                deskRelation: "👁️ Visible directement depuis votre écran PC",
+                deskBadgeClass: "success",
+                targetLook: { x: 4.25, y: 0.85, z: 0.95 },
+                camPos: { x: 2.5, y: 1.35, z: 0.95 },
+                highlight: { w: 0.26, h: 0.045, d: 1.6, x: 4.25, y: 0.78, z: 0.95 }
+            },
+
+            // Meuble 2 : Bacs BD (Niveau 1 Bac supérieur)
+            '2': {
+                name: "Meuble 2 • Bacs BD & Mangas",
+                targetFace: "droite",
+                faceName: "Bacs supérieurs",
+                tierName: "Niveau 1 (Bac supérieur)",
+                desc: "Astérix, Tintin, Mortelle Adèle, Lucky Luke",
+                deskRelation: "👁️ Visible depuis le bureau (près du canapé vert)",
+                deskBadgeClass: "success",
+                targetLook: { x: 6.25, y: 0.75, z: 1.0 },
+                camPos: { x: 7.1, y: 2.3, z: 2.8 },
+                highlight: { w: 0.82, h: 0.12, d: 1.7, x: 6.25, y: 0.88, z: 1.0 }
+            },
+
+            // Meuble 3 : Grand linéaire mural (Simple face)
+            '3': {
+                name: "Grand linéaire 3 • Histoire & Séries",
+                targetFace: "mur",
+                faceName: "Façade murale",
+                tierName: "Rayon 1 (Tout en haut)",
+                desc: "Séries cultes • Harry Potter (Section haute du meuble)",
+                deskRelation: "👁️ Tout au fond du mur droit",
+                deskBadgeClass: "info",
+                targetLook: { x: 8.6, y: 1.35, z: 1.4 },
+                camPos: { x: 6.3, y: 1.55, z: 1.4 },
+                highlight: { w: 0.52, h: 0.045, d: 1.8, x: 8.6, y: 1.35, z: 1.4 }
+            },
+
+            // Meuble 8 : Bibliothèque verte (Double-face)
+            '8': {
+                name: "Bibliothèque Verte 8 • Sciences & Nature",
+                targetFace: "droite",
+                faceName: "Face Droite (Côté Tapis)",
+                tierName: "Rayon 2 (Dinosaures & Préhistoire)",
+                desc: "Sciences Dewey 567 ➔ Face droite",
+                deskRelation: "🔄 Côté Tapis bleu / Fenêtres (Contourner la biblio)",
+                deskBadgeClass: "late",
+                targetLook: { x: 6.05, y: 0.85, z: 6.4 },
+                camPos: { x: 7.9, y: 1.3, z: 6.4 },
+                highlight: { w: 0.26, h: 0.045, d: 1.8, x: 6.05, y: 0.82, z: 6.4 }
+            },
+            '8_droite': {
+                name: "Bibliothèque Verte 8 • Sciences & Nature",
+                targetFace: "droite",
+                faceName: "Face Droite (Côté Tapis)",
+                tierName: "Rayon 2 (Dinosaures & Préhistoire)",
+                desc: "Sciences Dewey 567 ➔ Face droite",
+                deskRelation: "🔄 Côté Tapis bleu / Fenêtres (Contourner la biblio)",
+                deskBadgeClass: "late",
+                targetLook: { x: 6.05, y: 0.85, z: 6.4 },
+                camPos: { x: 7.9, y: 1.3, z: 6.4 },
+                highlight: { w: 0.26, h: 0.045, d: 1.8, x: 6.05, y: 0.82, z: 6.4 }
+            },
+            '8_gauche': {
+                name: "Bibliothèque Verte 8 • Albums thèmes & CP",
+                targetFace: "gauche",
+                faceName: "Face Gauche (Côté Bureau)",
+                tierName: "Rayon 1 (Sorcières, Noël, Princes)",
+                desc: "Albums thématiques et premières lectures CP/CE1",
+                deskRelation: "👁️ Visible directement depuis votre écran PC",
+                deskBadgeClass: "success",
+                targetLook: { x: 5.75, y: 0.85, z: 6.4 },
+                camPos: { x: 4.0, y: 1.3, z: 6.4 },
+                highlight: { w: 0.26, h: 0.045, d: 1.8, x: 5.75, y: 0.82, z: 6.4 }
+            }
+        };
+
+        let scene = null;
+        let camera = null;
+        let renderer = null;
+        let isWebGLSupported = false;
+        const furnitureGroups = {};
+        const labelPins = {};
+        let currentTargetZone = '1';
+        let currentMode = 'room'; // '2d', 'room', 'shelf'
+
+        // Variables d'animation fluide
+        let camTargetPos = null;
+        let camTargetLook = null;
+        let camCurrentLook = null;
+
+        // Meshes de mise en valeur 3D
+        let shelfHighlightMesh = null;
+        let furnitureHaloMesh = null;
+
+        const orbit = {
+            isDragging: false,
+            prevX: 0,
+            prevY: 0,
+            theta: Math.PI * 0.28,
+            phi: Math.PI * 0.32,
+            radius: 11.5,
+            target: { x: ROOM_W / 2, y: 0.4, z: ROOM_D / 2 }
+        };
+
+        // --- 1. INITIALISATION DU PLAN 2D SVG ---
+        function initSvgPlan() {
+            const svgGroup = document.getElementById('svgFurnitureGroup');
+            svgGroup.innerHTML = '';
+
+            ITEMS.forEach(it => {
+                const w = it.x2 - it.x1;
+                const d = it.z2 - it.z1;
+                const cx = it.x1 + w / 2;
+                const cy = it.z1 + d / 2;
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'svg-furniture-item');
+                g.setAttribute('id', `svgItem_${it.id}`);
+
+                if (it.doubleFaced) {
+                    // Meuble double-face : séparation visuelle bilatérale avec repère bureau
+                    if (it.axis === 'X') {
+                        const wHalf = w / 2;
+                        // Face Gauche (Côté Bureau)
+                        const rectLeft = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        rectLeft.setAttribute('class', 'main-rect svg-face-rect');
+                        rectLeft.setAttribute('id', `svgFace_${it.id}_gauche`);
+                        rectLeft.setAttribute('x', it.x1);
+                        rectLeft.setAttribute('y', it.z1);
+                        rectLeft.setAttribute('width', wHalf);
+                        rectLeft.setAttribute('height', d);
+                        rectLeft.setAttribute('rx', 0.04);
+                        rectLeft.setAttribute('fill', it.color2d || '#CBD5E1');
+                        rectLeft.setAttribute('stroke', '#64748B');
+                        rectLeft.setAttribute('stroke-width', 0.03);
+                        rectLeft.onclick = (e) => { e.stopPropagation(); highlightBcdZone(`${it.id}_gauche`); };
+                        g.appendChild(rectLeft);
+
+                        // Face Droite (Côté Allée)
+                        const rectRight = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        rectRight.setAttribute('class', 'main-rect svg-face-rect');
+                        rectRight.setAttribute('id', `svgFace_${it.id}_droite`);
+                        rectRight.setAttribute('x', it.x1 + wHalf);
+                        rectRight.setAttribute('y', it.z1);
+                        rectRight.setAttribute('width', wHalf);
+                        rectRight.setAttribute('height', d);
+                        rectRight.setAttribute('rx', 0.04);
+                        rectRight.setAttribute('fill', it.color2d || '#CBD5E1');
+                        rectRight.setAttribute('stroke', '#64748B');
+                        rectRight.setAttribute('stroke-width', 0.03);
+                        rectRight.onclick = (e) => { e.stopPropagation(); highlightBcdZone(`${it.id}_droite`); };
+                        g.appendChild(rectRight);
+
+                        // Ligne centrale en pointillés
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', cx);
+                        line.setAttribute('y1', it.z1);
+                        line.setAttribute('x2', cx);
+                        line.setAttribute('y2', it.z2);
+                        line.setAttribute('stroke', '#475569');
+                        line.setAttribute('stroke-width', 0.02);
+                        line.setAttribute('stroke-dasharray', '0.06,0.04');
+                        g.appendChild(line);
+                    } else {
+                        const dHalf = d / 2;
+                        // Face Haut
+                        const rectTop = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        rectTop.setAttribute('class', 'main-rect svg-face-rect');
+                        rectTop.setAttribute('id', `svgFace_${it.id}_haut`);
+                        rectTop.setAttribute('x', it.x1);
+                        rectTop.setAttribute('y', it.z1);
+                        rectTop.setAttribute('width', w);
+                        rectTop.setAttribute('height', dHalf);
+                        rectTop.setAttribute('rx', 0.04);
+                        rectTop.setAttribute('fill', it.color2d || '#CBD5E1');
+                        rectTop.setAttribute('stroke', '#64748B');
+                        rectTop.setAttribute('stroke-width', 0.03);
+                        rectTop.onclick = (e) => { e.stopPropagation(); highlightBcdZone(`${it.id}_haut`); };
+                        g.appendChild(rectTop);
+
+                        // Face Bas
+                        const rectBot = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        rectBot.setAttribute('class', 'main-rect svg-face-rect');
+                        rectBot.setAttribute('id', `svgFace_${it.id}_bas`);
+                        rectBot.setAttribute('x', it.x1);
+                        rectBot.setAttribute('y', it.z1 + dHalf);
+                        rectBot.setAttribute('width', w);
+                        rectBot.setAttribute('height', dHalf);
+                        rectBot.setAttribute('rx', 0.04);
+                        rectBot.setAttribute('fill', it.color2d || '#CBD5E1');
+                        rectBot.setAttribute('stroke', '#64748B');
+                        rectBot.setAttribute('stroke-width', 0.03);
+                        rectBot.onclick = (e) => { e.stopPropagation(); highlightBcdZone(`${it.id}_bas`); };
+                        g.appendChild(rectBot);
+
+                        // Ligne centrale en pointillés
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', it.x1);
+                        line.setAttribute('y1', cy);
+                        line.setAttribute('x2', it.x2);
+                        line.setAttribute('y2', cy);
+                        line.setAttribute('stroke', '#475569');
+                        line.setAttribute('stroke-width', 0.02);
+                        line.setAttribute('stroke-dasharray', '0.06,0.04');
+                        g.appendChild(line);
+                    }
+                } else {
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('class', 'main-rect');
+                    rect.setAttribute('id', `svgFace_${it.id}`);
+                    rect.setAttribute('x', it.x1);
+                    rect.setAttribute('y', it.z1);
+                    rect.setAttribute('width', w);
+                    rect.setAttribute('height', d);
+                    rect.setAttribute('rx', 0.06);
+                    rect.setAttribute('fill', it.color2d || '#CBD5E1');
+                    rect.setAttribute('stroke', '#64748B');
+                    rect.setAttribute('stroke-width', 0.04);
+                    rect.onclick = () => highlightBcdZone(it.id, currentMode === 'shelf');
+                    g.appendChild(rect);
+                }
+
+                if (it.num !== null) {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', cx);
+                    circle.setAttribute('cy', cy);
+                    circle.setAttribute('r', 0.22);
+                    circle.setAttribute('fill', '#FFFFFF');
+                    circle.setAttribute('stroke', '#475569');
+                    circle.setAttribute('stroke-width', 0.035);
+                    circle.style.pointerEvents = 'none';
+                    g.appendChild(circle);
+
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', cx);
+                    text.setAttribute('y', cy + 0.08);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('font-size', '0.23');
+                    text.setAttribute('font-weight', '800');
+                    text.setAttribute('fill', '#0F172A');
+                    text.style.pointerEvents = 'none';
+                    text.textContent = it.num;
+                    g.appendChild(text);
+                }
+
+                // Repère "Vous êtes ici (Bureau PC)"
+                if (it.id === 'desk') {
+                    const youAreHere = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    youAreHere.style.cursor = 'pointer';
+                    youAreHere.onclick = () => setViewerMode('desk');
+                    youAreHere.innerHTML = `
+                        <circle cx="${cx}" cy="${cy}" r="0.22" fill="#FFFFFF" stroke="#0284C7" stroke-width="0.03"/>
+                        <text x="${cx}" y="${cy + 0.08}" text-anchor="middle" font-size="0.22">💻</text>
+                        <rect x="${cx - 0.72}" y="${it.z2 + 0.08}" width="1.44" height="0.28" rx="0.06" fill="#0284C7"/>
+                        <text x="${cx}" y="${it.z2 + 0.27}" text-anchor="middle" font-size="0.15" font-weight="800" fill="#FFFFFF">VOUS ÊTES ICI</text>
+                    `;
+                    g.appendChild(youAreHere);
+                }
+
+                svgGroup.appendChild(g);
+            });
+        }
+
+        // --- 2. INITIALISATION DU JUMEAU 3D THREE.JS (AVEC GESTION D'ERREUR RIGOUREUSE) ---
+        function initThreeBCD() {
+            const container = document.getElementById('three-canvas-container');
+            const w = container.clientWidth || 400;
+            const h = container.clientHeight || 260;
+
+            try {
+                // Test de création de contexte WebGL
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'default' });
+                renderer.setSize(w, h);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                container.appendChild(renderer.domElement);
+                isWebGLSupported = true;
+            } catch (err) {
+                console.warn("WebGL indisponible dans cet environnement. Bascule automatique sur le Plan 2D SVG.", err);
+                isWebGLSupported = false;
+                setViewerMode('2d');
+                document.getElementById('btnTabRoom').style.display = 'none';
+                document.getElementById('btnTabShelf').style.display = 'none';
+                document.getElementById('viewerHintBar').innerHTML = "<span>📍 Plan vectoriel interactif 2D actif</span>";
+                return;
+            }
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xF5F2EB); // Teinte kraft / papier claire et chaleureuse
+
+            camTargetPos = new THREE.Vector3();
+            camTargetLook = new THREE.Vector3();
+            camCurrentLook = new THREE.Vector3(orbit.target.x, orbit.target.y, orbit.target.z);
+
+            camera = new THREE.PerspectiveCamera(36, w / h, 0.1, 100);
+            updateOrbitCamera();
+
+            // Lumières douces et réalistes de jour
+            const ambient = new THREE.AmbientLight(0xFFFFFF, 0.85);
+            scene.add(ambient);
+
+            const sun = new THREE.DirectionalLight(0xFFFBEB, 0.75);
+            sun.position.set(5, 14, 11);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 1024;
+            sun.shadow.mapSize.height = 1024;
+            scene.add(sun);
+
+            // Sol de la BCD (lattes douces)
+            const floorGeo = new THREE.PlaneGeometry(ROOM_W, ROOM_D);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x54627A, roughness: 0.9 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set(ROOM_W / 2, 0, ROOM_D / 2);
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Tapis bleu lecture
+            const rug = new THREE.Mesh(
+                new THREE.PlaneGeometry(1.6, 1.7),
+                new THREE.MeshStandardMaterial({ color: 0x38BDF8, roughness: 0.9 })
+            );
+            rug.rotation.x = -Math.PI / 2;
+            rug.position.set(7.3, 0.01, 6.45);
+            rug.receiveShadow = true;
+            scene.add(rug);
+
+            // Murs périphériques semi-bas pour vue plongeante
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.85 });
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(ROOM_W, 1.1, 0.12), wallMat);
+            backWall.position.set(ROOM_W / 2, 0.55, -0.06);
+            scene.add(backWall);
+
+            // Verrière fenêtres couloir
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0xBAE6FD, transparent: true, opacity: 0.45 });
+            const verriere = new THREE.Mesh(new THREE.BoxGeometry(6.6, 1.1, 0.04), glassMat);
+            verriere.position.set(5.4, 1.75, -0.06);
+            scene.add(verriere);
+
+            // Mur droit
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, ROOM_D), wallMat);
+            rightWall.position.set(ROOM_W + 0.06, 0.55, ROOM_D / 2);
+            scene.add(rightWall);
+
+            // Mur bas fenêtres
+            const botWall = new THREE.Mesh(new THREE.BoxGeometry(ROOM_W, 0.85, 0.12), wallMat);
+            botWall.position.set(ROOM_W / 2, 0.425, ROOM_D + 0.06);
+            scene.add(botWall);
+
+            // Porte d'entrée
+            const door = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.9, 0.06), new THREE.MeshStandardMaterial({ color: 0x2563EB }));
+            door.position.set(1.05, 0.95, 0.45);
+            door.rotation.y = Math.PI / 2;
+            scene.add(door);
+
+            // Construction de tous les meubles réels
+            const labelsLayer = document.getElementById('labels-3d-layer');
+            ITEMS.forEach(it => {
+                const group = buildFurniture3D(it);
+                scene.add(group);
+                furnitureGroups[it.id] = group;
+
+                if (it.num !== null) {
+                    const pin = document.createElement('div');
+                    pin.className = 'label-3d-pin';
+                    pin.innerText = it.num;
+                    pin.title = it.name;
+                    pin.onclick = (e) => {
+                        e.stopPropagation();
+                        highlightBcdZone(it.id, true);
+                    };
+                    labelsLayer.appendChild(pin);
+                    labelPins[it.id] = pin;
+                }
+            });
+
+            // Halo 3D doré
+            furnitureHaloMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 1, 1),
+                new THREE.MeshBasicMaterial({ color: 0xD49B28, wireframe: true, visible: false })
+            );
+            scene.add(furnitureHaloMesh);
+
+            // Tablette dorée en surbrillance émissive
+            shelfHighlightMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(0.8, 0.05, 0.4),
+                new THREE.MeshStandardMaterial({
+                    color: 0xF59E0B,
+                    emissive: 0xD49B28,
+                    emissiveIntensity: 0.8,
+                    roughness: 0.25
+                })
+            );
+            shelfHighlightMesh.visible = false;
+            scene.add(shelfHighlightMesh);
+
+            setupControls(container);
+
+            // ResizeObserver pour adapter la taille au pixel près
+            const ro = new ResizeObserver(() => {
+                const nw = container.clientWidth;
+                const nh = container.clientHeight;
+                if (nw > 0 && nh > 0 && renderer && camera) {
+                    camera.aspect = nw / nh;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(nw, nh);
+                }
+            });
+            ro.observe(container);
+
+            function renderLoop() {
+                requestAnimationFrame(renderLoop);
+
+                if (camTargetPos.lengthSq() > 0) {
+                    camera.position.lerp(camTargetPos, 0.07);
+                    camCurrentLook.lerp(camTargetLook, 0.07);
+                    camera.lookAt(camCurrentLook);
+
+                    if (camera.position.distanceTo(camTargetPos) < 0.02) {
+                        camTargetPos.set(0, 0, 0);
+                        syncOrbitWithCamera();
+                    }
+                }
+
+                // Pulsation lumineuse de la tablette dorée
+                if (shelfHighlightMesh && shelfHighlightMesh.visible) {
+                    const time = Date.now() * 0.005;
+                    shelfHighlightMesh.material.emissiveIntensity = 0.5 + Math.sin(time) * 0.45;
+                }
+
+                renderer.render(scene, camera);
+                updateLabels3DPositions();
+            }
+            renderLoop();
+        }
+
+        // --- 3. MODÈLES 3D RÉALISTES & CORRECTION DU BUG DES LIVRES DE 5 MÈTRES ---
+        const BOOK_COLORS = [0xEF4444, 0x3B82F6, 0x10B981, 0xF59E0B, 0x8B5CF6, 0xEC4899, 0x06B6D4];
+        let colorCounter = 0;
+
+        function buildFurniture3D(it) {
+            const group = new THREE.Group();
+            const w = it.x2 - it.x1;
+            const d = it.z2 - it.z1;
+            const h = it.height;
+            const cx = it.x1 + w / 2;
+            const cz = it.z1 + d / 2;
+
+            const matYellow = new THREE.MeshStandardMaterial({ color: 0xF59E0B, roughness: 0.45 });
+            const matGreen = new THREE.MeshStandardMaterial({ color: 0x10B981, roughness: 0.45 });
+            const matGrey = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.6 });
+            const matWood = new THREE.MeshStandardMaterial({ color: 0xD99B52, roughness: 0.7 });
+            const matWhite = new THREE.MeshStandardMaterial({ color: 0xF8FAFC, roughness: 0.55 });
+
+            if (it.category === 'shelf') {
+                const isGreen = it.style3d.includes('green');
+                const frameMat = isGreen ? matGreen : matYellow;
+                const shelfMat = isGreen ? matWhite : matGrey;
+
+                // Montants verticaux
+                const postGeo = new THREE.BoxGeometry(0.06, h, 0.06);
+                [[it.x1 + 0.04, it.z1 + 0.04], [it.x2 - 0.04, it.z1 + 0.04],
+                 [it.x1 + 0.04, it.z2 - 0.04], [it.x2 - 0.04, it.z2 - 0.04]].forEach(([px, pz]) => {
+                    const post = new THREE.Mesh(postGeo, frameMat);
+                    post.position.set(px, h / 2, pz);
+                    group.add(post);
+                });
+
+                // Tablettes et livres
+                const levels = 4;
+                const isAlongX = w >= d;
+                for (let i = 0; i < levels; i++) {
+                    const sy = 0.18 + i * ((h - 0.35) / (levels - 1));
+                    const slab = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, 0.035, d - 0.04), shelfMat);
+                    slab.position.set(cx, sy, cz);
+                    group.add(slab);
+
+                    // Livres bien dimensionnés (plus de bug de 5 mètres !)
+                    const totalLength = isAlongX ? w : d;
+                    const bookCount = Math.min(24, Math.floor(totalLength * 6));
+                    const step = (totalLength - 0.12) / bookCount;
+
+                    for (let b = 0; b < bookCount; b++) {
+                        const bw = 0.032 + (b % 3) * 0.01;
+                        const bh = 0.16 + (b % 4) * 0.03;
+                        const col = BOOK_COLORS[(colorCounter++) % BOOK_COLORS.length];
+                        
+                        // Dimensions rigoureuses : épaisseur selon l'axe, profondeur adaptée
+                        const bookGeo = isAlongX
+                            ? new THREE.BoxGeometry(bw, bh, Math.min(d * 0.75, 0.24))
+                            : new THREE.BoxGeometry(Math.min(w * 0.75, 0.24), bh, bw);
+
+                        const bMesh = new THREE.Mesh(bookGeo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.7 }));
+
+                        if (isAlongX) {
+                            bMesh.position.set(it.x1 + 0.06 + b * step + bw / 2, sy + bh / 2, cz);
+                        } else {
+                            bMesh.position.set(cx, sy + bh / 2, it.z1 + 0.06 + b * step + bw / 2);
+                        }
+                        group.add(bMesh);
+                    }
+                }
+            } else if (it.style3d === 'bin-bd-tiered') {
+                // Grand bac BD 2 niveaux en escalier
+                const base = new THREE.Mesh(new THREE.BoxGeometry(w, 0.45, d), matWhite);
+                base.position.set(cx, 0.45, cz);
+                group.add(base);
+
+                const topTier = new THREE.Mesh(new THREE.BoxGeometry(w * 0.6, 0.35, d * 0.9), matGrey);
+                topTier.position.set(cx, 0.85, cz);
+                group.add(topTier);
+
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(w * 0.9, 0.25, 0.08), matYellow);
+                leg.position.set(cx, 0.125, it.z1 + 0.15);
+                group.add(leg);
+                const leg2 = leg.clone();
+                leg2.position.z = it.z2 - 0.15;
+                group.add(leg2);
+            } else if (it.style3d === 'bin-wood') {
+                // Bacs bois fenêtres
+                const b1 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.48, 0.32, d), matWood);
+                b1.position.set(it.x1 + w * 0.24, 0.46, cz);
+                group.add(b1);
+                const b2 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.46, 0.40, d * 0.9), matWood);
+                b2.position.set(it.x2 - w * 0.23, 0.20, cz);
+                group.add(b2);
+            } else if (it.category === 'bin') {
+                const boxMat = it.style3d.includes('green') ? matGreen : matYellow;
+                const box = new THREE.Mesh(new THREE.BoxGeometry(w, 0.38, d), boxMat);
+                box.position.set(cx, h - 0.19, cz);
+                group.add(box);
+
+                const legGeo = new THREE.BoxGeometry(0.05, h - 0.38, 0.05);
+                [[it.x1 + 0.06, it.z1 + 0.06], [it.x2 - 0.06, it.z1 + 0.06],
+                 [it.x1 + 0.06, it.z2 - 0.06], [it.x2 - 0.06, it.z2 - 0.06]].forEach(([lx, lz]) => {
+                    const l = new THREE.Mesh(legGeo, matWhite);
+                    l.position.set(lx, (h - 0.38) / 2, lz);
+                    group.add(l);
+                });
+            } else if (it.category === 'desk') {
+                const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, d), new THREE.MeshStandardMaterial({ color: 0x1E5139 }));
+                top.position.set(cx, h, cz);
+                group.add(top);
+
+                const legGeo = new THREE.BoxGeometry(0.05, h, 0.05);
+                [[it.x1 + 0.06, it.z1 + 0.06], [it.x2 - 0.06, it.z1 + 0.06],
+                 [it.x1 + 0.06, it.z2 - 0.06], [it.x2 - 0.06, it.z2 - 0.06]].forEach(([lx, lz]) => {
+                    const l = new THREE.Mesh(legGeo, matYellow);
+                    l.position.set(lx, h / 2, lz);
+                    group.add(l);
+                });
+
+                if (it.id === 'desk') {
+                    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.32, 0.50), new THREE.MeshStandardMaterial({ color: 0x0F172A }));
+                    screen.position.set(cx - 0.15, h + 0.20, cz);
+                    group.add(screen);
+                }
+            } else if (it.id === 'chairs') {
+                const colors = [0x10B981, 0x2563EB, 0x2563EB];
+                for (let i = 0; i < 3; i++) {
+                    const chX = it.x1 + 0.25 + i * 0.45;
+                    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.05, 0.36), new THREE.MeshStandardMaterial({ color: colors[i] }));
+                    seat.position.set(chX, 0.40, cz);
+                    group.add(seat);
+                }
+            } else if (it.id === 'sofa') {
+                const sofa = new THREE.Mesh(new THREE.BoxGeometry(w, 0.45, d), new THREE.MeshStandardMaterial({ color: 0x15803D }));
+                sofa.position.set(cx, 0.22, cz);
+                group.add(sofa);
+            } else if (it.id === 'poufs') {
+                const pouf = new THREE.Mesh(new THREE.BoxGeometry(w * 0.8, 0.35, d * 0.8), new THREE.MeshStandardMaterial({ color: 0x84CC16 }));
+                pouf.position.set(cx, 0.175, cz);
+                group.add(pouf);
+            }
+
+            group.userData = { id: it.id, item: it };
+            return group;
+        }
+
+        // --- 4. NAVIGATION CAMERA & PROJECTION DES ÉTIQUETTES ---
+        function updateOrbitCamera() {
+            if (!camera) return;
+            const sinPhi = Math.sin(orbit.phi);
+            camera.position.x = orbit.target.x + orbit.radius * sinPhi * Math.sin(orbit.theta);
+            camera.position.y = orbit.target.y + orbit.radius * Math.cos(orbit.phi);
+            camera.position.z = orbit.target.z + orbit.radius * sinPhi * Math.cos(orbit.theta);
+            camera.lookAt(orbit.target.x, orbit.target.y, orbit.target.z);
+            if (camCurrentLook) camCurrentLook.set(orbit.target.x, orbit.target.y, orbit.target.z);
+        }
+
+        function syncOrbitWithCamera() {
+            if (!camera || !camCurrentLook) return;
+            const offset = new THREE.Vector3().subVectors(camera.position, camCurrentLook);
+            orbit.target.x = camCurrentLook.x;
+            orbit.target.y = camCurrentLook.y;
+            orbit.target.z = camCurrentLook.z;
+            orbit.radius = Math.max(3.0, offset.length());
+            orbit.phi = Math.acos(Math.max(-1, Math.min(1, offset.y / orbit.radius)));
+            orbit.theta = Math.atan2(offset.x, offset.z);
+        }
+
+        function setupControls(dom) {
+            dom.addEventListener('pointerdown', (e) => {
+                syncOrbitWithCamera();
+                camTargetPos.set(0, 0, 0);
+                orbit.isDragging = true;
+                orbit.prevX = e.clientX;
+                orbit.prevY = e.clientY;
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (!orbit.isDragging) return;
+                const dx = e.clientX - orbit.prevX;
+                const dy = e.clientY - orbit.prevY;
+                orbit.prevX = e.clientX;
+                orbit.prevY = e.clientY;
+
+                orbit.theta -= dx * 0.008;
+                orbit.phi = Math.max(0.08, Math.min(Math.PI / 2 - 0.05, orbit.phi - dy * 0.008));
+                updateOrbitCamera();
+            });
+
+            window.addEventListener('pointerup', () => {
+                orbit.isDragging = false;
+            });
+
+            dom.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                syncOrbitWithCamera();
+                camTargetPos.set(0, 0, 0);
+                orbit.radius = Math.max(3.0, Math.min(18, orbit.radius + e.deltaY * 0.008));
+                updateOrbitCamera();
+            }, { passive: false });
+        }
+
+        function updateLabels3DPositions() {
+            if (!camera || currentMode === '2d') return;
+            const container = document.getElementById('spatialContainer');
+            const cw = container.clientWidth;
+            const ch = container.clientHeight;
+            const vec = new THREE.Vector3();
+
+            ITEMS.forEach(it => {
+                if (it.num === null) return;
+                const pin = labelPins[it.id];
+                if (!pin) return;
+
+                vec.set((it.x1 + it.x2) / 2, it.height + 0.28, (it.z1 + it.z2) / 2);
+                vec.project(camera);
+
+                if (vec.z > 1) {
+                    pin.style.display = 'none';
+                    return;
+                }
+
+                pin.style.display = 'flex';
+                pin.style.left = `${(vec.x * 0.5 + 0.5) * cw}px`;
+                pin.style.top = `${(-vec.y * 0.5 + 0.5) * ch}px`;
+                
+                if (it.id === currentTargetZone) {
+                    pin.classList.add('active');
+                } else {
+                    pin.classList.remove('active');
+                }
+            });
+        }
+
+        // --- 5. BASCULE DU MODE DE VISUALISATION (2D / 3D SALLE / VUE BUREAU / ZOOM RAYON) ---
+        function setViewerMode(mode) {
+            currentMode = mode;
+            const btn2D = document.getElementById('btnTab2D');
+            const btnRoom = document.getElementById('btnTabRoom');
+            const btnDesk = document.getElementById('btnTabDesk');
+            const btnShelf = document.getElementById('btnTabShelf');
+            const svgBox = document.getElementById('svg-plan-container');
+            const threeBox = document.getElementById('three-canvas-container');
+            const labelsLayer = document.getElementById('labels-3d-layer');
+            const hintBar = document.getElementById('viewerHintBar');
+
+            [btn2D, btnRoom, btnDesk, btnShelf].forEach(b => { if (b) b.classList.remove('active'); });
+
+            if (mode === '2d' || !isWebGLSupported) {
+                if (btn2D) btn2D.classList.add('active');
+                svgBox.classList.remove('hidden');
+                threeBox.classList.add('hidden');
+                labelsLayer.style.display = 'none';
+                hintBar.innerHTML = "<span>📍 Plan vectoriel BCD • Cliquez sur un meuble ou un côté pour l'examiner</span>";
+                updateSvgSelection(currentTargetZone);
+                return;
+            }
+
+            svgBox.classList.add('hidden');
+            threeBox.classList.remove('hidden');
+            labelsLayer.style.display = 'block';
+
+            const preset = SHELF_PRESETS[currentTargetZone] || SHELF_PRESETS[currentTargetZone.split('_')[0]] || SHELF_PRESETS['1'];
+
+            if (mode === 'room') {
+                if (btnRoom) btnRoom.classList.add('active');
+                hintBar.innerHTML = "<span>🖱️ Tourner : Clic gauche • Zoomer : Molette</span>";
+                if (camTargetLook && camTargetPos) {
+                    camTargetLook.set(ROOM_W / 2, 0.4, ROOM_D / 2);
+                    camTargetPos.set(ROOM_W / 2 + 6.8, 7.8, ROOM_D / 2 + 7.2);
+                }
+            } else if (mode === 'desk') {
+                if (btnDesk) btnDesk.classList.add('active');
+                hintBar.innerHTML = "<span>💻 Point de vue du Bureau PC • Vous voyez les étagères à travers vos propres yeux !</span>";
+                if (camTargetLook && camTargetPos) {
+                    camTargetLook.set(5.2, 0.95, 3.8);
+                    camTargetPos.set(1.15, 1.25, 3.5);
+                }
+            } else {
+                if (btnShelf) btnShelf.classList.add('active');
+                hintBar.innerHTML = `<span>✨ Zoom Rayon actif sur ${preset.name}</span>`;
+                if (camTargetLook && camTargetPos) {
+                    camTargetLook.set(preset.targetLook.x, preset.targetLook.y, preset.targetLook.z);
+                    camTargetPos.set(preset.camPos.x, preset.camPos.y, preset.camPos.z);
+                }
+            }
+        }
+
+        function updateSvgSelection(zoneId) {
+            document.querySelectorAll('.svg-furniture-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.svg-face-rect').forEach(el => el.classList.remove('active'));
+
+            const baseId = zoneId.split('_')[0];
+            const activeItem = document.getElementById(`svgItem_${baseId}`);
+            if (activeItem) activeItem.classList.add('active');
+
+            const activeFace = document.getElementById(`svgFace_${zoneId}`);
+            if (activeFace) {
+                activeFace.classList.add('active');
+            } else {
+                const defaultFace = document.getElementById(`svgFace_${baseId}_droite`) || document.getElementById(`svgFace_${baseId}`);
+                if (defaultFace) defaultFace.classList.add('active');
+            }
+        }
+
+        // --- 6. FOCUS SPATIAL & SURBRILLANCE DU RAYON ---
+        function highlightBcdZone(zoneId, autoZoom = true) {
+            currentTargetZone = zoneId;
+            const preset = SHELF_PRESETS[zoneId] || SHELF_PRESETS[zoneId.split('_')[0]] || SHELF_PRESETS['1'];
+            const baseId = zoneId.split('_')[0];
+            const it = ITEMS.find(i => i.id === baseId) || ITEMS[0];
+
+            updateSvgSelection(zoneId);
+
+            if (furnitureHaloMesh && isWebGLSupported) {
+                const w = it.x2 - it.x1;
+                const d = it.z2 - it.z1;
+                const h = it.height;
+                const cx = it.x1 + w / 2;
+                const cz = it.z1 + d / 2;
+
+                furnitureHaloMesh.geometry.dispose();
+                furnitureHaloMesh.geometry = new THREE.BoxGeometry(w + 0.14, h + 0.14, d + 0.14);
+                furnitureHaloMesh.position.set(cx, h / 2, cz);
+                furnitureHaloMesh.material.visible = true;
+
+                shelfHighlightMesh.geometry.dispose();
+                shelfHighlightMesh.geometry = new THREE.BoxGeometry(
+                    preset.highlight.w,
+                    preset.highlight.h,
+                    preset.highlight.d
+                );
+                shelfHighlightMesh.position.set(
+                    preset.highlight.x,
+                    preset.highlight.y,
+                    preset.highlight.z
+                );
+                shelfHighlightMesh.visible = true;
+            }
+
+            // Textes du conseil
+            document.getElementById('tipShelfTitle').innerText = preset.name;
+            document.getElementById('tipShelfPos').innerHTML = `<strong>${preset.tierName}</strong> : ${preset.desc}`;
+
+            const deskBadge = document.getElementById('tipDeskRelation');
+            if (deskBadge) {
+                deskBadge.innerText = preset.deskRelation;
+                deskBadge.className = 'desk-indicator-badge ' + (preset.deskBadgeClass || 'late');
+            }
+
+            document.getElementById('shelfCalloutBadge').innerHTML = `✨ ${preset.name} • ${preset.faceName} • ${preset.tierName}`;
+
+            if (currentMode !== '2d' && currentMode !== 'desk') {
+                setViewerMode(autoZoom ? 'shelf' : 'room');
+            }
+        }
+
+        // --- 7. AUDIO & NOTIFICATIONS ---
+        let audioCtx = null;
+        function playSound(type = 'success') {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'success') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.setValueAtTime(1320, now + 0.08);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                    osc.start(now);
+                    osc.stop(now + 0.22);
+                }
+            } catch (e) {}
+        }
+
+        let toastTimer = null;
+        function showToast(text, icon = "✨") {
+            const el = document.getElementById('toastNotification');
+            document.getElementById('toastText').innerHTML = text;
+            document.getElementById('toastIcon').innerText = icon;
+            el.classList.add('visible');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('visible'), 4000);
+        }
+
+        // --- 8. LOGIQUE MÉTIER PRÊTS & RETOURS ---
+        function handleScanInput(e) {
+            e.preventDefault();
+            const val = document.getElementById('scanInputField').value.toLowerCase().trim();
+            if (!val) return;
+            document.getElementById('scanInputField').value = '';
+
+            if (val.includes('harry')) testScenario('return_harry');
+            else if (val.includes('dino')) testScenario('return_dino');
+            else if (val.includes('perrault') || val.includes('grimm')) testScenario('return_perrault');
+            else if (val.includes('sorciere') || val.includes('sorcière')) testScenario('return_sorciere');
+            else if (val.includes('bd') || val.includes('astérix')) testScenario('return_bd');
+            else testScenario('scan_charlie');
+        }
+
+        function confirmPendingLoan() {
+            playSound('success');
+            document.getElementById('pendingLoanCard').style.display = 'none';
+
+            document.getElementById('quotaLabel').innerText = "3 / 3 livres empruntés (Quota atteint)";
+            document.getElementById('quotaBar').style.width = "100%";
+            document.getElementById('quotaBar').style.background = "#D49B28";
+
+            const area = document.querySelector('.student-loans-area');
+            const div = document.createElement('div');
+            div.className = 'book-card-item';
+            div.id = 'loanItemNew';
+            div.innerHTML = `
+                <div class="book-cover" style="background: linear-gradient(135deg, #D49B28, #F59E0B);">🍫</div>
+                <div class="book-info">
+                    <div class="book-title">Charlie et la Chocolaterie</div>
+                    <div class="book-meta">Roald Dahl • Cote R DAH</div>
+                    <span class="book-due-pill">⏳ À rendre le 08 décembre</span>
+                </div>
+                <button class="btn-return-book" onclick="returnStudentBook('loanItemNew', 'Charlie et la Chocolaterie', '1_droite')">
+                    Rendre
+                </button>
+            `;
+            area.insertBefore(div, document.getElementById('pendingLoanCard'));
+            showToast("Prêt validé ! Bonnes lectures à Lucas.", "✅");
+        }
+
+        function returnStudentBook(elementId, bookTitle, targetZone) {
+            playSound('success');
+            const el = document.getElementById(elementId);
+            if (el) el.remove();
+
+            document.getElementById('quotaLabel').innerText = "1 / 3 livre emprunté";
+            document.getElementById('quotaBar').style.width = "33%";
+            document.getElementById('quotaBar').style.background = "var(--forest)";
+
+            highlightBcdZone(targetZone, true);
+            showToast(`Retour de <strong>${bookTitle}</strong> enregistré !`, "📦");
+        }
+
+        function handleExpressReturn(e) {
+            e.preventDefault();
+            const val = document.getElementById('expressReturnInput').value.toLowerCase().trim();
+            document.getElementById('expressReturnInput').value = '';
+
+            if (val.includes('dino')) testScenario('return_dino');
+            else if (val.includes('sorciere') || val.includes('sorcière')) testScenario('return_sorciere');
+            else if (val.includes('perrault') || val.includes('grimm')) testScenario('return_perrault');
+            else if (val.includes('bd') || val.includes('astérix')) testScenario('return_bd');
+            else testScenario('return_harry');
+        }
+
+        function selectStudent(studentKey) {
+            playSound('success');
+            document.querySelectorAll('.class-pill').forEach(p => p.classList.remove('active'));
+
+            if (studentKey === 'lea_cm2') {
+                document.getElementById('studentAvatar').innerText = "👧";
+                document.getElementById('studentName').innerHTML = 'Léa STOCKISTE <span class="class-tag">CM2-B</span>';
+                document.getElementById('studentSub').innerText = "Dernier passage à la BCD avant-hier";
+                document.getElementById('quotaLabel').innerText = "1 / 3 livre emprunté";
+                document.getElementById('quotaBar').style.width = "33%";
+                document.getElementById('quotaBar').style.background = "var(--forest)";
+                showToast("Fiche élève : <strong>Léa Stockiste (CM2-B)</strong>", "👧");
+            } else if (studentKey === 'thomas_cp') {
+                document.getElementById('studentAvatar').innerText = "🚼";
+                document.getElementById('studentName').innerHTML = 'Thomas PETIT <span class="class-tag">CP (Mme Roy)</span>';
+                document.getElementById('studentSub').innerText = "Lecteur débutant CP";
+                document.getElementById('quotaLabel').innerText = "0 / 1 livre emprunté";
+                document.getElementById('quotaBar').style.width = "0%";
+                showToast("Fiche élève : <strong>Thomas Petit (CP)</strong>", "🚼");
+            } else {
+                document.getElementById('studentAvatar').innerText = "👦";
+                document.getElementById('studentName').innerHTML = 'Lucas DUPONT <span class="class-tag">CM1-A</span>';
+                document.getElementById('studentSub').innerText = "Dernier passage il y a 6 jours";
+                document.getElementById('quotaLabel').innerText = "2 / 3 livres empruntés";
+                document.getElementById('quotaBar').style.width = "66%";
+                document.getElementById('quotaBar').style.background = "var(--forest)";
+                showToast("Fiche élève : <strong>Lucas Dupont (CM1-A)</strong>", "👦");
+            }
+        }
+
+        function testScenario(type) {
+            if (type === 'scan_charlie') {
+                playSound('success');
+                document.getElementById('pendingLoanCard').style.display = 'flex';
+                highlightBcdZone('1_droite', true);
+                showToast("Charlie et la Chocolaterie ➔ <strong>Étagère 1 • Face Droite (Côté Allée 🔄)</strong>", "📖");
+            } else if (type === 'return_perrault') {
+                playSound('success');
+                highlightBcdZone('1_gauche', true);
+                showToast("Contes de Perrault ➔ <strong>Étagère 1 • Face Gauche (Côté Bureau 👁️)</strong>", "🧚");
+            } else if (type === 'return_dino') {
+                playSound('success');
+                highlightBcdZone('8_droite', true);
+                showToast("Dinosaures ➔ <strong>Biblio verte 8 • Face Droite (Côté Tapis 🔄)</strong>", "🦖");
+            } else if (type === 'return_sorciere') {
+                playSound('success');
+                highlightBcdZone('8_gauche', true);
+                showToast("Albums Sorcières ➔ <strong>Biblio verte 8 • Face Gauche (Côté Bureau 👁️)</strong>", "👑");
+            } else if (type === 'return_harry') {
+                playSound('success');
+                highlightBcdZone('3', true);
+                showToast("Harry Potter ➔ <strong>Grand linéaire 3 (Rayon 1 Tout en haut)</strong>", "⚡");
+            } else if (type === 'return_bd') {
+                playSound('success');
+                highlightBcdZone('2', true);
+                showToast("Astérix ➔ <strong>Bac BD 2 (Niveau 1 Bac supérieur)</strong>", "💥");
+            }
+        }
+
+        function resetComptoir() {
+            setViewerMode('room');
+            showToast("Caméra recentrée sur toute la salle", "🔄");
+        }
+
+        window.onload = () => {
+            initSvgPlan();
+            initThreeBCD();
+            highlightBcdZone('1_droite', false);
+            if (typeof window.renderLivresView === 'function') window.renderLivresView();
+            if (typeof window.renderMallettesView === 'function') window.renderMallettesView();
+            if (typeof window.renderGestionView === 'function') window.renderGestionView();
+        };
+    </script>
+
+    <!-- MODALE IN-APP PARTAGÉE -->
+    <div id="appModalOverlay" class="modal-overlay" onclick="if (event.target === this) closeModal()">
+        <div id="appModalCard" class="modal-card"></div>
+    </div>
+
+    <script src="js/maquette_modules.js"></script>
+</body>
+</html>
